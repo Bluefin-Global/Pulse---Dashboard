@@ -292,6 +292,10 @@ body::before{
 
 .journal-row{padding:10px 0;border-bottom:1px solid var(--line);}
 .journal-row:last-child{border-bottom:none;}
+.journal-actions{display:flex;gap:8px;}
+.journal-act{color:var(--dim);font-size:12px;cursor:pointer;padding:1px 4px;}
+.journal-act:hover{color:var(--purple);}
+.journal-act.del:hover{color:var(--red);}
 .journal-top{display:flex;justify-content:space-between;align-items:baseline;}
 .journal-date{font-size:9px;color:var(--dim);font-family:var(--mono);}
 .journal-note{font-size:10px;color:var(--dim);margin-top:3px;}
@@ -546,7 +550,7 @@ body::before{
 <!-- LOG P&L MODAL -->
 <div class="modal-bg" id="modalTrade">
   <div class="modal">
-    <div class="modal-head"><h3>LOG P&L</h3><span class="modal-close" data-close="modalTrade">×</span></div>
+    <div class="modal-head"><h3 id="tradeModalTitle">LOG P&L</h3><span class="modal-close" data-close="modalTrade">×</span></div>
     <div class="modal-body">
       <div class="row2"><div class="field"><label>Firm</label><select id="fFirm"></select></div><div class="field"><label>Account</label><select id="fAccount"></select></div></div>
       <div class="field"><label>Amount ($) — use minus for a loss</label><input type="number" id="fPL" step="0.01" placeholder="e.g. 125 or -80"></div>
@@ -979,8 +983,22 @@ function render(){
   jWrap.innerHTML = sorted.length===0 ? '<div class="empty">No entries yet</div>' :
     sorted.map(t=>{
       const firm = getFirm(t.firmId); const acct = firm ? getAccount(t.firmId,t.accountId) : null;
-      return `<div class="journal-row"><div class="journal-top"><span class="journal-date">${new Date(t.ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</span><span class="journal-pl" style="color:${Number(t.pl)>=0?'var(--green)':'var(--red)'}">${fmt(t.pl)}</span></div>${firm?`<div class="journal-acct">${firm.name}${acct?' · '+acct.nickname:''}</div>`:''}${t.notes?`<div class="journal-note">${t.notes}</div>`:''}</div>`;
+      return `<div class="journal-row"><div class="journal-top"><span class="journal-date">${new Date(t.ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</span><span style="display:flex;align-items:center;gap:10px;"><span class="journal-pl" style="color:${Number(t.pl)>=0?'var(--green)':'var(--red)'}">${fmt(t.pl)}</span><span class="journal-actions"><span class="journal-act" data-edit-trade="${t.id}">✎</span><span class="journal-act del" data-del-trade="${t.id}">🗑</span></span></span></div>${firm?`<div class="journal-acct">${firm.name}${acct?' · '+acct.nickname:''}</div>`:''}${t.notes?`<div class="journal-note">${t.notes}</div>`:''}</div>`;
     }).join('');
+  jWrap.querySelectorAll('[data-edit-trade]').forEach(el=>{
+    el.addEventListener('click', ()=>openEditTrade(el.dataset.editTrade));
+  });
+  jWrap.querySelectorAll('[data-del-trade]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const t = state.trades.find(x=>x.id===el.dataset.delTrade);
+      if(!t) return;
+      if(confirm(`Delete this ${fmt(t.pl)} entry? This cannot be undone.`)){
+        state.trades = state.trades.filter(x=>x.id!==t.id);
+        save(); renderAll();
+        pushFeed(`Entry ${fmt(t.pl)} deleted`);
+      }
+    });
+  });
 
   document.getElementById('btnViewDash').style.display = s.account ? '' : 'none';
 
@@ -1450,22 +1468,53 @@ function populateTradeAccountSelect(){
   sel.innerHTML = firm ? firm.accounts.map(a=>`<option value="${a.id}">${a.nickname}</option>`).join('') : '';
 }
 document.getElementById('fFirm').addEventListener('change', populateTradeAccountSelect);
+let editingTradeId = null;
 document.getElementById('btnAddTrade').addEventListener('click', ()=>{
   if(state.firms.length===0 || state.firms.every(f=>f.accounts.length===0)){
     alert('Add a firm and at least one account first.');
     openAddFirmModal();
     return;
   }
+  editingTradeId = null;
+  document.getElementById('tradeModalTitle').textContent = 'LOG P&L';
+  document.getElementById('btnSaveTrade').textContent = 'SAVE';
+  document.getElementById('fPL').value=''; document.getElementById('fNotes').value='';
   populateTradeFirmSelect();
   const sc = scopeParts();
   if(sc){ document.getElementById('fFirm').value = sc.firmId; populateTradeAccountSelect(); document.getElementById('fAccount').value = sc.acctId; }
   openModal('modalTrade');
 });
+function openEditTrade(tradeId){
+  const t = state.trades.find(x=>x.id===tradeId);
+  if(!t) return;
+  editingTradeId = tradeId;
+  document.getElementById('tradeModalTitle').textContent = 'EDIT P&L ENTRY';
+  document.getElementById('btnSaveTrade').textContent = 'SAVE CHANGES';
+  populateTradeFirmSelect();
+  document.getElementById('fFirm').value = t.firmId;
+  populateTradeAccountSelect();
+  document.getElementById('fAccount').value = t.accountId;
+  document.getElementById('fPL').value = t.pl;
+  document.getElementById('fNotes').value = t.notes || '';
+  openModal('modalTrade');
+}
 document.getElementById('btnSaveTrade').addEventListener('click', ()=>{
   const firmId = document.getElementById('fFirm').value;
   const accountId = document.getElementById('fAccount').value;
   if(!firmId || !accountId){ alert('Select a firm and account'); return; }
-  const t = { id: uid(), firmId, accountId, status:'closed', pl: Number(document.getElementById('fPL').value||0), notes: document.getElementById('fNotes').value, ts: Date.now() };
+  const pl = Number(document.getElementById('fPL').value||0);
+  const notes = document.getElementById('fNotes').value;
+  if(editingTradeId){
+    const t = state.trades.find(x=>x.id===editingTradeId);
+    if(t){ t.firmId=firmId; t.accountId=accountId; t.pl=pl; t.notes=notes; }
+    save();
+    pushFeed(`Entry updated to ${fmt(pl)}`);
+    closeModal('modalTrade');
+    editingTradeId = null;
+    renderAll();
+    return;
+  }
+  const t = { id: uid(), firmId, accountId, status:'closed', pl, notes, ts: Date.now() };
   state.trades.push(t);
   save();
   pushFeed(`${fmt(t.pl)} logged`);
