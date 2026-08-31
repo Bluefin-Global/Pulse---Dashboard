@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PULSE — Trading Command Bridge</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#05000f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#05000f;
+  --panel:#0d0620;
+  --panel-b:#170b30;
+  --line:#2a1a4a;
+  --purple:#a855ff;
+  --cyan:#00eaff;
+  --green:#00ffa3;
+  --red:#ff2d6e;
+  --amber:#ffb800;
+  --pink:#ff2dd4;
+  --gold:#ffd700;
+  --dim:#7a6ba0;
+  --bright:#f3edff;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Inter',sans-serif;
+  --disp:'Orbitron',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--void);color:var(--bright);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
+#starfield{position:fixed;inset:0;z-index:0;pointer-events:none;}
+body{position:relative;}
+.app{position:relative;z-index:1;}
+body::before{
+  content:'';position:fixed;inset:-10%;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 1100px 650px at 50% -5%, rgba(168,85,255,0.22), transparent),
+    radial-gradient(ellipse 850px 550px at 100% 100%, rgba(0,234,255,0.12), transparent),
+    radial-gradient(ellipse 700px 450px at 0% 60%, rgba(255,45,212,0.10), transparent);
+  animation:nebulaDrift 26s ease-in-out infinite;
+}
+@keyframes nebulaDrift{
+  0%{transform:translate(0,0) scale(1);}
+  33%{transform:translate(-2%,1.5%) scale(1.03);}
+  66%{transform:translate(2%,-1%) scale(1.02);}
+  100%{transform:translate(0,0) scale(1);}
+}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
+
+/* ---------- loading / auth overlay ---------- */
+.loading-overlay{
+  position:fixed;inset:0;z-index:200;background:var(--void);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  transition:opacity .3s ease;
+}
+.loading-overlay.hide{opacity:0;pointer-events:none;}
+.lo-orb{width:50px;height:50px;border-radius:50%;background:radial-gradient(circle at 35% 30%, var(--purple), #1a0a3a 70%);box-shadow:0 0 30px rgba(168,85,255,0.8);animation:hubGlow 1.4s ease-in-out infinite;}
+.lo-text{font-family:var(--mono);font-size:11px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;}
+
+.auth-overlay{
+  position:fixed;inset:0;z-index:190;background:var(--void);
+  display:none;align-items:center;justify-content:center;
+}
+.auth-overlay.show{display:flex;}
+.auth-card{
+  width:380px;max-width:92vw;background:linear-gradient(180deg, rgba(23,11,48,0.9), rgba(13,6,32,0.9));
+  border:1px solid var(--line);border-radius:16px;padding:32px 28px;
+  box-shadow:0 0 60px rgba(168,85,255,0.15);
+}
+.auth-brand{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:26px;}
+.auth-orb{width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 35% 30%, var(--purple), #1a0a3a 70%);box-shadow:0 0 24px rgba(168,85,255,0.7);animation:hubGlow 3s ease-in-out infinite;}
+.auth-title{font-family:var(--disp);font-weight:800;font-size:22px;letter-spacing:5px;background:linear-gradient(90deg,#fff,#d9b9ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.auth-sub{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;}
+.auth-tabs{display:flex;gap:8px;margin-bottom:18px;}
+.auth-tab{flex:1;text-align:center;padding:9px;border-radius:8px;font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;border:1px solid var(--line);color:var(--dim);}
+.auth-tab.active{background:rgba(168,85,255,0.15);border-color:var(--purple);color:var(--bright);}
+.auth-field{margin-bottom:12px;}
+.auth-field label{font-size:10px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:5px;font-family:var(--mono);}
+.auth-field input{width:100%;background:var(--void);border:1px solid var(--line);border-radius:8px;padding:11px 12px;color:var(--bright);font-family:var(--sans);font-size:13px;}
+.auth-field input:focus{outline:none;border-color:var(--purple);}
+.auth-error{font-family:var(--mono);font-size:11px;color:var(--red);margin-bottom:10px;min-height:14px;}
+.auth-submit{
+  width:100%;padding:12px;border-radius:8px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff;
+  font-family:var(--mono);font-size:12px;letter-spacing:2px;text-transform:uppercase;font-weight:700;
+  box-shadow:0 0 20px rgba(168,85,255,0.4);margin-top:6px;
+}
+.auth-submit:hover{box-shadow:0 0 28px rgba(168,85,255,0.65);}
+.auth-submit:disabled{opacity:0.5;cursor:default;}
+
+/* ---------- topbar ---------- */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 24px;border-bottom:1px solid var(--line);
+  background:rgba(6,2,16,0.85);backdrop-filter:blur(12px);
+  position:sticky;top:0;z-index:60;
+}
+.brand{display:flex;align-items:center;gap:12px;}
+.brand-mark{width:36px;height:36px;border-radius:50%;background:radial-gradient(circle at 35% 30%, var(--purple), #1a0a3a 70%);box-shadow:0 0 26px rgba(168,85,255,0.85), inset 0 0 12px rgba(255,255,255,0.15);flex-shrink:0;animation:hubGlow 3s ease-in-out infinite;}
+@keyframes hubGlow{0%,100%{box-shadow:0 0 18px rgba(168,85,255,0.55);}50%{box-shadow:0 0 34px rgba(168,85,255,0.95);}}
+.brand-text .t1{font-family:var(--disp);font-weight:800;font-size:17px;letter-spacing:4px;background:linear-gradient(90deg,#fff,#d9b9ff,#00eaff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.brand-text .t2{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--dim);margin-top:2px;}
+.brand-badges{display:flex;gap:10px;margin-left:18px;}
+.brand-badge{font-family:var(--mono);font-size:8.5px;letter-spacing:1.5px;color:var(--dim);display:flex;align-items:center;gap:5px;text-transform:uppercase;}
+.brand-badge .bdot{width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite;}
+.top-actions{display:flex;gap:10px;align-items:center;}
+.btn{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;background:var(--panel-b);border:1px solid var(--line);color:var(--bright);padding:9px 14px;border-radius:6px;cursor:pointer;text-transform:uppercase;transition:all .15s;display:flex;align-items:center;gap:6px;}
+.btn:hover{border-color:var(--purple);box-shadow:0 0 14px rgba(168,85,255,0.4);transform:translateY(-1px);}
+.btn.primary{background:linear-gradient(135deg,var(--purple),var(--pink));border:none;}
+.btn.primary:hover{box-shadow:0 0 20px rgba(168,85,255,0.65);}
+.btn.danger{border-color:rgba(255,45,110,0.4);color:var(--red);}
+.btn.danger:hover{border-color:var(--red);box-shadow:0 0 14px rgba(255,45,110,0.35);}
+.clock{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:1px;}
+
+/* ---------- overview strip ---------- */
+.overview-strip{
+  display:flex;gap:1px;background:var(--line);border-bottom:1px solid var(--line);
+  overflow-x:auto;
+}
+.ov-cell{
+  flex:1;min-width:130px;background:rgba(9,4,20,0.85);padding:12px 18px;
+}
+.ov-label{font-family:var(--mono);font-size:8.5px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;}
+.ov-value{font-family:var(--disp);font-weight:800;font-size:18px;margin-top:4px;}
+.ov-value.hot{color:var(--gold);text-shadow:0 0 12px rgba(255,215,0,0.6);}
+
+/* ---------- alert banner ---------- */
+.alert-banner{display:none;padding:10px 24px;background:rgba(255,45,110,0.14);border-bottom:1px solid rgba(255,45,110,0.5);font-family:var(--mono);font-size:11px;letter-spacing:1px;color:var(--red);align-items:center;gap:10px;position:relative;z-index:55;}
+.alert-banner.show{display:flex;}
+.alert-dot{width:6px;height:6px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red);animation:pulse 1.2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+/* ---------- scope bar ---------- */
+.scope-bar{display:flex;align-items:center;gap:10px;padding:10px 24px;flex-wrap:wrap;border-bottom:1px solid var(--line);background:rgba(6,2,16,0.5);}
+.scope-label{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;}
+.scope-pill{font-family:var(--mono);font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid var(--line);color:var(--bright);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px;}
+.scope-pill:hover{border-color:var(--cyan);}
+.scope-pill.active{background:rgba(0,234,255,0.12);border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 12px rgba(0,234,255,0.3);}
+.scope-chip-dot{width:6px;height:6px;border-radius:50%;}
+
+/* ---------- network stage ---------- */
+.network-panel{margin:18px 20px 6px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg, rgba(23,11,48,0.5), rgba(9,4,20,0.7));position:relative;overflow:hidden;}
+.network-head{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line);}
+.network-head .title{font-family:var(--mono);font-size:10px;letter-spacing:2.5px;color:var(--dim);text-transform:uppercase;display:flex;align-items:center;gap:8px;}
+.network-head .title span.b{color:var(--bright);}
+.network-stage{position:relative;width:100%;height:520px;}
+.node-lines{position:absolute;inset:0;width:100%;height:100%;}
+.node-lines line{stroke-dasharray:3 4;animation:dashflow 3s linear infinite;}
+@keyframes dashflow{to{stroke-dashoffset:-70;}}
+
+.hub-node{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:118px;height:118px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 35% 30%, rgba(168,85,255,0.55), rgba(20,8,45,0.9) 72%);border:1px solid rgba(168,85,255,0.6);box-shadow:0 0 34px rgba(168,85,255,0.5), inset 0 0 20px rgba(168,85,255,0.25);cursor:default;z-index:5;animation:hubPulse 4s ease-in-out infinite;text-align:center;}
+@keyframes hubPulse{0%,100%{box-shadow:0 0 28px rgba(168,85,255,0.4), inset 0 0 16px rgba(168,85,255,0.18);}50%{box-shadow:0 0 46px rgba(168,85,255,0.7), inset 0 0 24px rgba(168,85,255,0.3);}}
+.hub-node .hl{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:#e2c8ff;text-transform:uppercase;}
+.hub-node .hv{font-family:var(--disp);font-weight:800;font-size:16px;margin-top:4px;color:#fff;}
+.hub-node .hs{font-family:var(--mono);font-size:9px;margin-top:2px;}
+
+.firm-node{position:absolute;width:96px;height:84px;clip-path:polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0% 50%);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s;z-index:4;border:1px solid var(--fc,var(--cyan));background:linear-gradient(160deg, color-mix(in srgb, var(--fc,var(--cyan)) 26%, #0d0620), rgba(9,4,20,0.92));box-shadow:0 0 18px color-mix(in srgb, var(--fc,var(--cyan)) 55%, transparent);animation:nodePulse var(--pulsedur,4s) ease-in-out infinite;}
+.firm-node:hover{transform:scale(1.08);}
+.firm-node.selected{box-shadow:0 0 30px color-mix(in srgb, var(--fc,var(--cyan)) 85%, transparent);transform:scale(1.1);}
+.firm-node.payout-hit{border-color:var(--gold)!important;box-shadow:0 0 34px rgba(255,215,0,0.85)!important;}
+@keyframes nodePulse{0%,100%{filter:brightness(1);}50%{filter:brightness(1.35);}}
+.firm-node .fn-name{font-family:var(--mono);font-weight:700;font-size:10px;letter-spacing:0.5px;color:var(--bright);text-align:center;padding:0 6px;}
+.firm-node .fn-val{font-family:var(--mono);font-size:10px;margin-top:3px;font-weight:700;}
+.firm-node .fn-acct{font-family:var(--mono);font-size:8px;color:var(--dim);margin-top:1px;}
+
+.node-icon{position:absolute;width:20px;height:20px;border-radius:50%;background:rgba(6,2,16,0.95);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;z-index:6;transition:all .15s;}
+.node-icon:hover{border-color:var(--purple);color:var(--purple);transform:scale(1.15);}
+.node-icon.del:hover{border-color:var(--red);color:var(--red);}
+.node-icon.view:hover{border-color:var(--cyan);color:var(--cyan);}
+
+.acct-node{position:absolute;width:76px;height:66px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s, box-shadow .2s;z-index:3;border:1px solid var(--ac,var(--cyan));background:linear-gradient(160deg, color-mix(in srgb, var(--ac,var(--cyan)) 18%, #0d0620), rgba(9,4,20,0.9));box-shadow:0 0 10px color-mix(in srgb, var(--ac,var(--cyan)) 40%, transparent);animation:nodePulse var(--pulsedur,5s) ease-in-out infinite;}
+.acct-node:hover{transform:scale(1.1);}
+.acct-node.active{box-shadow:0 0 22px color-mix(in srgb, var(--ac,var(--cyan)) 90%, transparent);border-width:2px;}
+.acct-node.payout-hit{border-color:var(--gold)!important;box-shadow:0 0 26px rgba(255,215,0,0.9)!important;}
+.acct-node .an-name{font-family:var(--mono);font-size:8.5px;font-weight:700;color:var(--bright);text-align:center;padding:0 4px;line-height:1.2;}
+.acct-node .an-pl{font-family:var(--mono);font-size:9px;margin-top:3px;font-weight:700;}
+.acct-node .an-payout{font-family:var(--mono);font-size:7px;color:var(--dim);margin-top:1px;}
+
+.add-node{position:absolute;width:76px;height:76px;border-radius:50%;border:1.5px dashed var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:var(--dim);transition:all .15s;z-index:4;background:rgba(255,255,255,0.02);}
+.add-node:hover{border-color:var(--purple);color:var(--purple);box-shadow:0 0 16px rgba(168,85,255,0.35);}
+.add-node .plus{font-size:22px;line-height:1;}
+.add-node .lbl{font-family:var(--mono);font-size:8px;letter-spacing:1px;margin-top:3px;}
+
+/* ---------- drawer ---------- */
+.drawer-bg{position:fixed;inset:0;background:rgba(2,0,8,0.65);backdrop-filter:blur(3px);z-index:90;display:none;}
+.drawer-bg.show{display:block;}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:420px;max-width:92vw;background:linear-gradient(180deg, rgba(15,7,32,0.98), rgba(5,2,15,0.98));border-left:1px solid var(--line);z-index:95;transform:translateX(100%);transition:transform .25s ease;display:flex;flex-direction:column;}
+.drawer.show{transform:translateX(0);}
+.drawer-head{padding:18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
+.drawer-head .fname{font-family:var(--disp);font-weight:800;font-size:16px;letter-spacing:1px;}
+.drawer-head .fsub{font-family:var(--mono);font-size:9px;color:var(--dim);letter-spacing:1px;margin-top:3px;}
+.drawer-close{cursor:pointer;color:var(--dim);font-size:20px;line-height:1;}
+.drawer-body{padding:16px 18px;overflow-y:auto;flex:1;}
+.drawer-foot{padding:14px 18px;border-top:1px solid var(--line);}
+
+.firm-metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.fm-cell{background:rgba(255,255,255,0.03);border:1px solid var(--line);border-radius:8px;padding:10px 12px;}
+.fm-cell .v{font-family:var(--mono);font-weight:700;font-size:16px;}
+.fm-cell .l{font-size:8.5px;letter-spacing:1px;color:var(--dim);text-transform:uppercase;margin-top:3px;}
+
+.acct-card{border:1px solid var(--line);border-radius:10px;padding:13px;margin-bottom:12px;background:rgba(255,255,255,0.02);cursor:pointer;transition:all .15s;position:relative;}
+.acct-card:hover{border-color:var(--cyan);}
+.acct-card.active{border-color:var(--cyan);box-shadow:0 0 16px rgba(0,234,255,0.25);background:rgba(0,234,255,0.06);}
+.acct-top{display:flex;justify-content:space-between;align-items:flex-start;}
+.acct-name{font-family:var(--mono);font-weight:700;font-size:12px;}
+.acct-del{color:var(--dim);font-size:13px;cursor:pointer;padding:2px 6px;}
+.acct-del:hover{color:var(--red);}
+.acct-stats{display:flex;gap:14px;margin-top:8px;}
+.acct-stats .as{font-family:var(--mono);font-size:10px;}
+.acct-stats .as .l{color:var(--dim);font-size:8px;letter-spacing:1px;text-transform:uppercase;display:block;}
+.acct-bar{height:5px;border-radius:3px;background:var(--line);margin-top:9px;overflow:hidden;}
+.acct-bar-fill{height:100%;border-radius:3px;transition:width .4s;}
+.acct-payout{font-family:var(--mono);font-size:11px;font-weight:700;margin-top:7px;}
+
+.mini-field{margin-bottom:10px;}
+.mini-field label{font-size:9px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:4px;font-family:var(--mono);}
+.mini-field input,.mini-field select{width:100%;background:var(--void);border:1px solid var(--line);border-radius:6px;padding:8px 9px;color:var(--bright);font-family:var(--sans);font-size:12px;}
+.mini-row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+
+/* ---------- layout ---------- */
+.grid{display:grid;grid-template-columns:300px 1fr 320px;gap:16px;padding:16px 20px 40px;max-width:1680px;margin:0 auto;}
+.col{display:flex;flex-direction:column;gap:16px;}
+.panel{background:linear-gradient(180deg, rgba(23,11,48,0.6), rgba(9,4,20,0.7));border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,0.02) inset;}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);}
+.panel-head .title{display:flex;align-items:center;gap:7px;color:var(--bright);}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.dot.green{background:var(--green);box-shadow:0 0 7px var(--green);}
+.dot.cyan{background:var(--cyan);box-shadow:0 0 7px var(--cyan);}
+.dot.amber{background:var(--amber);box-shadow:0 0 7px var(--amber);}
+.dot.red{background:var(--red);box-shadow:0 0 7px var(--red);}
+.tag{font-size:9px;padding:2px 7px;border-radius:20px;border:1px solid var(--line);color:var(--dim);}
+.panel-body{padding:14px;}
+
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.stat{background:rgba(255,255,255,0.025);border:1px solid var(--line);border-radius:8px;padding:10px 12px;}
+.stat .v{font-family:var(--mono);font-weight:700;font-size:19px;}
+.stat .l{font-size:9px;letter-spacing:1px;color:var(--dim);text-transform:uppercase;margin-top:3px;}
+.v.pos{color:var(--green);text-shadow:0 0 8px rgba(0,255,163,0.4);}
+.v.neg{color:var(--red);text-shadow:0 0 8px rgba(255,45,110,0.4);}
+
+.rule-row{display:block;padding:8px 0;border-bottom:1px solid var(--line);}
+.rule-row:last-child{border-bottom:none;}
+.rule-name{font-size:11px;color:var(--bright);}
+.rule-status{font-family:var(--mono);font-size:10px;font-weight:700;}
+.rule-status.ok{color:var(--green);}
+.rule-status.warn{color:var(--amber);}
+.rule-status.breach{color:var(--red);}
+.rule-bar{height:4px;border-radius:3px;background:var(--line);margin-top:5px;overflow:hidden;}
+.rule-bar-fill{height:100%;border-radius:3px;transition:width .4s;}
+
+.core-col{display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:6px;}
+.core-label{font-family:var(--mono);font-size:11px;letter-spacing:5px;color:var(--dim);text-transform:uppercase;}
+.core-name{font-family:var(--disp);font-size:22px;font-weight:800;letter-spacing:4px;margin:2px 0 14px;text-shadow:0 0 22px currentColor;}
+.core-wrap{position:relative;width:260px;height:260px;}
+#coreCanvas{position:absolute;inset:0;}
+.core-readout{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;}
+.core-readout .eq{font-family:var(--mono);font-size:26px;font-weight:800;}
+.core-readout .pl{font-family:var(--mono);font-size:13px;margin-top:4px;font-weight:700;}
+.core-readout .state{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--dim);margin-top:10px;text-transform:uppercase;}
+.core-payout{margin-top:16px;background:rgba(255,255,255,0.03);border:1px solid var(--line);border-radius:10px;padding:12px 20px;text-align:center;min-width:220px;}
+.core-payout .cp-l{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;}
+.core-payout .cp-v{font-family:var(--disp);font-weight:800;font-size:22px;margin-top:4px;}
+.core-payout .cp-bar{height:5px;border-radius:3px;background:var(--line);margin-top:9px;overflow:hidden;}
+.core-payout .cp-bar-fill{height:100%;border-radius:3px;transition:width .5s;}
+.core-sub{font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:1px;margin-top:14px;text-align:center;max-width:280px;}
+.view-dash-btn{margin-top:16px;}
+.cmd-bar-wrap{width:100%;max-width:340px;margin-top:18px;}
+.cmd-bar{
+  width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--line);border-radius:24px;
+  padding:11px 18px;color:var(--bright);font-family:var(--mono);font-size:11px;
+  text-align:center;letter-spacing:0.5px;
+}
+.cmd-bar:focus{outline:none;border-color:var(--purple);box-shadow:0 0 16px rgba(168,85,255,0.35);}
+.cmd-bar::placeholder{color:var(--dim);}
+
+.targets-wrap{display:flex;flex-direction:column;gap:16px;}
+.target-block{display:flex;gap:14px;align-items:center;}
+.ring{width:74px;height:74px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:conic-gradient(var(--rc) calc(var(--pct)*1%), var(--line) 0);transition:background .4s;}
+.ring-inner{width:56px;height:56px;border-radius:50%;background:#0d0620;display:flex;align-items:center;justify-content:center;}
+.ring-pct{font-family:var(--mono);font-weight:700;font-size:13px;}
+.target-info{flex:1;min-width:0;}
+.ti-label{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;}
+.ti-val{font-family:var(--mono);font-size:12px;margin-top:4px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+.ti-input{width:64px;background:var(--void);border:1px solid var(--line);border-radius:5px;padding:3px 6px;color:var(--bright);font-family:var(--mono);font-size:11px;}
+.ti-remain{font-family:var(--mono);font-size:10px;margin-top:5px;}
+
+.journal-row{padding:10px 0;border-bottom:1px solid var(--line);}
+.journal-row:last-child{border-bottom:none;}
+.journal-top{display:flex;justify-content:space-between;align-items:baseline;}
+.journal-date{font-size:9px;color:var(--dim);font-family:var(--mono);}
+.journal-note{font-size:10px;color:var(--dim);margin-top:3px;}
+.journal-pl{font-family:var(--mono);font-weight:700;font-size:12px;}
+.journal-acct{font-size:9px;color:var(--purple);margin-top:2px;font-family:var(--mono);}
+.empty{color:var(--dim);font-size:11px;text-align:center;padding:20px 0;font-family:var(--mono);}
+
+.feed-row{display:flex;gap:9px;padding:8px 0;border-bottom:1px solid var(--line);}
+.feed-row:last-child{border-bottom:none;}
+.feed-time{font-family:var(--mono);font-size:9px;color:var(--dim);width:42px;flex-shrink:0;padding-top:1px;}
+.feed-text{font-size:11px;color:var(--bright);line-height:1.4;}
+.feed-text b{color:var(--purple);}
+
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(2,0,8,0.78);backdrop-filter:blur(4px);z-index:100;align-items:center;justify-content:center;overflow-y:auto;padding:20px;}
+.modal-bg.show{display:flex;}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:12px;width:420px;max-width:92vw;max-height:88vh;overflow-y:auto;box-shadow:0 20px 70px rgba(0,0,0,0.7);}
+.modal.wide{width:820px;}
+.modal-head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
+.modal-head h3{font-family:var(--mono);font-size:13px;letter-spacing:1.5px;}
+.modal-close{cursor:pointer;color:var(--dim);font-size:18px;line-height:1;}
+.modal-body{padding:18px;display:flex;flex-direction:column;gap:12px;}
+.field label{font-size:10px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:5px;font-family:var(--mono);}
+.field input,.field select,.field textarea{width:100%;background:var(--void);border:1px solid var(--line);border-radius:6px;padding:9px 10px;color:var(--bright);font-family:var(--sans);font-size:13px;}
+.field textarea{resize:vertical;min-height:60px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.modal-foot{padding:14px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px;}
+.color-picker{display:flex;gap:8px;flex-wrap:wrap;}
+.color-dot{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s;}
+.color-dot.picked{border-color:#fff;transform:scale(1.15);}
+
+.qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px;}
+.qa-tile{
+  background:rgba(255,255,255,0.03);border:1px solid var(--line);border-radius:9px;
+  padding:12px 10px;text-align:center;cursor:pointer;transition:all .15s;
+}
+.qa-tile:hover{border-color:var(--purple);box-shadow:0 0 14px rgba(168,85,255,0.3);transform:translateY(-2px);}
+.qa-tile .qi{font-size:18px;}
+.qa-tile .ql{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--dim);text-transform:uppercase;margin-top:6px;}
+
+/* ---------- account drill-down dashboard ---------- */
+.dash-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;}
+.dash-title{font-family:var(--disp);font-weight:800;font-size:22px;}
+.dash-badge{font-family:var(--mono);font-size:9px;padding:3px 9px;border-radius:20px;background:rgba(0,255,163,0.15);color:var(--green);border:1px solid rgba(0,255,163,0.4);margin-left:10px;}
+.dash-meta{font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:4px;}
+.dash-section{margin-top:20px;}
+.dash-section-title{font-family:var(--mono);font-size:11px;letter-spacing:1.5px;color:var(--bright);text-transform:uppercase;margin-bottom:10px;}
+.dash-chart-note{font-size:10px;color:var(--dim);margin-bottom:12px;}
+.dash-legend{display:flex;gap:16px;margin-bottom:10px;font-family:var(--mono);font-size:10px;}
+.dash-legend span{display:flex;align-items:center;gap:5px;}
+.leg-dot{width:8px;height:8px;border-radius:2px;}
+.dash-grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.dash-obj-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);}
+.dash-obj-row:last-child{border-bottom:none;}
+.dash-obj-ring{width:44px;height:44px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:conic-gradient(var(--rc) calc(var(--pct)*1%), var(--line) 0);}
+.dash-obj-ring-inner{width:34px;height:34px;border-radius:50%;background:var(--panel);}
+.dash-obj-icon{width:44px;height:44px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.dash-obj-icon.warn{background:rgba(255,45,110,0.15);color:var(--red);}
+.dash-obj-icon.ok{background:rgba(0,255,163,0.15);color:var(--green);}
+.dash-obj-label{font-size:11px;color:var(--dim);}
+.dash-obj-val{font-family:var(--mono);font-weight:700;font-size:14px;margin-top:2px;}
+.dash-summary-row{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);}
+.dash-summary-row:last-child{border-bottom:none;}
+.dash-summary-label{font-size:11px;color:var(--dim);}
+.dash-summary-val{font-family:var(--mono);font-weight:700;font-size:13px;}
+
+.cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.cal-nav{display:flex;gap:8px;align-items:center;font-family:var(--mono);font-size:12px;}
+.cal-nav-btn{cursor:pointer;color:var(--dim);padding:2px 8px;border:1px solid var(--line);border-radius:5px;}
+.cal-nav-btn:hover{color:var(--bright);border-color:var(--purple);}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cal-dow{font-family:var(--mono);font-size:9px;color:var(--dim);text-align:center;padding-bottom:4px;text-transform:uppercase;}
+.cal-cell{aspect-ratio:1;border:1px solid var(--line);border-radius:6px;padding:5px;font-family:var(--mono);font-size:9px;color:var(--dim);background:rgba(255,255,255,0.015);}
+.cal-cell.pos{background:rgba(0,255,163,0.12);border-color:rgba(0,255,163,0.4);color:var(--green);}
+.cal-cell.neg{background:rgba(255,45,110,0.12);border-color:rgba(255,45,110,0.4);color:var(--red);}
+.cal-cell.empty{visibility:hidden;}
+.cal-pl{font-weight:700;font-size:9px;margin-top:3px;}
+
+@media(max-width:1200px){.grid{grid-template-columns:1fr;} .core-wrap{width:220px;height:220px;} .drawer{width:100vw;} .dash-grid2{grid-template-columns:1fr;} .modal.wide{width:94vw;}}
+</style>
+</head>
+<body>
+<div class="loading-overlay" id="loadingOverlay"><div class="lo-orb"></div><div class="lo-text">Loading Pulse...</div></div>
+
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-card">
+    <div class="auth-brand"><div class="auth-orb"></div><div class="auth-title">PULSE</div><div class="auth-sub">Trading Command Bridge</div></div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" id="tabLogin">Log In</div>
+      <div class="auth-tab" id="tabSignup">Sign Up</div>
+    </div>
+    <div class="auth-field"><label>Email</label><input type="email" id="authEmail" autocomplete="email"></div>
+    <div class="auth-field"><label>Password</label><input type="password" id="authPassword" autocomplete="current-password"></div>
+    <div class="auth-error" id="authError"></div>
+    <button class="auth-submit" id="authSubmit">Log In</button>
+  </div>
+</div>
+
+<canvas id="starfield"></canvas>
+<div class="app" id="appRoot" style="display:none;">
+
+<div class="topbar">
+  <div class="brand"><div class="brand-mark"></div><div class="brand-text"><div class="t1">PULSE</div><div class="t2">TRADING COMMAND BRIDGE</div></div>
+    <div class="brand-badges"><span class="brand-badge"><span class="bdot"></span>Online</span><span class="brand-badge"><span class="bdot"></span>Synced</span><span class="brand-badge"><span class="bdot"></span>Encrypted</span></div>
+  </div>
+  <div class="top-actions">
+    <span class="clock" id="clock">--:--:--</span>
+    <button class="btn" id="btnAddFirmTop">+ FIRM</button>
+    <button class="btn danger" id="btnClearData">↺ RESET</button>
+    <button class="btn primary" id="btnAddTrade">+ LOG P&L</button>
+    <button class="btn" id="btnLogout">⎋ LOG OUT</button>
+  </div>
+</div>
+
+<div class="overview-strip" id="overviewStrip"></div>
+
+<div class="alert-banner" id="alertBanner"><span class="alert-dot"></span><span id="alertText">RISK RULE BREACHED</span></div>
+
+<div class="scope-bar" id="scopeBar">
+  <span class="scope-label">Viewing:</span>
+  <div class="scope-pill active" data-scope="ALL" id="scopeAll">◆ All Accounts</div>
+  <div id="scopePills" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+</div>
+
+<div class="network-panel">
+  <div class="network-head">
+    <div class="title">◆ <span class="b">FIRM NETWORK</span> — click a node to select · ✎ to manage · glow brightens near payout</div>
+    <span class="tag" id="firmCountTag">0 FIRMS</span>
+  </div>
+  <div class="network-stage" id="networkStage">
+    <svg class="node-lines" id="nodeLines"></svg>
+    <div class="hub-node" id="hubNode"><div class="hl">NETWORK</div><div class="hv">◆</div><div class="hs">CORE</div></div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="col">
+    <div class="panel">
+      <div class="panel-head"><div class="title"><span class="dot cyan"></span>QUICK ACTIONS</div></div>
+      <div class="qa-grid">
+        <div class="qa-tile" id="qaLog"><div class="qi">📝</div><div class="ql">Log P&L</div></div>
+        <div class="qa-tile" id="qaAddFirm"><div class="qi">➕</div><div class="ql">Add Firm</div></div>
+        <div class="qa-tile" id="qaAll"><div class="qi">◆</div><div class="ql">All Accounts</div></div>
+        <div class="qa-tile" id="qaReset"><div class="qi">↺</div><div class="ql">Reset</div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div class="title"><span class="dot green"></span>ACCOUNT PULSE</div><span class="tag">TODAY</span></div>
+      <div class="panel-body">
+        <div class="stat-grid">
+          <div class="stat"><div class="v" id="statEquity">$0</div><div class="l">Equity</div></div>
+          <div class="stat"><div class="v" id="statDayPL">$0</div><div class="l">Day P&L</div></div>
+          <div class="stat"><div class="v" id="statWinRate">0%</div><div class="l">Positive Days</div></div>
+          <div class="stat"><div class="v" id="statTrades">0</div><div class="l">Entries Today</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div class="title"><span class="dot amber"></span>RISK RULES</div><span class="tag">LIVE</span></div>
+      <div class="panel-body" id="rulesList"><div class="empty">Select an account to view its rules</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div class="title"><span class="dot cyan"></span>DAILY & WEEKLY TARGETS</div><span class="tag" id="targetsTag">—</span></div>
+      <div class="panel-body" id="targetsBody"><div class="empty">Select an account to set targets</div></div>
+    </div>
+  </div>
+
+  <div class="col core-col">
+    <div class="core-label">EQUITY CORE</div>
+    <div class="core-name" id="coreName">CALM STATE</div>
+    <div class="core-wrap">
+      <canvas id="coreCanvas" width="260" height="260"></canvas>
+      <div class="core-readout"><div class="eq" id="coreEquity">$0</div><div class="pl" id="corePL">$0.00 TODAY</div><div class="state" id="coreState">STANDING BY</div></div>
+    </div>
+    <div class="core-payout" id="corePayoutBox" style="display:none;">
+      <div class="cp-l">To Next Payout</div><div class="cp-v" id="cpValue">$0</div>
+      <div class="cp-bar"><div class="cp-bar-fill" id="cpBarFill"></div></div>
+    </div>
+    <button class="btn primary view-dash-btn" id="btnViewDash" style="display:none;">📊 VIEW FULL ACCOUNT DASHBOARD</button>
+    <div class="core-sub" id="coreSub">Pulse reflects account discipline — steady and slow when in control, fast and red under stress</div>
+
+    <div class="core-label" style="margin-top:24px;">NEURAL MESH</div>
+    <canvas id="meshCanvas" width="320" height="220" style="max-width:100%;"></canvas>
+
+    <div class="cmd-bar-wrap">
+      <input type="text" id="cmdBar" class="cmd-bar" placeholder="Quick command — e.g. +125, -80, reset, add firm">
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="panel">
+      <div class="panel-head"><div class="title"><span class="dot green"></span>PERFORMANCE</div><span class="tag">SCOPED</span></div>
+      <div class="panel-body">
+        <div class="stat-grid">
+          <div class="stat"><div class="v" id="statTotalPL">$0</div><div class="l">Total P&L</div></div>
+          <div class="stat"><div class="v" id="statProfitFactor">0.0</div><div class="l">Profit Factor</div></div>
+          <div class="stat"><div class="v" id="statAvgWin">$0</div><div class="l">Avg Win</div></div>
+          <div class="stat"><div class="v" id="statAvgLoss">$0</div><div class="l">Avg Loss</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div class="title"><span class="dot cyan"></span>BALANCE LOG</div><span class="tag" id="journalCount">0 ENTRIES</span></div>
+      <div class="panel-body" id="journalList" style="max-height:340px;overflow-y:auto;"><div class="empty">No entries yet</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div class="title"><span class="dot amber"></span>ALERT FEED</div><span class="tag">LIVE</span></div>
+      <div class="panel-body" id="feedList" style="max-height:220px;overflow-y:auto;"></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<!-- DRAWER: firm detail -->
+<div class="drawer-bg" id="drawerBg"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div><div class="fname" id="drawerFirmName">Firm</div><div class="fsub" id="drawerFirmSub">0 accounts</div></div>
+    <div style="display:flex;align-items:center;gap:12px;"><span class="drawer-close" id="drawerEditFirm" style="font-size:14px;" title="Edit firm">✎</span><span class="drawer-close" id="drawerClose">×</span></div>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+  <div class="drawer-foot"><button class="btn danger" style="width:100%;justify-content:center;" id="btnDeleteFirm">DELETE FIRM</button></div>
+</div>
+
+<!-- ADD FIRM MODAL -->
+<div class="modal-bg" id="modalFirm">
+  <div class="modal">
+    <div class="modal-head"><h3>ADD FIRM</h3><span class="modal-close" data-close="modalFirm">×</span></div>
+    <div class="modal-body">
+      <div class="field"><label>Firm Name</label><input type="text" id="firmName" placeholder="e.g. Apex Trader Funding"></div>
+      <div class="field"><label>Node Color</label><div class="color-picker" id="colorPicker"></div></div>
+    </div>
+    <div class="modal-foot"><button class="btn" data-close="modalFirm">CANCEL</button><button class="btn primary" id="btnSaveFirm">ADD FIRM</button></div>
+  </div>
+</div>
+
+<!-- ADD/EDIT ACCOUNT MODAL -->
+<div class="modal-bg" id="modalAccount">
+  <div class="modal">
+    <div class="modal-head"><h3 id="acctModalTitle">ADD ACCOUNT</h3><span class="modal-close" data-close="modalAccount">×</span></div>
+    <div class="modal-body">
+      <div class="field"><label>Account Nickname</label><input type="text" id="acctNickname" placeholder="e.g. 50K Eval #1"></div>
+      <div class="row2"><div class="field"><label>Starting Balance ($)</label><input type="number" id="acctStart" step="1"></div><div class="field"><label>Profit Target ($)</label><input type="number" id="acctTarget" step="1"></div></div>
+      <div class="row2"><div class="field"><label>Daily Loss Limit ($)</label><input type="number" id="acctDailyLoss" step="1"></div><div class="field"><label>Max Drawdown ($)</label><input type="number" id="acctMaxDD" step="1"></div></div>
+      <div class="row2"><div class="field"><label>Daily Profit Target ($)</label><input type="number" id="acctDailyTarget" step="1"></div><div class="field"><label>Weekly Payout Goal ($)</label><input type="number" id="acctWeeklyPayout" step="1"></div></div>
+      <div class="row2"><div class="field"><label>Consistency Cap (%)</label><input type="number" id="acctConsistency" step="1"></div><div class="field"><label>Min Trading Days</label><input type="number" id="acctMinDays" step="1"></div></div>
+    </div>
+    <div class="modal-foot"><button class="btn" data-close="modalAccount">CANCEL</button><button class="btn primary" id="btnSaveAccount">SAVE ACCOUNT</button></div>
+  </div>
+</div>
+
+<!-- LOG P&L MODAL -->
+<div class="modal-bg" id="modalTrade">
+  <div class="modal">
+    <div class="modal-head"><h3>LOG P&L</h3><span class="modal-close" data-close="modalTrade">×</span></div>
+    <div class="modal-body">
+      <div class="row2"><div class="field"><label>Firm</label><select id="fFirm"></select></div><div class="field"><label>Account</label><select id="fAccount"></select></div></div>
+      <div class="field"><label>Amount ($) — use minus for a loss</label><input type="number" id="fPL" step="0.01" placeholder="e.g. 125 or -80"></div>
+      <div class="field"><label>Note (optional)</label><textarea id="fNotes" placeholder="e.g. good session, stayed disciplined"></textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn" data-close="modalTrade">CANCEL</button><button class="btn primary" id="btnSaveTrade">SAVE</button></div>
+  </div>
+</div>
+
+<!-- ACCOUNT DRILL-DOWN DASHBOARD -->
+<div class="modal-bg" id="modalDash">
+  <div class="modal wide">
+    <div class="modal-head"><h3>ACCOUNT DASHBOARD</h3><span class="modal-close" data-close="modalDash">×</span></div>
+    <div class="modal-body" id="dashBody"></div>
+  </div>
+</div>
+
+<script type="module">
+/* ================= FIREBASE ================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword,
+  createUserWithEmailAndPassword, signOut
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, setDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA6Or4wxfK94Kt4G9AY28zT9uUNtSqtePw",
+  authDomain: "pulse-trading-dashboard.firebaseapp.com",
+  projectId: "pulse-trading-dashboard",
+  storageBucket: "pulse-trading-dashboard.firebasestorage.app",
+  messagingSenderId: "502419176586",
+  appId: "1:502419176586:web:9f7bf7a23446bfb12bc173"
+};
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
+const db = getFirestore(fbApp);
+let currentUser = null;
+
+/* ---- auth UI ---- */
+const authOverlay = document.getElementById('authOverlay');
+const loadingOverlay = document.getElementById('loadingOverlay');
+const appRoot = document.getElementById('appRoot');
+let authMode = 'login';
+document.getElementById('tabLogin').addEventListener('click', ()=>{
+  authMode='login';
+  document.getElementById('tabLogin').classList.add('active');
+  document.getElementById('tabSignup').classList.remove('active');
+  document.getElementById('authSubmit').textContent='Log In';
+  document.getElementById('authError').textContent='';
+});
+document.getElementById('tabSignup').addEventListener('click', ()=>{
+  authMode='signup';
+  document.getElementById('tabSignup').classList.add('active');
+  document.getElementById('tabLogin').classList.remove('active');
+  document.getElementById('authSubmit').textContent='Sign Up';
+  document.getElementById('authError').textContent='';
+});
+document.getElementById('authSubmit').addEventListener('click', async ()=>{
+  const email = document.getElementById('authEmail').value.trim();
+  const pw = document.getElementById('authPassword').value;
+  const errEl = document.getElementById('authError');
+  errEl.textContent='';
+  if(!email || !pw){ errEl.textContent='Enter an email and password.'; return; }
+  const btn = document.getElementById('authSubmit');
+  btn.disabled = true;
+  try{
+    if(authMode==='login'){
+      await signInWithEmailAndPassword(auth, email, pw);
+    } else {
+      await createUserWithEmailAndPassword(auth, email, pw);
+    }
+  }catch(e){
+    errEl.textContent = (e.code||'').replace('auth/','').replace(/-/g,' ') || 'Something went wrong.';
+  }
+  btn.disabled = false;
+});
+document.getElementById('btnLogout').addEventListener('click', ()=>{ signOut(auth); });
+
+onAuthStateChanged(auth, async (user)=>{
+  if(user){
+    currentUser = user;
+    authOverlay.classList.remove('show');
+    loadingOverlay.classList.remove('hide');
+    appRoot.style.display = '';
+    await load();
+    renderAll();
+    loadingOverlay.classList.add('hide');
+    pushFeed('Command bridge online — synced to your account');
+  } else {
+    currentUser = null;
+    appRoot.style.display = 'none';
+    loadingOverlay.classList.add('hide');
+    authOverlay.classList.add('show');
+  }
+});
+
+/* ================= STARFIELD ================= */
+const sfCanvas = document.getElementById('starfield');
+const sfCtx = sfCanvas.getContext('2d');
+let stars = [], shooters = [];
+function initStars(){
+  sfCanvas.width = window.innerWidth; sfCanvas.height = window.innerHeight;
+  stars = [];
+  const n = Math.floor((sfCanvas.width*sfCanvas.height)/8000);
+  for(let i=0;i<n;i++){
+    const layer = Math.random()<0.7 ? 1 : 2;
+    stars.push({x:Math.random()*sfCanvas.width,y:Math.random()*sfCanvas.height,r:(Math.random()*1.3+0.2)*(layer===2?1.6:1),tw:Math.random()*Math.PI*2,twSpeed:0.01+Math.random()*0.02,vx:(0.02+Math.random()*0.05)*(layer===2?1.8:1),vy:(0.01+Math.random()*0.025)*(layer===2?1.8:1),layer});
+  }
+}
+function maybeSpawnShooter(){
+  if(Math.random()<0.006 && shooters.length<2){
+    shooters.push({x:Math.random()*sfCanvas.width*0.6,y:Math.random()*sfCanvas.height*0.3,len:80+Math.random()*60,vx:6+Math.random()*4,vy:3+Math.random()*2,life:1});
+  }
+}
+function drawStars(){
+  sfCtx.clearRect(0,0,sfCanvas.width,sfCanvas.height);
+  stars.forEach(s=>{
+    s.tw += s.twSpeed; s.x += s.vx; s.y += s.vy;
+    if(s.x>sfCanvas.width+5) s.x=-5; if(s.y>sfCanvas.height+5) s.y=-5;
+    const alpha = 0.25 + Math.sin(s.tw)*0.25 + 0.25;
+    sfCtx.beginPath(); sfCtx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    sfCtx.fillStyle = `rgba(210,190,255,${Math.max(0,alpha)})`; sfCtx.fill();
+  });
+  maybeSpawnShooter();
+  shooters.forEach(sh=>{
+    sh.x += sh.vx; sh.y += sh.vy; sh.life -= 0.02;
+    const grad = sfCtx.createLinearGradient(sh.x,sh.y,sh.x-sh.len,sh.y-sh.len*0.5);
+    grad.addColorStop(0, `rgba(220,200,255,${Math.max(0,sh.life)})`); grad.addColorStop(1,'rgba(220,200,255,0)');
+    sfCtx.strokeStyle=grad; sfCtx.lineWidth=1.4;
+    sfCtx.beginPath(); sfCtx.moveTo(sh.x,sh.y); sfCtx.lineTo(sh.x-sh.len,sh.y-sh.len*0.5); sfCtx.stroke();
+  });
+  shooters = shooters.filter(sh=>sh.life>0 && sh.x<sfCanvas.width+100 && sh.y<sfCanvas.height+100);
+  requestAnimationFrame(drawStars);
+}
+initStars(); drawStars();
+window.addEventListener('resize', initStars);
+
+/* ================= COLORS ================= */
+const FIRM_COLORS = ['#00eaff','#ff8a3d','#a855ff','#ff2dd4','#00ffa3','#ffd23d','#5c9eff','#ff2d6e'];
+
+/* ================= STATE ================= */
+let state = { firms: [], trades: [], scope: 'ALL', expandedFirms: {} };
+
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+async function load(){
+  try{
+    if(currentUser){
+      const ref = doc(db, 'pulse_users', currentUser.uid);
+      const snap = await getDoc(ref);
+      if(snap.exists() && snap.data().json){ state = JSON.parse(snap.data().json); }
+    }
+  }catch(e){ console.error('load error', e); }
+  if(!state.firms) state.firms=[];
+  if(!state.trades) state.trades=[];
+  if(!state.scope) state.scope='ALL';
+  if(!state.expandedFirms) state.expandedFirms={};
+}
+async function save(){
+  try{
+    if(currentUser){
+      const ref = doc(db, 'pulse_users', currentUser.uid);
+      await setDoc(ref, { json: JSON.stringify(state), updatedAt: Date.now() });
+    }
+  }catch(e){ console.error('save error', e); pushFeed('⚠ Save failed — check your connection'); }
+}
+
+function getFirm(id){ return state.firms.find(f=>f.id===id); }
+function getAccount(firmId, acctId){ const f=getFirm(firmId); return f ? f.accounts.find(a=>a.id===acctId) : null; }
+function scopeParts(){
+  if(state.scope==='ALL') return null;
+  const [firmId, acctId] = state.scope.split('::');
+  return {firmId, acctId};
+}
+
+/* ================= CLOCK ================= */
+function tickClock(){ document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US',{hour12:false}) + ' ET'; }
+setInterval(tickClock,1000); tickClock();
+
+/* ================= HELPERS ================= */
+function fmt(n){ const v=Number(n||0); return (v<0?'-':'')+'$'+Math.abs(v).toLocaleString('en-US',{maximumFractionDigits:0}); }
+function isToday(ts){ const d=new Date(ts), n=new Date(); return d.toDateString()===n.toDateString(); }
+function startOfWeek(){ const d=new Date(); const day=d.getDay(); const diff=(day===0?-6:1-day); d.setDate(d.getDate()+diff); d.setHours(0,0,0,0); return d; }
+function isThisWeek(ts){ return new Date(ts) >= startOfWeek(); }
+function dayKey(ts){ return new Date(ts).toDateString(); }
+
+function tradesInScope(){
+  const sc = scopeParts();
+  if(!sc) return state.trades;
+  return state.trades.filter(t=>t.firmId===sc.firmId && t.accountId===sc.acctId);
+}
+function accountEquity(firmId, acct){
+  const closed = state.trades.filter(t=>t.firmId===firmId && t.accountId===acct.id);
+  const pl = closed.reduce((s,t)=>s+Number(t.pl||0),0);
+  return acct.start + pl;
+}
+function firmEquity(firm){ return firm.accounts.reduce((s,a)=>s+accountEquity(firm.id,a),0); }
+function allEquity(){ return state.firms.reduce((s,f)=>s+firmEquity(f),0); }
+
+function accountProximity(firmId, acct){
+  if(!acct.target || acct.target<=0) return 0;
+  const eq = accountEquity(firmId, acct);
+  const pct = ((eq-acct.start)/acct.target)*100;
+  return Math.max(0, Math.min(100, pct));
+}
+function firmProximity(firm){
+  if(firm.accounts.length===0) return 0;
+  return Math.max(...firm.accounts.map(a=>accountProximity(firm.id,a)));
+}
+function pulseDurForProximity(pct){
+  // 4.5s at 0% down to 0.9s at 100%
+  return (4.5 - (pct/100)*3.6).toFixed(2)+'s';
+}
+
+/* ================= COMPUTE STATS ================= */
+function computeStats(){
+  const trades = tradesInScope();
+  const closed = trades;
+  const today = trades.filter(t=>isToday(t.ts));
+  const dayPL = today.reduce((s,t)=>s+Number(t.pl||0),0);
+  const weekClosed = closed.filter(t=>isThisWeek(t.ts));
+  const weekPL = weekClosed.reduce((s,t)=>s+Number(t.pl||0),0);
+  const totalPL = closed.reduce((s,t)=>s+Number(t.pl||0),0);
+  const wins = closed.filter(t=>Number(t.pl)>0);
+  const losses = closed.filter(t=>Number(t.pl)<0);
+  const winRate = closed.length ? Math.round((wins.length/closed.length)*100) : 0;
+  const avgWin = wins.length ? wins.reduce((s,t)=>s+Number(t.pl),0)/wins.length : 0;
+  const avgLoss = losses.length ? losses.reduce((s,t)=>s+Number(t.pl),0)/losses.length : 0;
+  const grossWin = wins.reduce((s,t)=>s+Number(t.pl),0);
+  const grossLoss = Math.abs(losses.reduce((s,t)=>s+Number(t.pl),0));
+  const profitFactor = grossLoss>0 ? (grossWin/grossLoss) : (grossWin>0?grossWin:0);
+
+  const sc = scopeParts();
+  let equity, account=null, firm=null;
+  if(sc){
+    firm = getFirm(sc.firmId);
+    account = firm ? getAccount(sc.firmId, sc.acctId) : null;
+    equity = account ? accountEquity(sc.firmId, account) : 0;
+  } else {
+    equity = allEquity();
+  }
+  const openContracts = 0;
+  return {trades, today, dayPL, weekPL, totalPL, winRate, avgWin, avgLoss, profitFactor, equity, openContracts, closedCount:closed.length, account, firm};
+}
+
+/* ================= OVERVIEW STRIP ================= */
+function renderOverview(){
+  const wrap = document.getElementById('overviewStrip');
+  const totalAccounts = state.firms.reduce((s,f)=>s+f.accounts.length,0);
+  const totalEquity = allEquity();
+  const allTodayPL = state.trades.filter(t=>isToday(t.ts)).reduce((s,t)=>s+Number(t.pl||0),0);
+  let nearPayout = 0, alerts = 0;
+  state.firms.forEach(f=>f.accounts.forEach(a=>{
+    const pct = accountProximity(f.id, a);
+    if(pct>=80) nearPayout++;
+    const eq = accountEquity(f.id, a);
+    const todayPL = state.trades.filter(t=>t.firmId===f.id && t.accountId===a.id && isToday(t.ts)).reduce((s,t)=>s+Number(t.pl||0),0);
+    if(a.dailyLoss>0 && -todayPL>=a.dailyLoss) alerts++;
+    if(a.maxDD>0 && Math.max(0,a.start-eq)>=a.maxDD) alerts++;
+  }));
+  const cells = [
+    {l:'Total Equity', v: fmt(totalEquity)},
+    {l:"Today's P&L", v: fmt(allTodayPL), hot: allTodayPL>0},
+    {l:'Firms', v: state.firms.length},
+    {l:'Accounts', v: totalAccounts},
+    {l:'Near Payout', v: nearPayout, hot: nearPayout>0},
+    {l:'Active Alerts', v: alerts, hot: alerts>0},
+  ];
+  wrap.innerHTML = cells.map(c=>`<div class="ov-cell"><div class="ov-label">${c.l}</div><div class="ov-value ${c.hot?'hot':''}">${c.v}</div></div>`).join('');
+}
+
+/* ================= RENDER: NETWORK ================= */
+function isExpanded(firmId){ return state.expandedFirms && state.expandedFirms[firmId] !== false; }
+function svgLine(lines, x1,y1,x2,y2,color,opacity,width){
+  const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+  line.setAttribute('x1',x1); line.setAttribute('y1',y1); line.setAttribute('x2',x2); line.setAttribute('y2',y2);
+  line.setAttribute('stroke', color); line.setAttribute('stroke-width', width||1); line.setAttribute('opacity', opacity);
+  lines.appendChild(line);
+}
+
+function renderNetwork(){
+  const stage = document.getElementById('networkStage');
+  const lines = document.getElementById('nodeLines');
+  stage.querySelectorAll('.firm-node, .add-node, .acct-node, .node-icon').forEach(n=>n.remove());
+  lines.innerHTML = '';
+  document.getElementById('firmCountTag').textContent = state.firms.length + ' FIRM' + (state.firms.length!==1?'S':'');
+
+  const W = stage.clientWidth, H = stage.clientHeight;
+  const cx = W/2, cy = H/2;
+  const firmRadius = Math.min(W,H)/2 - 150;
+  const total = state.firms.length + 1;
+  const startAngle = -Math.PI/2;
+  lines.setAttribute('width', W); lines.setAttribute('height', H);
+
+  state.firms.forEach((firm, i)=>{
+    const ang = startAngle + (i/total)*Math.PI*2;
+    const fx = cx + Math.cos(ang)*firmRadius, fy = cy + Math.sin(ang)*firmRadius;
+    svgLine(lines, cx,cy,fx,fy, firm.color, 0.5, 1);
+
+    const eq = firmEquity(firm);
+    const startSum = firm.accounts.reduce((s,a)=>s+a.start,0);
+    const pl = eq - startSum;
+    const expanded = isExpanded(firm.id);
+    const prox = firmProximity(firm);
+    const hitPayout = firm.accounts.some(a=>accountProximity(firm.id,a)>=100);
+
+    const node = document.createElement('div');
+    node.className = 'firm-node' + (hitPayout?' payout-hit':'');
+    node.style.setProperty('--fc', firm.color);
+    node.style.setProperty('--pulsedur', pulseDurForProximity(prox));
+    node.style.left = (fx-48)+'px'; node.style.top=(fy-42)+'px';
+    node.innerHTML = `<div class="fn-name">${firm.name}</div><div class="fn-val" style="color:${pl>=0?'var(--green)':'var(--red)'}">${fmt(pl)}</div><div class="fn-acct">${firm.accounts.length} acct${firm.accounts.length!==1?'s':''} ${expanded?'▾':'▸'}</div>`;
+    node.addEventListener('click', ()=>{ state.expandedFirms[firm.id] = !expanded; save(); renderNetwork(); });
+    stage.appendChild(node);
+
+    const editIcon = document.createElement('div');
+    editIcon.className='node-icon'; editIcon.style.left=(fx+30)+'px'; editIcon.style.top=(fy-46)+'px';
+    editIcon.innerHTML='✎'; editIcon.title='Edit firm / manage accounts';
+    editIcon.addEventListener('click',(e)=>{ e.stopPropagation(); openDrawer(firm.id); });
+    stage.appendChild(editIcon);
+
+    if(expanded && firm.accounts.length>0){
+      const acctRadius = 108;
+      const spread = Math.min(Math.PI*0.85, 0.5 + firm.accounts.length*0.32);
+      firm.accounts.forEach((a, j)=>{
+        const off = firm.accounts.length===1 ? 0 : (j/(firm.accounts.length-1) - 0.5) * spread;
+        const aAng = ang + off;
+        const ax = fx + Math.cos(aAng)*acctRadius, ay = fy + Math.sin(aAng)*acctRadius;
+        svgLine(lines, fx,fy,ax,ay, firm.color, 0.35, 1);
+
+        const aEq = accountEquity(firm.id, a);
+        const aPl = aEq - a.start;
+        const key = `${firm.id}::${a.id}`;
+        const active = state.scope===key;
+        const remaining = a.target>0 ? Math.max(0, a.target-aPl) : null;
+        const aProx = accountProximity(firm.id, a);
+        const aHit = aProx>=100;
+
+        const an = document.createElement('div');
+        an.className = 'acct-node' + (active?' active':'') + (aHit?' payout-hit':'');
+        an.style.setProperty('--ac', firm.color);
+        an.style.setProperty('--pulsedur', pulseDurForProximity(aProx));
+        an.style.left=(ax-38)+'px'; an.style.top=(ay-33)+'px';
+        an.innerHTML = `<div class="an-name">${a.nickname}</div><div class="an-pl" style="color:${aPl>=0?'var(--green)':'var(--red)'}">${fmt(aPl)}</div><div class="an-payout">${remaining===null?'no target':(remaining<=0?'🎯 hit':fmt(remaining)+' left')}</div>`;
+        an.addEventListener('click', ()=>{ state.scope = key; save(); renderAll(); });
+        stage.appendChild(an);
+
+        const aView = document.createElement('div');
+        aView.className='node-icon view'; aView.style.left=(ax-38)+'px'; aView.style.top=(ay-38)+'px';
+        aView.style.width='16px'; aView.style.height='16px'; aView.style.fontSize='8px';
+        aView.innerHTML='📊'; aView.title='View dashboard';
+        aView.addEventListener('click',(e)=>{ e.stopPropagation(); state.scope=key; save(); renderAll(); openAccountDashboard(firm.id, a.id); });
+        stage.appendChild(aView);
+
+        const aEdit = document.createElement('div');
+        aEdit.className='node-icon'; aEdit.style.left=(ax+22)+'px'; aEdit.style.top=(ay-38)+'px';
+        aEdit.style.width='16px'; aEdit.style.height='16px'; aEdit.style.fontSize='8px';
+        aEdit.innerHTML='✎'; aEdit.title='Edit account';
+        aEdit.addEventListener('click',(e)=>{ e.stopPropagation(); openAccountModal(firm.id, a.id); });
+        stage.appendChild(aEdit);
+
+        const aDel = document.createElement('div');
+        aDel.className='node-icon del'; aDel.style.left=(ax+22)+'px'; aDel.style.top=(ay+20)+'px';
+        aDel.style.width='16px'; aDel.style.height='16px'; aDel.style.fontSize='8px';
+        aDel.innerHTML='×'; aDel.title='Delete account';
+        aDel.addEventListener('click',(e)=>{
+          e.stopPropagation();
+          if(confirm(`Delete account "${a.nickname}"? Trade history stays logged under All Accounts.`)){
+            firm.accounts = firm.accounts.filter(x=>x.id!==a.id);
+            if(state.scope===key) state.scope='ALL';
+            save(); renderAll();
+            pushFeed(`Account <b>${a.nickname}</b> removed from ${firm.name}`);
+          }
+        });
+        stage.appendChild(aDel);
+      });
+    }
+  });
+
+  const ang = startAngle + (state.firms.length/total)*Math.PI*2;
+  const x = cx + Math.cos(ang)*firmRadius, y = cy + Math.sin(ang)*firmRadius;
+  svgLine(lines, cx,cy,x,y,'#3a2a5e',0.4,1);
+  const addNode = document.createElement('div');
+  addNode.className='add-node'; addNode.style.left=(x-38)+'px'; addNode.style.top=(y-38)+'px';
+  addNode.innerHTML = `<div class="plus">+</div><div class="lbl">ADD FIRM</div>`;
+  addNode.addEventListener('click', openAddFirmModal);
+  stage.appendChild(addNode);
+}
+
+/* ================= SCOPE BAR ================= */
+function renderScopeBar(){
+  const wrap = document.getElementById('scopePills');
+  wrap.innerHTML = '';
+  state.firms.forEach(firm=>{
+    firm.accounts.forEach(acct=>{
+      const key = `${firm.id}::${acct.id}`;
+      const pill = document.createElement('div');
+      pill.className = 'scope-pill' + (state.scope===key ? ' active':'');
+      pill.innerHTML = `<span class="scope-chip-dot" style="background:${firm.color};box-shadow:0 0 6px ${firm.color};"></span>${firm.name} · ${acct.nickname}`;
+      pill.addEventListener('click', ()=>{ state.scope = key; save(); renderAll(); });
+      wrap.appendChild(pill);
+    });
+  });
+  document.getElementById('scopeAll').classList.toggle('active', state.scope==='ALL');
+}
+document.getElementById('scopeAll').addEventListener('click', ()=>{ state.scope='ALL'; save(); renderAll(); });
+
+/* ================= MAIN RENDER ================= */
+function render(){
+  const s = computeStats();
+  document.getElementById('statEquity').textContent = fmt(s.equity);
+  const dayPLEl = document.getElementById('statDayPL');
+  dayPLEl.textContent = fmt(s.dayPL); dayPLEl.className = 'v ' + (s.dayPL>0?'pos':s.dayPL<0?'neg':'');
+  document.getElementById('statWinRate').textContent = s.winRate + '%';
+  document.getElementById('statTrades').textContent = s.today.length;
+  document.getElementById('statTotalPL').textContent = fmt(s.totalPL);
+  document.getElementById('statTotalPL').className = 'v ' + (s.totalPL>0?'pos':s.totalPL<0?'neg':'');
+  document.getElementById('statProfitFactor').textContent = s.profitFactor.toFixed(2);
+  document.getElementById('statAvgWin').textContent = fmt(s.avgWin);
+  document.getElementById('statAvgLoss').textContent = fmt(s.avgLoss);
+  document.getElementById('statAvgWin').className='v pos';
+  document.getElementById('statAvgLoss').className='v neg';
+
+  const jWrap = document.getElementById('journalList');
+  const sorted = [...s.trades].sort((a,b)=>b.ts-a.ts).slice(0,40);
+  document.getElementById('journalCount').textContent = s.trades.length + ' ENTRIES';
+  jWrap.innerHTML = sorted.length===0 ? '<div class="empty">No entries yet</div>' :
+    sorted.map(t=>{
+      const firm = getFirm(t.firmId); const acct = firm ? getAccount(t.firmId,t.accountId) : null;
+      return `<div class="journal-row"><div class="journal-top"><span class="journal-date">${new Date(t.ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</span><span class="journal-pl" style="color:${Number(t.pl)>=0?'var(--green)':'var(--red)'}">${fmt(t.pl)}</span></div>${firm?`<div class="journal-acct">${firm.name}${acct?' · '+acct.nickname:''}</div>`:''}${t.notes?`<div class="journal-note">${t.notes}</div>`:''}</div>`;
+    }).join('');
+
+  document.getElementById('btnViewDash').style.display = s.account ? '' : 'none';
+
+  renderOverview();
+  renderRules(s);
+  renderTargets(s);
+  renderCore(s);
+  renderNetwork();
+  renderScopeBar();
+}
+function renderAll(){ render(); }
+
+function renderRules(s){
+  const wrap = document.getElementById('rulesList');
+  if(!s.account){ wrap.innerHTML = '<div class="empty">Select an account to view its risk rules</div>'; document.getElementById('alertBanner').classList.remove('show'); return false; }
+  const a = s.account;
+  const items = [
+    {name:'Daily Loss Limit', val:-s.dayPL, cap:a.dailyLoss, fmt:v=>fmt(-v)},
+    {name:'Max Drawdown', val: Math.max(0, a.start - s.equity), cap:a.maxDD, fmt:v=>fmt(v)},
+  ];
+  let breach=false, warnMsg='';
+  wrap.innerHTML = items.map(it=>{
+    const pct = it.cap>0 ? Math.min(100,(Math.max(0,it.val)/it.cap)*100) : 0;
+    let status='ok', color='var(--green)';
+    if(pct>=100){status='breach';color='var(--red)';breach=true;warnMsg=it.name.toUpperCase()+' EXCEEDED';}
+    else if(pct>=70){status='warn';color='var(--amber)';}
+    return `<div class="rule-row"><div style="display:flex;justify-content:space-between;"><span class="rule-name">${it.name}</span><span class="rule-status ${status}">${it.fmt(it.val)} / ${it.fmt(it.cap)}</span></div><div class="rule-bar"><div class="rule-bar-fill" style="width:${pct}%;background:${color};"></div></div></div>`;
+  }).join('');
+  const banner = document.getElementById('alertBanner');
+  if(breach){ banner.classList.add('show'); document.getElementById('alertText').textContent = warnMsg+' — STOP TRADING FOR TODAY'; }
+  else banner.classList.remove('show');
+  return breach;
+}
+
+function renderTargets(s){
+  const wrap = document.getElementById('targetsBody');
+  const tag = document.getElementById('targetsTag');
+  if(!s.account){ wrap.innerHTML = '<div class="empty">Select an account to set daily & weekly targets</div>'; tag.textContent='—'; return; }
+  const a = s.account;
+  tag.textContent = a.nickname.toUpperCase();
+  const dailyTarget = a.dailyTarget||0, weeklyPayout = a.weeklyPayout||0;
+  const dayPct = dailyTarget>0 ? Math.min(100, Math.max(0,(s.dayPL/dailyTarget)*100)) : 0;
+  const weekPct = weeklyPayout>0 ? Math.min(100, Math.max(0,(s.weekPL/weeklyPayout)*100)) : 0;
+  const dayRemain = Math.max(0, dailyTarget - s.dayPL);
+  const weekRemain = Math.max(0, weeklyPayout - s.weekPL);
+  wrap.innerHTML = `<div class="targets-wrap">
+    <div class="target-block"><div class="ring" style="--pct:${dayPct};--rc:${s.dayPL>=dailyTarget && dailyTarget>0 ? 'var(--green)':'var(--cyan)'}"><div class="ring-inner"><div class="ring-pct">${Math.round(dayPct)}%</div></div></div>
+      <div class="target-info"><div class="ti-label">Daily Target</div><div class="ti-val">${fmt(s.dayPL)} of $<input class="ti-input" type="number" id="inpDailyTarget" value="${dailyTarget}"></div><div class="ti-remain" style="color:${dayRemain<=0 && dailyTarget>0?'var(--green)':'var(--dim)'}">${dayRemain<=0 && dailyTarget>0 ? '🎯 Hit today' : fmt(dayRemain)+' to go today'}</div></div></div>
+    <div class="target-block"><div class="ring" style="--pct:${weekPct};--rc:${s.weekPL>=weeklyPayout && weeklyPayout>0 ? 'var(--green)':'var(--purple)'}"><div class="ring-inner"><div class="ring-pct">${Math.round(weekPct)}%</div></div></div>
+      <div class="target-info"><div class="ti-label">Weekly Payout Goal</div><div class="ti-val">${fmt(s.weekPL)} of $<input class="ti-input" type="number" id="inpWeeklyPayout" value="${weeklyPayout}"></div><div class="ti-remain" style="color:${weekRemain<=0 && weeklyPayout>0?'var(--green)':'var(--dim)'}">${weekRemain<=0 && weeklyPayout>0 ? '🎯 Hit this week' : fmt(weekRemain)+' to go this week'}</div></div></div>
+  </div>`;
+  document.getElementById('inpDailyTarget').addEventListener('change', (e)=>{ a.dailyTarget = Number(e.target.value||0); save(); renderAll(); pushFeed(`Daily target for <b>${a.nickname}</b> set to ${fmt(a.dailyTarget)}`); });
+  document.getElementById('inpWeeklyPayout').addEventListener('change', (e)=>{ a.weeklyPayout = Number(e.target.value||0); save(); renderAll(); pushFeed(`Weekly payout goal for <b>${a.nickname}</b> set to ${fmt(a.weeklyPayout)}`); });
+}
+
+/* ================= CORE VISUAL ================= */
+const canvas = document.getElementById('coreCanvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+for(let i=0;i<46;i++){ particles.push({baseAng:Math.random()*Math.PI*2, rad:60+Math.random()*45, speed:0.0015+Math.random()*0.002, wob:Math.random()*Math.PI*2}); }
+let coreColor={r:168,g:85,b:255}, pulseSpeed=0.02, t=0;
+function hexToRgb(pl){ if(pl>0) return {r:0,g:255,b:163}; if(pl<0) return {r:255,g:45,b:110}; return {r:168,g:85,b:255}; }
+
+function renderCore(s){
+  coreColor = hexToRgb(s.dayPL);
+  const breach = document.getElementById('alertBanner').classList.contains('show');
+  pulseSpeed = breach?0.09:(s.dayPL<0?0.045:0.02);
+  document.getElementById('coreEquity').textContent = fmt(s.equity);
+  const plEl = document.getElementById('corePL');
+  plEl.textContent = fmt(s.dayPL)+' TODAY';
+  plEl.style.color = s.dayPL>0?'var(--green)':s.dayPL<0?'var(--red)':'var(--dim)';
+  const nameEl = document.getElementById('coreName');
+  const stateEl = document.getElementById('coreState');
+  if(breach){ nameEl.textContent='STAND DOWN'; nameEl.style.color='var(--red)'; stateEl.textContent='RULE BREACHED — HALT'; }
+  else if(s.dayPL<0){ nameEl.textContent='STAY DISCIPLINED'; nameEl.style.color='var(--red)'; stateEl.textContent='DRAWDOWN — WATCH SIZE'; }
+  else if(s.dayPL>0){ nameEl.textContent='IN CONTROL'; nameEl.style.color='var(--green)'; stateEl.textContent='POSITIVE — STAY THE PLAN'; }
+  else { nameEl.textContent='CALM STATE'; nameEl.style.color='var(--bright)'; stateEl.textContent='STANDING BY'; }
+  const payoutBox = document.getElementById('corePayoutBox');
+  if(s.account && s.account.target>0){
+    payoutBox.style.display='block';
+    const progressPL = s.equity - s.account.start;
+    const remaining = Math.max(0, s.account.target - progressPL);
+    const pct = Math.min(100, Math.max(0,(progressPL/s.account.target)*100));
+    document.getElementById('cpValue').textContent = remaining<=0 ? 'TARGET HIT 🎯' : fmt(remaining)+' TO GO';
+    document.getElementById('cpBarFill').style.width = pct+'%';
+    document.getElementById('cpBarFill').style.background = remaining<=0 ? 'var(--green)' : 'var(--cyan)';
+  } else { payoutBox.style.display='none'; }
+}
+function drawCore(){
+  const w=canvas.width,h=canvas.height,cx=w/2,cy=h/2;
+  ctx.clearRect(0,0,w,h);
+  t += pulseSpeed;
+  const pulse = 1+Math.sin(t)*0.06;
+  const coreR = 46*pulse;
+  const {r,g,b} = coreColor;
+  for(let i=0;i<3;i++){ ctx.beginPath(); ctx.arc(cx,cy,70+i*28,0,Math.PI*2); ctx.strokeStyle=`rgba(${r},${g},${b},${0.12-i*0.02})`; ctx.lineWidth=1; ctx.stroke(); }
+  particles.forEach(p=>{
+    const ang = p.baseAng + t*p.speed*30;
+    const wob = Math.sin(t*0.7+p.wob)*6;
+    const x = cx+Math.cos(ang)*(p.rad+wob), y=cy+Math.sin(ang)*(p.rad+wob);
+    ctx.beginPath(); ctx.arc(x,y,1.4,0,Math.PI*2); ctx.fillStyle=`rgba(${r},${g},${b},0.6)`; ctx.fill();
+  });
+  const grad = ctx.createRadialGradient(cx,cy,0,cx,cy,coreR);
+  grad.addColorStop(0,`rgba(${r},${g},${b},0.95)`); grad.addColorStop(0.5,`rgba(${r},${g},${b},0.35)`); grad.addColorStop(1,`rgba(${r},${g},${b},0)`);
+  ctx.beginPath(); ctx.arc(cx,cy,coreR,0,Math.PI*2); ctx.fillStyle=grad; ctx.fill();
+  ctx.beginPath(); ctx.arc(cx,cy,coreR*0.32,0,Math.PI*2); ctx.fillStyle='rgba(255,255,255,0.9)';
+  ctx.shadowColor=`rgba(${r},${g},${b},1)`; ctx.shadowBlur=22; ctx.fill(); ctx.shadowBlur=0;
+  requestAnimationFrame(drawCore);
+}
+drawCore();
+
+/* ================= FEED ================= */
+function pushFeed(msg){
+  const wrap = document.getElementById('feedList');
+  const time = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false});
+  const row = document.createElement('div'); row.className='feed-row';
+  row.innerHTML = `<div class="feed-time">${time}</div><div class="feed-text">${msg}</div>`;
+  wrap.prepend(row);
+  while(wrap.children.length>25) wrap.removeChild(wrap.lastChild);
+}
+
+/* ================= ACCOUNT DRILL-DOWN DASHBOARD ================= */
+let calMonth = new Date().getMonth(), calYear = new Date().getFullYear();
+function openAccountDashboard(firmId, acctId){
+  const firm = getFirm(firmId); const acct = firm ? getAccount(firmId, acctId) : null;
+  if(!firm || !acct) return;
+  calMonth = new Date().getMonth(); calYear = new Date().getFullYear();
+  renderDashBody(firm, acct);
+  openModal('modalDash');
+}
+document.getElementById('btnViewDash').addEventListener('click', ()=>{
+  const sc = scopeParts(); if(!sc) return;
+  openAccountDashboard(sc.firmId, sc.acctId);
+});
+
+function renderDashBody(firm, acct){
+  const entries = state.trades.filter(t=>t.firmId===firm.id && t.accountId===acct.id).sort((a,b)=>a.ts-b.ts);
+  const wrap = document.getElementById('dashBody');
+
+  // running balance / drawdown series
+  let balance = acct.start, peak = acct.start;
+  const points = [{ts: entries.length?entries[0].ts-86400000:Date.now(), balance, floor: acct.maxDD>0?peak-acct.maxDD:null}];
+  entries.forEach(e=>{
+    balance += Number(e.pl||0);
+    peak = Math.max(peak, balance);
+    points.push({ts:e.ts, balance, floor: acct.maxDD>0 ? peak-acct.maxDD : null});
+  });
+  const totalProfit = balance - acct.start;
+
+  // daily buckets for calendar + highest profit day + trading days
+  const dayMap = {};
+  entries.forEach(e=>{ const k=dayKey(e.ts); dayMap[k]=(dayMap[k]||0)+Number(e.pl||0); });
+  const tradingDays = Object.keys(dayMap).length;
+  const highestProfitDay = Object.values(dayMap).length ? Math.max(...Object.values(dayMap)) : 0;
+  const consistencyPct = totalProfit>0 ? Math.min(999,(highestProfitDay/totalProfit)*100) : 0;
+  const consistencyCap = acct.consistencyCap||40;
+  const consistencyBreach = consistencyPct > consistencyCap;
+
+  const lastEntry = entries.length ? new Date(entries[entries.length-1].ts) : null;
+
+  wrap.innerHTML = `
+    <div class="dash-head">
+      <div>
+        <span class="dash-title">${acct.nickname}<span class="dash-badge">${firm.name}</span></span>
+        <div class="dash-meta">${lastEntry ? 'Last entry '+lastEntry.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : 'No entries yet'} · Started ${fmt(acct.start)}</div>
+      </div>
+    </div>
+
+    <div class="dash-section">
+      <div class="dash-section-title">Balance vs Drawdown</div>
+      <div class="dash-chart-note">Trailing drawdown floor rises with new balance highs, based on your Max Drawdown setting.</div>
+      <div class="dash-legend"><span><span class="leg-dot" style="background:var(--green);"></span>Balance</span>${acct.maxDD>0?'<span><span class="leg-dot" style="background:var(--red);"></span>Drawdown Floor</span>':''}</div>
+      <div id="dashChartWrap"></div>
+    </div>
+
+    <div class="dash-grid2">
+      <div class="dash-section">
+        <div class="dash-section-title">Summary</div>
+        <div class="dash-summary-row"><span class="dash-summary-label">Balance</span><span class="dash-summary-val" style="color:${totalProfit>=0?'var(--green)':'var(--red)'}">${fmt(balance)} ${totalProfit>=0?'↑':'↓'} ${fmt(totalProfit)}</span></div>
+        <div class="dash-summary-row"><span class="dash-summary-label">Trailing Max Drawdown</span><span class="dash-summary-val">${acct.maxDD>0?fmt(peak-acct.maxDD):'None'}</span></div>
+        <div class="dash-summary-row"><span class="dash-summary-label">Daily Loss Limit</span><span class="dash-summary-val">${acct.dailyLoss>0?fmt(acct.dailyLoss):'None'}</span></div>
+        <div class="dash-summary-row"><span class="dash-summary-label">Total Profit</span><span class="dash-summary-val">${fmt(totalProfit)}</span></div>
+      </div>
+      <div class="dash-section">
+        <div class="dash-section-title">Objectives</div>
+        <div class="dash-obj-row">
+          <div class="dash-obj-ring" style="--pct:${acct.target>0?Math.min(100,Math.max(0,(totalProfit/acct.target)*100)):0};--rc:var(--green)"><div class="dash-obj-ring-inner"></div></div>
+          <div><div class="dash-obj-label">Profit Target</div><div class="dash-obj-val">${fmt(totalProfit)} / ${fmt(acct.target||0)}</div></div>
+        </div>
+        <div class="dash-obj-row">
+          <div class="dash-obj-icon ${consistencyBreach?'warn':'ok'}">${consistencyBreach?'⚠':'✓'}</div>
+          <div><div class="dash-obj-label">Consistency</div><div class="dash-obj-val">${Math.round(consistencyPct)}% / ${consistencyCap}% max</div></div>
+        </div>
+        <div class="dash-obj-row">
+          <div class="dash-obj-icon ok" style="background:rgba(0,234,255,0.15);color:var(--cyan);">📈</div>
+          <div><div class="dash-obj-label">Highest Profit Day</div><div class="dash-obj-val">${fmt(highestProfitDay)}</div></div>
+        </div>
+        <div class="dash-obj-row">
+          <div class="dash-obj-ring" style="--pct:${acct.minDays>0?Math.min(100,(tradingDays/acct.minDays)*100):0};--rc:var(--purple)"><div class="dash-obj-ring-inner"></div></div>
+          <div><div class="dash-obj-label">Trading Days</div><div class="dash-obj-val">${tradingDays} / ${acct.minDays||0}</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-section" id="dashCalSection"></div>
+  `;
+
+  renderDashChart(points, acct);
+  renderDashCalendar(dayMap);
+}
+
+function renderDashChart(points, acct){
+  const wrap = document.getElementById('dashChartWrap');
+  if(points.length<2){ wrap.innerHTML = '<div class="empty">Log a few entries to see the balance chart</div>'; return; }
+  const W = 740, H = 220, padL=55, padR=15, padT=15, padB=25;
+  const balances = points.map(p=>p.balance);
+  const floors = points.filter(p=>p.floor!=null).map(p=>p.floor);
+  const allVals = balances.concat(floors);
+  const minV = Math.min(...allVals), maxV = Math.max(...allVals);
+  const range = (maxV-minV) || 1;
+  const x = i => padL + (i/(points.length-1))*(W-padL-padR);
+  const y = v => padT + (1-((v-minV)/range))*(H-padT-padB);
+
+  const balPath = points.map((p,i)=>`${i===0?'M':'L'}${x(i).toFixed(1)},${y(p.balance).toFixed(1)}`).join(' ');
+  let floorPath = '';
+  if(acct.maxDD>0) floorPath = points.map((p,i)=>`${i===0?'M':'L'}${x(i).toFixed(1)},${y(p.floor).toFixed(1)}`).join(' ');
+
+  const gridLines = [];
+  for(let gi=0; gi<=4; gi++){
+    const v = minV + (range*gi/4);
+    const yy = y(v);
+    gridLines.push(`<line x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}" stroke="#2a1a4a" stroke-width="1"/>`);
+    gridLines.push(`<text x="${padL-8}" y="${yy+3}" fill="#7a6ba0" font-size="9" font-family="JetBrains Mono" text-anchor="end">${Math.round(v).toLocaleString()}</text>`);
+  }
+
+  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;">
+    ${gridLines.join('')}
+    ${floorPath?`<path d="${floorPath}" fill="none" stroke="#ff2d6e" stroke-width="1.5" stroke-dasharray="4 3"/>`:''}
+    <path d="${balPath} L${x(points.length-1)},${H-padB} L${x(0)},${H-padB} Z" fill="url(#balGrad)" opacity="0.25"/>
+    <path d="${balPath}" fill="none" stroke="#00ffa3" stroke-width="2"/>
+    <defs><linearGradient id="balGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00ffa3" stop-opacity="0.5"/><stop offset="100%" stop-color="#00ffa3" stop-opacity="0"/></linearGradient></defs>
+  </svg>`;
+}
+
+function renderDashCalendar(dayMap){
+  const wrap = document.getElementById('dashCalSection');
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const first = new Date(calYear, calMonth, 1);
+  const startDow = first.getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  let cells = '';
+  for(let i=0;i<startDow;i++) cells += `<div class="cal-cell empty"></div>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const dt = new Date(calYear, calMonth, d);
+    const pl = dayMap[dt.toDateString()];
+    const cls = pl>0?'pos':pl<0?'neg':'';
+    cells += `<div class="cal-cell ${cls}">${d}${pl?`<div class="cal-pl">${fmt(pl)}</div>`:''}</div>`;
+  }
+  wrap.innerHTML = `
+    <div class="cal-head">
+      <div class="dash-section-title" style="margin:0;">P&L Calendar</div>
+      <div class="cal-nav"><span class="cal-nav-btn" id="calPrev">‹</span><span>${monthNames[calMonth]} ${calYear}</span><span class="cal-nav-btn" id="calNext">›</span></div>
+    </div>
+    <div class="cal-grid">
+      ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="cal-dow">${d}</div>`).join('')}
+      ${cells}
+    </div>`;
+  document.getElementById('calPrev').addEventListener('click', ()=>{ calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderDashCalendar(dayMap); });
+  document.getElementById('calNext').addEventListener('click', ()=>{ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderDashCalendar(dayMap); });
+}
+
+/* ================= DRAWER ================= */
+let drawerFirmId = null;
+function openDrawer(firmId){
+  drawerFirmId = firmId;
+  const firm = getFirm(firmId); if(!firm) return;
+  document.getElementById('drawerFirmName').textContent = firm.name;
+  document.getElementById('drawerFirmSub').textContent = firm.accounts.length+' account'+(firm.accounts.length!==1?'s':'')+' · '+fmt(firmEquity(firm))+' total';
+  renderDrawerBody(firm);
+  document.getElementById('drawerBg').classList.add('show');
+  document.getElementById('drawer').classList.add('show');
+}
+function closeDrawer(){ document.getElementById('drawerBg').classList.remove('show'); document.getElementById('drawer').classList.remove('show'); }
+document.getElementById('drawerClose').addEventListener('click', closeDrawer);
+document.getElementById('drawerBg').addEventListener('click', closeDrawer);
+document.getElementById('drawerEditFirm').addEventListener('click', ()=>{ if(drawerFirmId) openEditFirmModal(drawerFirmId); });
+
+function renderDrawerBody(firm){
+  const wrap = document.getElementById('drawerBody');
+  const eq = firmEquity(firm);
+  const startSum = firm.accounts.reduce((s,a)=>s+a.start,0);
+  const pl = eq - startSum;
+  const totalTarget = firm.accounts.reduce((s,a)=>s+(a.target||0),0);
+  const totalRemaining = firm.accounts.reduce((s,a)=>{ const aPl = accountEquity(firm.id,a)-a.start; return s + Math.max(0,(a.target||0)-aPl); },0);
+
+  const metricsHtml = `<div class="firm-metrics">
+    <div class="fm-cell"><div class="v" style="color:${pl>=0?'var(--green)':'var(--red)'}">${fmt(pl)}</div><div class="l">Total P&L</div></div>
+    <div class="fm-cell"><div class="v">${fmt(eq)}</div><div class="l">Firm Equity</div></div>
+    <div class="fm-cell"><div class="v">${fmt(totalRemaining)}</div><div class="l">To All Payouts</div></div>
+    <div class="fm-cell"><div class="v">${firm.accounts.length}</div><div class="l">Accounts</div></div>
+  </div>`;
+
+  const cardsHtml = firm.accounts.map(a=>{
+    const aEq = accountEquity(firm.id, a);
+    const aPl = aEq - a.start;
+    const key = `${firm.id}::${a.id}`;
+    const active = state.scope===key;
+    const pct = a.target>0 ? Math.min(100,Math.max(0,(aPl/a.target)*100)) : 0;
+    const remaining = a.target>0 ? Math.max(0, a.target-aPl) : null;
+    return `<div class="acct-card ${active?'active':''}" data-key="${key}">
+      <div class="acct-top"><div class="acct-name">${a.nickname}</div><div style="display:flex;gap:10px;"><div class="acct-del" data-view-acct="${a.id}">📊</div><div class="acct-del" data-edit-acct="${a.id}">✎</div><div class="acct-del" data-del-acct="${a.id}">🗑</div></div></div>
+      <div class="acct-stats"><div class="as"><span class="l">Balance</span>${fmt(aEq)}</div><div class="as"><span class="l">P&L</span><span style="color:${aPl>=0?'var(--green)':'var(--red)'}">${fmt(aPl)}</span></div></div>
+      ${a.target>0?`<div class="acct-bar"><div class="acct-bar-fill" style="width:${pct}%;background:${remaining<=0?'var(--green)':firm.color};"></div></div><div class="acct-payout" style="color:${remaining<=0?'var(--green)':'var(--bright)'}">${remaining<=0?'🎯 TARGET HIT':fmt(remaining)+' to payout'}</div>`:'<div class="acct-payout" style="color:var(--dim);">No target set</div>'}
+    </div>`;
+  }).join('');
+
+  wrap.innerHTML = metricsHtml + (firm.accounts.length? cardsHtml : '<div class="empty">No accounts yet — add one below</div>') + `<button class="btn primary" style="width:100%;justify-content:center;margin-top:6px;" id="btnAddAccountInline">+ ADD ACCOUNT</button>`;
+
+  wrap.querySelectorAll('.acct-card').forEach(card=>{
+    card.addEventListener('click', (e)=>{
+      if(e.target.closest('[data-del-acct]') || e.target.closest('[data-edit-acct]') || e.target.closest('[data-view-acct]')) return;
+      state.scope = card.dataset.key; save(); closeDrawer(); renderAll();
+    });
+  });
+  wrap.querySelectorAll('[data-view-acct]').forEach(el=>{
+    el.addEventListener('click', (e)=>{ e.stopPropagation(); closeDrawer(); openAccountDashboard(firm.id, el.dataset.viewAcct); });
+  });
+  wrap.querySelectorAll('[data-edit-acct]').forEach(el=>{
+    el.addEventListener('click', (e)=>{ e.stopPropagation(); openAccountModal(firm.id, el.dataset.editAcct); });
+  });
+  wrap.querySelectorAll('[data-del-acct]').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const a = getAccount(firm.id, el.dataset.delAcct);
+      if(confirm(`Delete account "${a.nickname}"? Trade history stays logged under All Accounts.`)){
+        firm.accounts = firm.accounts.filter(x=>x.id!==el.dataset.delAcct);
+        if(state.scope === `${firm.id}::${el.dataset.delAcct}`) state.scope='ALL';
+        save(); renderDrawerBody(firm); renderAll();
+        pushFeed(`Account removed from <b>${firm.name}</b>`);
+      }
+    });
+  });
+  document.getElementById('btnAddAccountInline').addEventListener('click', ()=>openAccountModal(firm.id));
+}
+
+document.getElementById('btnDeleteFirm').addEventListener('click', ()=>{
+  const firm = getFirm(drawerFirmId); if(!firm) return;
+  if(confirm(`Delete "${firm.name}" and all its accounts? Trade history stays logged under All Accounts.`)){
+    state.firms = state.firms.filter(f=>f.id!==firm.id);
+    if(state.scope.startsWith(firm.id+'::')) state.scope='ALL';
+    save(); closeDrawer(); renderAll();
+    pushFeed(`Firm <b>${firm.name}</b> deleted`);
+  }
+});
+
+/* ================= MODALS: generic ================= */
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('[data-close]').forEach(el=>el.addEventListener('click', ()=>closeModal(el.dataset.close)));
+document.querySelectorAll('.modal-bg').forEach(bg=>bg.addEventListener('click', e=>{ if(e.target===bg) bg.classList.remove('show'); }));
+
+let pickedColor = FIRM_COLORS[0];
+let editingFirmId = null;
+function buildColorPicker(){
+  const wrap = document.getElementById('colorPicker');
+  wrap.innerHTML = FIRM_COLORS.map(c=>`<div class="color-dot ${c===pickedColor?'picked':''}" style="background:${c};" data-color="${c}"></div>`).join('');
+  wrap.querySelectorAll('.color-dot').forEach(d=>{ d.addEventListener('click', ()=>{ pickedColor=d.dataset.color; buildColorPicker(); }); });
+}
+function openAddFirmModal(){
+  editingFirmId = null;
+  document.getElementById('firmName').value='';
+  document.querySelector('#modalFirm h3').textContent = 'ADD FIRM';
+  document.getElementById('btnSaveFirm').textContent = 'ADD FIRM';
+  pickedColor = FIRM_COLORS[state.firms.length % FIRM_COLORS.length];
+  buildColorPicker();
+  openModal('modalFirm');
+}
+function openEditFirmModal(firmId){
+  const firm = getFirm(firmId); if(!firm) return;
+  editingFirmId = firmId;
+  document.getElementById('firmName').value = firm.name;
+  document.querySelector('#modalFirm h3').textContent = 'EDIT FIRM';
+  document.getElementById('btnSaveFirm').textContent = 'SAVE CHANGES';
+  pickedColor = firm.color;
+  buildColorPicker();
+  openModal('modalFirm');
+}
+document.getElementById('btnAddFirmTop').addEventListener('click', openAddFirmModal);
+document.getElementById('btnSaveFirm').addEventListener('click', ()=>{
+  const name = document.getElementById('firmName').value.trim();
+  if(!name){ alert('Enter a firm name'); return; }
+  if(editingFirmId){
+    const firm = getFirm(editingFirmId);
+    firm.name = name; firm.color = pickedColor;
+    save(); closeModal('modalFirm'); renderAll();
+    pushFeed(`Firm renamed to <b>${name}</b>`);
+    if(document.getElementById('drawer').classList.contains('show')) openDrawer(editingFirmId);
+  } else {
+    const firm = { id:uid(), name, color:pickedColor, accounts:[] };
+    state.firms.push(firm);
+    save(); closeModal('modalFirm'); renderAll();
+    pushFeed(`Firm <b>${name}</b> added to network — click its node's ✎ to add an account`);
+  }
+});
+
+let accountModalFirmId = null;
+let editingAccountId = null;
+function openAccountModal(firmId, accountId){
+  accountModalFirmId = firmId;
+  editingAccountId = accountId || null;
+  const firm = getFirm(firmId);
+  const existing = editingAccountId && firm ? getAccount(firmId, editingAccountId) : null;
+  document.getElementById('acctModalTitle').textContent = existing ? 'EDIT ACCOUNT' : 'ADD ACCOUNT';
+  document.getElementById('btnSaveAccount').textContent = existing ? 'SAVE CHANGES' : 'SAVE ACCOUNT';
+  document.getElementById('acctNickname').value = existing ? existing.nickname : '';
+  document.getElementById('acctStart').value = existing ? existing.start : 50000;
+  document.getElementById('acctTarget').value = existing ? existing.target : 2750;
+  document.getElementById('acctDailyLoss').value = existing ? existing.dailyLoss : 1000;
+  document.getElementById('acctMaxDD').value = existing ? existing.maxDD : 2000;
+  document.getElementById('acctDailyTarget').value = existing ? (existing.dailyTarget||200) : 200;
+  document.getElementById('acctWeeklyPayout').value = existing ? (existing.weeklyPayout||1000) : 1000;
+  document.getElementById('acctConsistency').value = existing ? (existing.consistencyCap||40) : 40;
+  document.getElementById('acctMinDays').value = existing ? (existing.minDays||3) : 3;
+  openModal('modalAccount');
+}
+document.getElementById('btnSaveAccount').addEventListener('click', ()=>{
+  const firm = getFirm(accountModalFirmId); if(!firm) return;
+  const nickname = document.getElementById('acctNickname').value.trim() || `Account ${firm.accounts.length+1}`;
+  const vals = {
+    nickname,
+    start: Number(document.getElementById('acctStart').value||0),
+    target: Number(document.getElementById('acctTarget').value||0),
+    dailyLoss: Number(document.getElementById('acctDailyLoss').value||0),
+    maxDD: Number(document.getElementById('acctMaxDD').value||0),
+    dailyTarget: Number(document.getElementById('acctDailyTarget').value||0),
+    weeklyPayout: Number(document.getElementById('acctWeeklyPayout').value||0),
+    consistencyCap: Number(document.getElementById('acctConsistency').value||40),
+    minDays: Number(document.getElementById('acctMinDays').value||3),
+  };
+  if(editingAccountId){
+    const acct = getAccount(firm.id, editingAccountId);
+    Object.assign(acct, vals);
+    save(); closeModal('modalAccount'); renderAll();
+    pushFeed(`Account <b>${nickname}</b> updated`);
+    if(document.getElementById('drawer').classList.contains('show')) renderDrawerBody(firm);
+  } else {
+    const acct = { id: uid(), ...vals };
+    firm.accounts.push(acct);
+    state.expandedFirms[firm.id] = true;
+    save(); closeModal('modalAccount');
+    state.scope = `${firm.id}::${acct.id}`; save();
+    renderAll();
+    pushFeed(`Account <b>${nickname}</b> added to ${firm.name}`);
+    if(document.getElementById('drawer').classList.contains('show')) renderDrawerBody(firm);
+  }
+});
+
+function populateTradeFirmSelect(){
+  const sel = document.getElementById('fFirm');
+  sel.innerHTML = state.firms.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
+  populateTradeAccountSelect();
+}
+function populateTradeAccountSelect(){
+  const firmId = document.getElementById('fFirm').value;
+  const firm = getFirm(firmId);
+  const sel = document.getElementById('fAccount');
+  sel.innerHTML = firm ? firm.accounts.map(a=>`<option value="${a.id}">${a.nickname}</option>`).join('') : '';
+}
+document.getElementById('fFirm').addEventListener('change', populateTradeAccountSelect);
+document.getElementById('btnAddTrade').addEventListener('click', ()=>{
+  if(state.firms.length===0 || state.firms.every(f=>f.accounts.length===0)){
+    alert('Add a firm and at least one account first.');
+    openAddFirmModal();
+    return;
+  }
+  populateTradeFirmSelect();
+  const sc = scopeParts();
+  if(sc){ document.getElementById('fFirm').value = sc.firmId; populateTradeAccountSelect(); document.getElementById('fAccount').value = sc.acctId; }
+  openModal('modalTrade');
+});
+document.getElementById('btnSaveTrade').addEventListener('click', ()=>{
+  const firmId = document.getElementById('fFirm').value;
+  const accountId = document.getElementById('fAccount').value;
+  if(!firmId || !accountId){ alert('Select a firm and account'); return; }
+  const t = { id: uid(), firmId, accountId, status:'closed', pl: Number(document.getElementById('fPL').value||0), notes: document.getElementById('fNotes').value, ts: Date.now() };
+  state.trades.push(t);
+  save();
+  pushFeed(`${fmt(t.pl)} logged`);
+  closeModal('modalTrade');
+  ['fPL','fNotes'].forEach(id=>document.getElementById(id).value='');
+  renderAll();
+});
+
+document.getElementById('btnClearData').addEventListener('click', ()=>{
+  if(confirm('Reset everything — all firms, accounts, and entries? This cannot be undone.')){
+    state = {firms:[], trades:[], scope:'ALL', expandedFirms:{}};
+    save(); renderAll();
+    pushFeed('Dashboard reset');
+  }
+});
+
+/* ================= QUICK ACTIONS ================= */
+document.getElementById('qaLog').addEventListener('click', ()=>document.getElementById('btnAddTrade').click());
+document.getElementById('qaAddFirm').addEventListener('click', openAddFirmModal);
+document.getElementById('qaAll').addEventListener('click', ()=>{ state.scope='ALL'; save(); renderAll(); });
+document.getElementById('qaReset').addEventListener('click', ()=>document.getElementById('btnClearData').click());
+
+/* ================= COMMAND BAR ================= */
+document.getElementById('cmdBar').addEventListener('keydown', (e)=>{
+  if(e.key !== 'Enter') return;
+  const raw = e.target.value.trim();
+  if(!raw){ return; }
+  const lower = raw.toLowerCase();
+  if(lower === 'reset'){
+    e.target.value=''; document.getElementById('btnClearData').click(); return;
+  }
+  if(lower.startsWith('add firm')){
+    e.target.value='';
+    openAddFirmModal();
+    const rest = raw.slice(8).trim();
+    if(rest) document.getElementById('firmName').value = rest;
+    return;
+  }
+  if(lower === 'all' || lower === 'all accounts'){
+    e.target.value=''; state.scope='ALL'; save(); renderAll(); return;
+  }
+  const numMatch = raw.match(/^[-+]?\d+(\.\d+)?$/);
+  if(numMatch){
+    const sc = scopeParts();
+    if(!sc){ pushFeed('⚠ Select a specific account first, then use the command bar to log P&L'); return; }
+    const pl = Number(raw);
+    state.trades.push({ id: uid(), firmId: sc.firmId, accountId: sc.acctId, status:'closed', pl, notes:'via command bar', ts: Date.now() });
+    save(); renderAll();
+    pushFeed(`${fmt(pl)} logged via command`);
+    e.target.value='';
+    return;
+  }
+  pushFeed(`Unrecognized command: "${raw}"`);
+});
+
+/* ================= NEURAL MESH ================= */
+const meshCanvas = document.getElementById('meshCanvas');
+const meshCtx = meshCanvas.getContext('2d');
+let meshPoints = [];
+const MESH_N = 55;
+for(let i=0;i<MESH_N;i++){
+  const theta = Math.acos(2*Math.random()-1);
+  const phi = Math.random()*Math.PI*2;
+  meshPoints.push({theta, phi, r: 70 + Math.random()*10});
+}
+let meshT = 0;
+function drawMesh(){
+  const w = meshCanvas.width, h = meshCanvas.height, cx=w/2, cy=h/2;
+  meshCtx.clearRect(0,0,w,h);
+  meshT += 0.004;
+  const {r:cr,g:cg,b:cb} = coreColor;
+  const proj = meshPoints.map(p=>{
+    const phi = p.phi + meshT;
+    const x3 = p.r * Math.sin(p.theta) * Math.cos(phi);
+    const y3 = p.r * Math.cos(p.theta);
+    const z3 = p.r * Math.sin(p.theta) * Math.sin(phi);
+    const scale = 1 / (1 + (z3/220));
+    return { x: cx + x3*scale*1.6, y: cy + y3*scale*0.85, z: z3, s: scale };
+  });
+  for(let i=0;i<proj.length;i++){
+    for(let j=i+1;j<proj.length;j++){
+      const dx=proj[i].x-proj[j].x, dy=proj[i].y-proj[j].y;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      if(dist<34){
+        meshCtx.beginPath();
+        meshCtx.moveTo(proj[i].x, proj[i].y); meshCtx.lineTo(proj[j].x, proj[j].y);
+        meshCtx.strokeStyle = `rgba(${cr},${cg},${cb},${0.14*(1-dist/34)})`;
+        meshCtx.lineWidth=0.7;
+        meshCtx.stroke();
+      }
+    }
+  }
+  proj.sort((a,b)=>a.z-b.z).forEach(p=>{
+    meshCtx.beginPath();
+    meshCtx.arc(p.x, p.y, 1.6*p.s, 0, Math.PI*2);
+    meshCtx.fillStyle = `rgba(${cr},${cg},${cb},${0.5+0.4*p.s})`;
+    meshCtx.fill();
+  });
+  requestAnimationFrame(drawMesh);
+}
+drawMesh();
+
+window.addEventListener('resize', ()=>renderNetwork());
+setInterval(()=>{ if(currentUser) render(); }, 5000);
+</script>
+</body>
+</html>

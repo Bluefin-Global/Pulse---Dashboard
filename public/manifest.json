@@ -1,0 +1,10 @@
+{
+  "name": "PULSE — Trading Command Bridge",
+  "short_name": "PULSE",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#05000f",
+  "theme_color": "#05000f",
+  "orientation": "any",
+  "icons": []
+}
