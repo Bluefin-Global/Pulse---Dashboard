@@ -156,7 +156,11 @@ body::before{
 @keyframes dashflow{to{stroke-dashoffset:-70;}}
 
 .hub-node{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:118px;height:118px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 35% 30%, rgba(168,85,255,0.55), rgba(20,8,45,0.9) 72%);border:1px solid rgba(168,85,255,0.6);box-shadow:0 0 34px rgba(168,85,255,0.5), inset 0 0 20px rgba(168,85,255,0.25);cursor:default;z-index:5;animation:hubPulse 4s ease-in-out infinite;text-align:center;}
-@keyframes hubPulse{0%,100%{box-shadow:0 0 28px rgba(168,85,255,0.4), inset 0 0 16px rgba(168,85,255,0.18);}50%{box-shadow:0 0 46px rgba(168,85,255,0.7), inset 0 0 24px rgba(168,85,255,0.3);}}
+@keyframes hubPulse{0%,100%{transform:translate(-50%,-50%) scale(1);box-shadow:0 0 28px rgba(168,85,255,0.4), inset 0 0 16px rgba(168,85,255,0.18);}50%{transform:translate(-50%,-50%) scale(1.07);box-shadow:0 0 52px rgba(168,85,255,0.8), inset 0 0 26px rgba(168,85,255,0.32);}}
+.hub-ring{position:absolute;left:50%;top:50%;width:150px;height:150px;margin-left:-75px;margin-top:-75px;border-radius:50%;border:1.5px dashed rgba(168,85,255,0.45);z-index:4;animation:hubSpin 16s linear infinite;pointer-events:none;}
+.hub-ring.r2{width:172px;height:172px;margin-left:-86px;margin-top:-86px;border-color:rgba(0,234,255,0.3);animation:hubSpinRev 24s linear infinite;}
+@keyframes hubSpin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+@keyframes hubSpinRev{from{transform:rotate(360deg);}to{transform:rotate(0deg);}}
 .hub-node .hl{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:#e2c8ff;text-transform:uppercase;}
 .hub-node .hv{font-family:var(--disp);font-weight:800;font-size:16px;margin-top:4px;color:#fff;}
 .hub-node .hs{font-family:var(--mono);font-size:9px;margin-top:2px;}
@@ -433,6 +437,8 @@ body::before{
   </div>
   <div class="network-stage" id="networkStage">
     <svg class="node-lines" id="nodeLines"></svg>
+    <div class="hub-ring"></div>
+    <div class="hub-ring r2"></div>
     <div class="hub-node" id="hubNode"><div class="hl">NETWORK</div><div class="hv">◆</div><div class="hs">CORE</div></div>
   </div>
 </div>
