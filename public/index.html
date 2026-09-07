@@ -34,6 +34,7 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{background:var(--void);color:var(--bright);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
 #starfield{position:fixed;inset:0;z-index:0;pointer-events:none;}
+.market-bg{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.9;}
 body{position:relative;}
 .app{position:relative;z-index:1;}
 body::before{
@@ -149,7 +150,7 @@ body::before{
 .network-head{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line);}
 .network-head .title{font-family:var(--mono);font-size:10px;letter-spacing:2.5px;color:var(--dim);text-transform:uppercase;display:flex;align-items:center;gap:8px;}
 .network-head .title span.b{color:var(--bright);}
-.network-stage{position:relative;width:100%;height:520px;}
+.network-stage{position:relative;width:100%;height:640px;}
 .node-lines{position:absolute;inset:0;width:100%;height:100%;}
 .node-lines line{stroke-dasharray:3 4;animation:dashflow 3s linear infinite;}
 @keyframes dashflow{to{stroke-dashoffset:-70;}}
@@ -394,6 +395,7 @@ body::before{
 </div>
 
 <canvas id="starfield"></canvas>
+<canvas id="marketBg" class="market-bg"></canvas>
 <div class="app" id="appRoot" style="display:none;">
 
 <div class="topbar">
@@ -691,6 +693,97 @@ function drawStars(){
 initStars(); drawStars();
 window.addEventListener('resize', initStars);
 
+/* ================= MARKET BACKGROUND ================= */
+const mkCanvas = document.getElementById('marketBg');
+const mkCtx = mkCanvas.getContext('2d');
+let candleLanes = [];
+let tickerLabels = [];
+const TICKER_WORDS = ['MES','MNQ','MGC','MRTY','NQ','ES','GC','CL'];
+
+function initMarket(){
+  mkCanvas.width = window.innerWidth; mkCanvas.height = window.innerHeight;
+  const W = mkCanvas.width, H = mkCanvas.height;
+  candleLanes = [];
+  const laneCount = 3;
+  for(let l=0; l<laneCount; l++){
+    const laneY = H*(0.18 + l*0.32) + (Math.random()*40-20);
+    const candleW = 9 + Math.random()*3;
+    const count = Math.ceil(W/candleW)+4;
+    let val = 50 + Math.random()*20;
+    const candles = [];
+    for(let i=0;i<count;i++){
+      const open = val;
+      val += (Math.random()-0.48)*6;
+      val = Math.max(15, Math.min(85, val));
+      const close = val;
+      const high = Math.max(open,close) + Math.random()*4;
+      const low = Math.min(open,close) - Math.random()*4;
+      candles.push({x: i*candleW, open, close, high, low});
+    }
+    candleLanes.push({ y: laneY, h: 70+Math.random()*20, candleW, candles, speed: 0.12+l*0.05, color: l%2===0 ? 'cyan':'purple' });
+  }
+  tickerLabels = [];
+  for(let i=0;i<7;i++){
+    const up = Math.random()>0.5;
+    tickerLabels.push({
+      x: Math.random()*W, y: Math.random()*H,
+      text: (up?'+':'-') + (Math.random()*2).toFixed(2) + '%',
+      up, vx: 0.05+Math.random()*0.08, size: 11+Math.random()*7,
+    });
+  }
+}
+
+function drawMarket(){
+  const W = mkCanvas.width, H = mkCanvas.height;
+  mkCtx.clearRect(0,0,W,H);
+
+  candleLanes.forEach(lane=>{
+    lane.candles.forEach(c=>{ c.x -= lane.speed; });
+    if(lane.candles.length && lane.candles[0].x < -lane.candleW){
+      const first = lane.candles.shift();
+      const last = lane.candles[lane.candles.length-1];
+      let val = last.close;
+      const open = val;
+      val += (Math.random()-0.48)*6;
+      val = Math.max(15, Math.min(85, val));
+      const close = val;
+      const high = Math.max(open,close) + Math.random()*4;
+      const low = Math.min(open,close) - Math.random()*4;
+      lane.candles.push({x: last.x + lane.candleW, open, close, high, low});
+    }
+    const up = lane.color==='cyan' ? [0,234,255] : [168,85,255];
+    const down = [255,45,110];
+    lane.candles.forEach(c=>{
+      if(c.x < -20 || c.x > W+20) return;
+      const isUp = c.close >= c.open;
+      const [r,g,b] = isUp ? up : down;
+      const scaleY = v => lane.y + lane.h - (v/100)*lane.h;
+      mkCtx.strokeStyle = `rgba(${r},${g},${b},0.16)`;
+      mkCtx.lineWidth = 1;
+      mkCtx.beginPath();
+      mkCtx.moveTo(c.x+lane.candleW/2, scaleY(c.high));
+      mkCtx.lineTo(c.x+lane.candleW/2, scaleY(c.low));
+      mkCtx.stroke();
+      mkCtx.fillStyle = `rgba(${r},${g},${b},0.13)`;
+      const top = scaleY(Math.max(c.open,c.close));
+      const bodyH = Math.max(1, Math.abs(scaleY(c.open)-scaleY(c.close)));
+      mkCtx.fillRect(c.x+1, top, lane.candleW-2, bodyH);
+    });
+  });
+
+  tickerLabels.forEach(t=>{
+    t.x -= t.vx;
+    if(t.x < -60) t.x = W+60;
+    mkCtx.font = `${t.size}px 'JetBrains Mono', monospace`;
+    mkCtx.fillStyle = t.up ? 'rgba(0,255,163,0.10)' : 'rgba(255,45,110,0.10)';
+    mkCtx.fillText(t.text, t.x, t.y);
+  });
+
+  requestAnimationFrame(drawMarket);
+}
+initMarket(); drawMarket();
+window.addEventListener('resize', initMarket);
+
 /* ================= COLORS ================= */
 const FIRM_COLORS = ['#00eaff','#ff8a3d','#a855ff','#ff2dd4','#00ffa3','#ffd23d','#5c9eff','#ff2d6e'];
 
@@ -843,7 +936,7 @@ function renderNetwork(){
 
   const W = stage.clientWidth, H = stage.clientHeight;
   const cx = W/2, cy = H/2;
-  const firmRadius = Math.min(W,H)/2 - 150;
+  const firmRadius = Math.min(W,H)/2 - 200;
   const total = state.firms.length + 1;
   const startAngle = -Math.PI/2;
   lines.setAttribute('width', W); lines.setAttribute('height', H);
@@ -876,11 +969,25 @@ function renderNetwork(){
     stage.appendChild(editIcon);
 
     if(expanded && firm.accounts.length>0){
-      const acctRadius = 108;
-      const spread = Math.min(Math.PI*0.85, 0.5 + firm.accounts.length*0.32);
-      firm.accounts.forEach((a, j)=>{
-        const off = firm.accounts.length===1 ? 0 : (j/(firm.accounts.length-1) - 0.5) * spread;
-        const aAng = ang + off;
+      const NODE_GAP = 82; // minimum chord distance between adjacent account nodes
+      const PER_RING = 4;
+      const totalRings = Math.ceil(firm.accounts.length/PER_RING);
+      const acctPositions = [];
+      for(let ring=0; ring<totalRings; ring++){
+        const ringAccounts = firm.accounts.slice(ring*PER_RING, ring*PER_RING+PER_RING);
+        const count = ringAccounts.length;
+        const radius = 118 + ring*98;
+        let arcSpan = 0;
+        if(count>1){
+          const angleStep = 2*Math.asin(Math.min(0.95, NODE_GAP/(2*radius)));
+          arcSpan = Math.min(angleStep*(count-1), Math.PI*1.55);
+        }
+        ringAccounts.forEach((a,i)=>{
+          const off = count===1 ? 0 : (i/(count-1)-0.5)*arcSpan;
+          acctPositions.push({ a, ang: ang+off, radius });
+        });
+      }
+      acctPositions.forEach(({a, ang: aAng, radius: acctRadius})=>{
         const ax = fx + Math.cos(aAng)*acctRadius, ay = fy + Math.sin(aAng)*acctRadius;
         svgLine(lines, fx,fy,ax,ay, firm.color, 0.35, 1);
 
