@@ -898,6 +898,13 @@ function accountFundedPL(firmId, acct){
   if(accountType(acct)==='funded' && acct.fundedStartEquity!=null) return accountEquity(firmId, acct) - acct.fundedStartEquity;
   return 0;
 }
+function accountPhaseInfo(acct){
+  const funded = accountType(acct)==='funded' && acct.fundedStartEquity!=null;
+  return { baseline: funded ? acct.fundedStartEquity : acct.start, sinceTs: funded ? (acct.upgradedAt||0) : 0, funded };
+}
+function accountDisplayPL(firmId, acct){
+  return accountEquity(firmId, acct) - accountPhaseInfo(acct).baseline;
+}
 function firmEvalPL(firm){ return firm.accounts.reduce((s,a)=>s+accountEvalPL(firm.id,a),0); }
 function firmFundedPL(firm){ return firm.accounts.reduce((s,a)=>s+accountFundedPL(firm.id,a),0); }
 
@@ -1047,7 +1054,7 @@ function renderNetwork(){
         svgLine(lines, fx,fy,ax,ay, firm.color, 0.35, 1);
 
         const aEq = accountEquity(firm.id, a);
-        const aPl = aEq - a.start;
+        const aPl = accountDisplayPL(firm.id, a);
         const key = `${firm.id}::${a.id}`;
         const active = state.scope===key;
         const remaining = a.target>0 ? Math.max(0, a.target-aPl) : null;
@@ -1187,7 +1194,7 @@ function renderRules(s){
   const a = s.account;
   const items = [
     {name:'Daily Loss Limit', val:-s.dayPL, cap:a.dailyLoss, fmt:v=>fmt(-v)},
-    {name:'Max Drawdown', val: Math.max(0, a.start - s.equity), cap:a.maxDD, fmt:v=>fmt(v)},
+    {name:'Max Drawdown', val: Math.max(0, accountPhaseInfo(a).baseline - s.equity), cap:a.maxDD, fmt:v=>fmt(v)},
   ];
   let breach=false, warnMsg='';
   wrap.innerHTML = items.map(it=>{
@@ -1249,7 +1256,7 @@ function renderCore(s){
   const payoutBox = document.getElementById('corePayoutBox');
   if(s.account && s.account.target>0){
     payoutBox.style.display='block';
-    const progressPL = s.equity - s.account.start;
+    const progressPL = s.equity - accountPhaseInfo(s.account).baseline;
     const remaining = Math.max(0, s.account.target - progressPL);
     const pct = Math.min(100, Math.max(0,(progressPL/s.account.target)*100));
     document.getElementById('cpValue').textContent = remaining<=0 ? 'TARGET HIT 🎯' : fmt(remaining)+' TO GO';
@@ -1305,18 +1312,19 @@ document.getElementById('btnViewDash').addEventListener('click', ()=>{
 });
 
 function renderDashBody(firm, acct){
-  const entries = state.trades.filter(t=>t.firmId===firm.id && t.accountId===acct.id).sort((a,b)=>a.ts-b.ts);
+  const phase = accountPhaseInfo(acct);
+  const entries = state.trades.filter(t=>t.firmId===firm.id && t.accountId===acct.id && t.ts>=phase.sinceTs).sort((a,b)=>a.ts-b.ts);
   const wrap = document.getElementById('dashBody');
 
-  // running balance / drawdown series
-  let balance = acct.start, peak = acct.start;
+  // running balance / drawdown series — starts fresh from the funded baseline if upgraded
+  let balance = phase.baseline, peak = phase.baseline;
   const points = [{ts: entries.length?entries[0].ts-86400000:Date.now(), balance, floor: acct.maxDD>0?peak-acct.maxDD:null}];
   entries.forEach(e=>{
     balance += Number(e.pl||0);
     peak = Math.max(peak, balance);
     points.push({ts:e.ts, balance, floor: acct.maxDD>0 ? peak-acct.maxDD : null});
   });
-  const totalProfit = balance - acct.start;
+  const totalProfit = balance - phase.baseline;
 
   // daily buckets for calendar + highest profit day + trading days
   const dayMap = {};
@@ -1332,14 +1340,14 @@ function renderDashBody(firm, acct){
   wrap.innerHTML = `
     <div class="dash-head">
       <div>
-        <span class="dash-title">${acct.nickname}<span class="dash-badge">${firm.name}</span></span>
-        <div class="dash-meta">${lastEntry ? 'Last entry '+lastEntry.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : 'No entries yet'} · Started ${fmt(acct.start)}</div>
+        <span class="dash-title">${acct.nickname}<span class="dash-badge">${firm.name}</span><span class="dash-badge" style="background:${phase.funded?'rgba(255,215,0,0.15)':'rgba(0,234,255,0.15)'};color:${phase.funded?'var(--gold)':'var(--cyan)'};border-color:${phase.funded?'rgba(255,215,0,0.4)':'rgba(0,234,255,0.4)'};">${phase.funded?'FUNDED':'EVAL'}</span></span>
+        <div class="dash-meta">${lastEntry ? 'Last entry '+lastEntry.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : 'No entries yet'} · ${phase.funded?'Funded balance started at':'Started'} ${fmt(phase.baseline)}${phase.funded?' (eval P&L locked in separately)':''}</div>
       </div>
     </div>
 
     <div class="dash-section">
       <div class="dash-section-title">Balance vs Drawdown</div>
-      <div class="dash-chart-note">Trailing drawdown floor rises with new balance highs, based on your Max Drawdown setting.</div>
+      <div class="dash-chart-note">Trailing drawdown floor rises with new balance highs, based on your Max Drawdown setting.${phase.funded?' Chart reflects the funded phase only — eval history is preserved separately in the firm summary.':''}</div>
       <div class="dash-legend"><span><span class="leg-dot" style="background:var(--green);"></span>Balance</span>${acct.maxDD>0?'<span><span class="leg-dot" style="background:var(--red);"></span>Drawdown Floor</span>':''}</div>
       <div id="dashChartWrap"></div>
     </div>
@@ -1478,7 +1486,7 @@ function renderDrawerBody(firm){
 
   const cardsHtml = firm.accounts.map(a=>{
     const aEq = accountEquity(firm.id, a);
-    const aPl = aEq - a.start;
+    const aPl = accountDisplayPL(firm.id, a);
     const key = `${firm.id}::${a.id}`;
     const active = state.scope===key;
     const pct = a.target>0 ? Math.min(100,Math.max(0,(aPl/a.target)*100)) : 0;
@@ -1660,6 +1668,7 @@ function upgradeToFunded(firmId, acctId){
   if(!confirm(`Upgrade "${a.nickname}" to Funded?\n\nIts eval P&L will be locked in as history, and this firm's Funded defaults (risk limits, targets) will apply going forward. The account stays on the dashboard — nothing is deleted.`)) return;
   const currentEq = accountEquity(firmId, a);
   a.fundedStartEquity = currentEq;
+  a.upgradedAt = Date.now();
   a.type = 'funded';
   const fd = getFundedDefaults(firm);
   a.target = fd.target; a.dailyLoss = fd.dailyLoss; a.maxDD = fd.maxDD;
