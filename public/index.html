@@ -542,7 +542,7 @@ body::before{
       <div class="core-readout"><div class="eq" id="coreEquity">$0</div><div class="pl" id="corePL">$0.00 TODAY</div><div class="state" id="coreState">STANDING BY</div></div>
     </div>
     <div class="core-payout" id="corePayoutBox" style="display:none;">
-      <div class="cp-l">To Next Payout</div><div class="cp-v" id="cpValue">$0</div>
+      <div class="cp-l" id="cpLabel">To Next Payout</div><div class="cp-v" id="cpValue">$0</div>
       <div class="cp-bar"><div class="cp-bar-fill" id="cpBarFill"></div></div>
     </div>
     <button class="btn primary view-dash-btn" id="btnViewDash" style="display:none;">📊 VIEW FULL ACCOUNT DASHBOARD</button>
@@ -1224,7 +1224,8 @@ function renderNetwork(){
         an.style.setProperty('--ac', firm.color);
         an.style.setProperty('--pulsedur', pulseDurForProximity(aProx));
         an.style.left=(ax-38)+'px'; an.style.top=(ay-33)+'px';
-        an.innerHTML = `${isFunded?'<div class="an-badge">FUNDED</div>':''}<div class="an-name">${a.nickname}</div><div class="an-pl" style="color:${aPl>=0?'var(--green)':'var(--red)'}">${fmt(aPl)}</div><div class="an-payout">${remaining===null?'no target':(remaining<=0?'🎯 hit':fmt(remaining)+' left')}</div>`;
+        const statusText = remaining===null ? 'no target' : (remaining<=0 ? (isFunded?'🎯 payout ready':'✅ eval passed') : fmt(remaining)+(isFunded?' to payout':' to pass'));
+        an.innerHTML = `${isFunded?'<div class="an-badge">FUNDED</div>':''}<div class="an-name">${a.nickname}</div><div class="an-pl" style="color:${aPl>=0?'var(--green)':'var(--red)'}">${fmt(aPl)}</div><div class="an-payout">${statusText}</div>`;
         an.addEventListener('click', ()=>{ state.scope = key; save(); renderAll(); });
         stage.appendChild(an);
 
@@ -1417,10 +1418,12 @@ function renderCore(s){
   const payoutBox = document.getElementById('corePayoutBox');
   if(s.account && s.account.target>0){
     payoutBox.style.display='block';
+    const isFunded = accountType(s.account)==='funded';
     const progressPL = s.equity - accountPhaseInfo(s.account).baseline;
     const remaining = Math.max(0, s.account.target - progressPL);
     const pct = Math.min(100, Math.max(0,(progressPL/s.account.target)*100));
-    document.getElementById('cpValue').textContent = remaining<=0 ? 'TARGET HIT 🎯' : fmt(remaining)+' TO GO';
+    document.getElementById('cpLabel').textContent = isFunded ? 'To Next Payout' : 'To Pass Eval';
+    document.getElementById('cpValue').textContent = remaining<=0 ? (isFunded?'PAYOUT READY 🎯':'EVAL PASSED ✅') : fmt(remaining)+' TO GO';
     document.getElementById('cpBarFill').style.width = pct+'%';
     document.getElementById('cpBarFill').style.background = remaining<=0 ? 'var(--green)' : 'var(--cyan)';
   } else { payoutBox.style.display='none'; }
@@ -1632,7 +1635,9 @@ function renderDrawerBody(firm){
   const startSum = firm.accounts.reduce((s,a)=>s+a.start,0);
   const pl = eq - startSum;
   const totalTarget = firm.accounts.reduce((s,a)=>s+(a.target||0),0);
-  const totalRemaining = firm.accounts.reduce((s,a)=>{ const aPl = accountEquity(firm.id,a)-a.start; return s + Math.max(0,(a.target||0)-aPl); },0);
+  const totalRemaining = firm.accounts.reduce((s,a)=>{ const aPl = accountDisplayPL(firm.id,a); return s + Math.max(0,(a.target||0)-aPl); },0);
+  const evalRemaining = firm.accounts.filter(a=>accountType(a)!=='funded').reduce((s,a)=>{ const aPl = accountDisplayPL(firm.id,a); return s + Math.max(0,(a.target||0)-aPl); },0);
+  const fundedRemaining = firm.accounts.filter(a=>accountType(a)==='funded').reduce((s,a)=>{ const aPl = accountDisplayPL(firm.id,a); return s + Math.max(0,(a.target||0)-aPl); },0);
   const evalPL = firmEvalPL(firm);
   const fundedPL = firmFundedPL(firm);
   const fundedCount = firm.accounts.filter(a=>accountType(a)==='funded').length;
@@ -1642,7 +1647,8 @@ function renderDrawerBody(firm){
     <div class="fm-cell"><div class="v">${fmt(eq)}</div><div class="l">Firm Equity</div></div>
     <div class="fm-cell"><div class="v" style="color:${evalPL>=0?'var(--green)':'var(--red)'}">${fmt(evalPL)}</div><div class="l">Eval P&L</div></div>
     <div class="fm-cell"><div class="v" style="color:${fundedPL>=0?'var(--green)':'var(--red)'}">${fmt(fundedPL)}</div><div class="l">Funded P&L (${fundedCount})</div></div>
-    <div class="fm-cell"><div class="v">${fmt(totalRemaining)}</div><div class="l">To All Payouts</div></div>
+    <div class="fm-cell"><div class="v">${fmt(evalRemaining)}</div><div class="l">To Pass (Eval)</div></div>
+    <div class="fm-cell"><div class="v">${fmt(fundedRemaining)}</div><div class="l">To Payout (Funded)</div></div>
     <div class="fm-cell"><div class="v">${firm.blownCount||0}</div><div class="l">Accounts Blown</div></div>
   </div>`;
 
@@ -1665,7 +1671,7 @@ function renderDrawerBody(firm){
           <div class="acct-del" data-del-acct="${a.id}" title="Delete">🗑</div>
         </div></div>
       <div class="acct-stats"><div class="as"><span class="l">Balance</span>${fmt(aEq)}</div><div class="as"><span class="l">P&L</span><span style="color:${aPl>=0?'var(--green)':'var(--red)'}">${fmt(aPl)}</span></div></div>
-      ${a.target>0?`<div class="acct-bar"><div class="acct-bar-fill" style="width:${pct}%;background:${remaining<=0?'var(--green)':firm.color};"></div></div><div class="acct-payout" style="color:${remaining<=0?'var(--green)':'var(--bright)'}">${remaining<=0?'🎯 TARGET HIT':fmt(remaining)+' to payout'}</div>`:'<div class="acct-payout" style="color:var(--dim);">No target set</div>'}
+      ${a.target>0?`<div class="acct-bar"><div class="acct-bar-fill" style="width:${pct}%;background:${remaining<=0?'var(--green)':firm.color};"></div></div><div class="acct-payout" style="color:${remaining<=0?'var(--green)':'var(--bright)'}">${remaining<=0?(isFunded?'🎯 PAYOUT READY':'✅ EVAL PASSED'):fmt(remaining)+(isFunded?' to payout':' to pass')}</div>`:'<div class="acct-payout" style="color:var(--dim);">No target set</div>'}
     </div>`;
   }).join('');
 
