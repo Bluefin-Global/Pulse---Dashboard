@@ -35,6 +35,13 @@
 html,body{background:var(--void);color:var(--bright);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
 #starfield{position:fixed;inset:0;z-index:0;pointer-events:none;}
 .market-bg{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.9;}
+.et-clock{
+  position:fixed;left:22px;top:50%;transform:translateY(-50%);
+  writing-mode:vertical-rl;text-orientation:mixed;
+  font-family:var(--mono);font-size:13px;letter-spacing:4px;color:var(--dim);
+  z-index:1;pointer-events:none;user-select:none;
+}
+@media(max-width:1780px){.et-clock{display:none;}}
 body{position:relative;}
 .app{position:relative;z-index:1;}
 body::before{
@@ -146,7 +153,7 @@ body::before{
 .scope-chip-dot{width:6px;height:6px;border-radius:50%;}
 
 /* ---------- network stage ---------- */
-.network-panel{margin:18px 20px 6px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg, rgba(23,11,48,0.5), rgba(9,4,20,0.7));position:relative;overflow:hidden;}
+.network-panel{width:calc(100% - 40px);max-width:1680px;margin:18px auto 6px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg, rgba(23,11,48,0.5), rgba(9,4,20,0.7));position:relative;overflow:hidden;}
 .network-body{display:grid;grid-template-columns:220px 1fr 220px;}
 .network-sidebar{display:flex;flex-direction:column;border-right:1px solid var(--line);}
 .network-sidebar.right{border-right:none;border-left:1px solid var(--line);}
@@ -434,6 +441,7 @@ body::before{
 
 <canvas id="starfield"></canvas>
 <canvas id="marketBg" class="market-bg"></canvas>
+<div class="et-clock" id="etClock">ET --:--:--</div>
 <div class="app" id="appRoot" style="display:none;">
 
 <div class="topbar">
@@ -914,7 +922,12 @@ function scopeParts(){
 }
 
 /* ================= CLOCK ================= */
-function tickClock(){ document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US',{hour12:false}) + ' ET'; }
+function tickClock(){
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US',{hour12:false}) + ' ET';
+  const etTime = new Date().toLocaleTimeString('en-US',{hour12:false, timeZone:'America/New_York'});
+  const etEl = document.getElementById('etClock');
+  if(etEl) etEl.textContent = 'ET ' + etTime;
+}
 setInterval(tickClock,1000); tickClock();
 
 /* ================= HELPERS ================= */
