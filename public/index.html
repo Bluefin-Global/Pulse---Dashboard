@@ -241,6 +241,9 @@ body::before{
 
 .acct-node.funded{border-width:2px;box-shadow:0 0 16px color-mix(in srgb, var(--ac,var(--cyan)) 60%, transparent), 0 0 4px var(--gold) inset;}
 .acct-node .an-badge{position:absolute;top:-8px;right:-6px;font-size:9px;background:var(--gold);color:#1a1400;padding:1px 5px;border-radius:8px;font-family:var(--mono);font-weight:800;letter-spacing:0.5px;}
+.acct-node .an-badge.reserved{background:var(--amber);color:#3a2400;}
+.acct-node.reserved{border-color:var(--amber)!important;box-shadow:0 0 14px rgba(255,184,0,0.5)!important;}
+.node-icon.reserve:hover{border-color:var(--amber);color:var(--amber);}
 .node-icon.upgrade:hover{border-color:var(--gold);color:var(--gold);}
 .node-icon.blown:hover{border-color:var(--red);color:var(--red);}
 .node-icon.log:hover{border-color:var(--green);color:var(--green);}
@@ -996,7 +999,8 @@ function firmFundedPL(firm){ return firm.accounts.reduce((s,a)=>s+accountFundedP
 function accountProximity(firmId, acct){
   if(!acct.target || acct.target<=0) return 0;
   const eq = accountEquity(firmId, acct);
-  const pct = ((eq-acct.start)/acct.target)*100;
+  const baseline = accountPhaseInfo(acct).baseline;
+  const pct = ((eq-baseline)/acct.target)*100;
   return Math.max(0, Math.min(100, pct));
 }
 function firmProximity(firm){
@@ -1071,11 +1075,12 @@ function renderPayoutGauges(){
   const all = [];
   state.firms.forEach(f=>f.accounts.forEach(a=>{
     if(!a.target || a.target<=0) return;
+    if(accountType(a)!=='funded') return; // only real funded accounts count toward a payout
     all.push({ firm:f, acct:a, pct: accountProximity(f.id,a) });
   }));
   all.sort((a,b)=>b.pct-a.pct);
   const top = all.slice(0,3);
-  wrap.innerHTML = top.length===0 ? '<div class="empty" style="padding:0;">No targets set yet</div>' :
+  wrap.innerHTML = top.length===0 ? '<div class="empty" style="padding:0;">No funded accounts working toward a target yet</div>' :
     top.map(({firm,acct,pct})=>`
       <div class="gauge-row">
         <div class="gauge-ring" style="background:conic-gradient(${firm.color} calc(${pct}*1%), var(--line) 0);"><div class="gauge-ring-inner">${Math.round(pct)}%</div></div>
@@ -1218,14 +1223,20 @@ function renderNetwork(){
         const aProx = accountProximity(firm.id, a);
         const aHit = aProx>=100;
         const isFunded = accountType(a)==='funded';
+        const isReserved = !isFunded && !!a.reserved;
 
         const an = document.createElement('div');
-        an.className = 'acct-node' + (active?' active':'') + (aHit?' payout-hit':'') + (isFunded?' funded':'');
+        an.className = 'acct-node' + (active?' active':'') + (aHit?' payout-hit':'') + (isFunded?' funded':'') + (isReserved?' reserved':'');
         an.style.setProperty('--ac', firm.color);
         an.style.setProperty('--pulsedur', pulseDurForProximity(aProx));
         an.style.left=(ax-38)+'px'; an.style.top=(ay-33)+'px';
-        const statusText = remaining===null ? 'no target' : (remaining<=0 ? (isFunded?'🎯 payout ready':'✅ eval passed') : fmt(remaining)+(isFunded?' to payout':' to pass'));
-        an.innerHTML = `${isFunded?'<div class="an-badge">FUNDED</div>':''}<div class="an-name">${a.nickname}</div><div class="an-pl" style="color:${aPl>=0?'var(--green)':'var(--red)'}">${fmt(aPl)}</div><div class="an-payout">${statusText}</div>`;
+        let statusText;
+        if(remaining===null) statusText = 'no target';
+        else if(isReserved && remaining<=0) statusText = '🕓 ready — queued';
+        else if(remaining<=0) statusText = isFunded?'🎯 payout ready':'✅ eval passed';
+        else statusText = fmt(remaining)+(isFunded?' to payout':' to pass');
+        const badgeHtml = isFunded ? '<div class="an-badge">FUNDED</div>' : (isReserved ? '<div class="an-badge reserved">READY</div>' : '');
+        an.innerHTML = `${badgeHtml}<div class="an-name">${a.nickname}</div><div class="an-pl" style="color:${aPl>=0?'var(--green)':'var(--red)'}">${fmt(aPl)}</div><div class="an-payout">${statusText}</div>`;
         an.addEventListener('click', ()=>{ state.scope = key; save(); renderAll(); });
         stage.appendChild(an);
 
@@ -1242,6 +1253,15 @@ function renderNetwork(){
         aLog.innerHTML='💰'; aLog.title='Log P&L';
         aLog.addEventListener('click',(e)=>{ e.stopPropagation(); quickLogPL(firm.id, a.id); });
         stage.appendChild(aLog);
+
+        if(!isFunded){
+          const aReserve = document.createElement('div');
+          aReserve.className='node-icon reserve'; aReserve.style.left=(ax-8)+'px'; aReserve.style.top=(ay-46)+'px';
+          aReserve.style.width='16px'; aReserve.style.height='16px'; aReserve.style.fontSize='8px';
+          aReserve.innerHTML='🕓'; aReserve.title=isReserved?'Unmark Reserved':'Mark Ready (Reserved)';
+          aReserve.addEventListener('click',(e)=>{ e.stopPropagation(); toggleReserved(firm.id, a.id); });
+          stage.appendChild(aReserve);
+        }
 
         const aEdit = document.createElement('div');
         aEdit.className='node-icon'; aEdit.style.left=(ax+22)+'px'; aEdit.style.top=(ay-38)+'px';
@@ -1660,18 +1680,20 @@ function renderDrawerBody(firm){
     const pct = a.target>0 ? Math.min(100,Math.max(0,(aPl/a.target)*100)) : 0;
     const remaining = a.target>0 ? Math.max(0, a.target-aPl) : null;
     const isFunded = accountType(a)==='funded';
+    const isReserved = !isFunded && !!a.reserved;
     return `<div class="acct-card ${active?'active':''}" data-key="${key}">
-      <div class="acct-top"><div class="acct-name">${isFunded?'★ ':''}${a.nickname} <span style="color:var(--dim);font-size:9px;">${isFunded?'FUNDED':'EVAL'}</span></div>
+      <div class="acct-top"><div class="acct-name">${isFunded?'★ ':''}${a.nickname} <span style="color:${isReserved?'var(--amber)':'var(--dim)'};font-size:9px;">${isFunded?'FUNDED':(isReserved?'🕓 READY (RESERVED)':'EVAL')}</span></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
           <div class="acct-del" data-log-acct="${a.id}" title="Log P&L">💰</div>
           <div class="acct-del" data-view-acct="${a.id}" title="View dashboard">📊</div>
           <div class="acct-del" data-edit-acct="${a.id}" title="Edit">✎</div>
+          ${!isFunded?`<div class="acct-del" data-reserve-acct="${a.id}" title="${isReserved?'Unmark Reserved':'Mark Ready (Reserved)'}">🕓</div>`:''}
           ${!isFunded?`<div class="acct-del" data-upgrade-acct="${a.id}" title="Upgrade to Funded">⬆</div>`:''}
           <div class="acct-del" data-blown-acct="${a.id}" title="Mark blown">💥</div>
           <div class="acct-del" data-del-acct="${a.id}" title="Delete">🗑</div>
         </div></div>
       <div class="acct-stats"><div class="as"><span class="l">Balance</span>${fmt(aEq)}</div><div class="as"><span class="l">P&L</span><span style="color:${aPl>=0?'var(--green)':'var(--red)'}">${fmt(aPl)}</span></div></div>
-      ${a.target>0?`<div class="acct-bar"><div class="acct-bar-fill" style="width:${pct}%;background:${remaining<=0?'var(--green)':firm.color};"></div></div><div class="acct-payout" style="color:${remaining<=0?'var(--green)':'var(--bright)'}">${remaining<=0?(isFunded?'🎯 PAYOUT READY':'✅ EVAL PASSED'):fmt(remaining)+(isFunded?' to payout':' to pass')}</div>`:'<div class="acct-payout" style="color:var(--dim);">No target set</div>'}
+      ${a.target>0?`<div class="acct-bar"><div class="acct-bar-fill" style="width:${pct}%;background:${remaining<=0?(isReserved?'var(--amber)':'var(--green)'):firm.color};"></div></div><div class="acct-payout" style="color:${remaining<=0?(isReserved?'var(--amber)':'var(--green)'):'var(--bright)'}">${remaining<=0?(isReserved?'🕓 READY — QUEUED':(isFunded?'🎯 PAYOUT READY':'✅ EVAL PASSED')):fmt(remaining)+(isFunded?' to payout':' to pass')}</div>`:'<div class="acct-payout" style="color:var(--dim);">No target set</div>'}
     </div>`;
   }).join('');
 
@@ -1690,6 +1712,9 @@ function renderDrawerBody(firm){
   });
   wrap.querySelectorAll('[data-upgrade-acct]').forEach(el=>{
     el.addEventListener('click', (e)=>{ e.stopPropagation(); upgradeToFunded(firm.id, el.dataset.upgradeAcct); renderDrawerBody(firm); });
+  });
+  wrap.querySelectorAll('[data-reserve-acct]').forEach(el=>{
+    el.addEventListener('click', (e)=>{ e.stopPropagation(); toggleReserved(firm.id, el.dataset.reserveAcct); renderDrawerBody(firm); });
   });
   wrap.querySelectorAll('[data-blown-acct]').forEach(el=>{
     el.addEventListener('click', (e)=>{ e.stopPropagation(); blowAccount(firm.id, el.dataset.blownAcct); renderDrawerBody(firm); });
@@ -1818,7 +1843,7 @@ document.getElementById('btnSaveAccount').addEventListener('click', ()=>{
     pushFeed(`Account <b>${nickname}</b> updated`, firm.color);
     if(document.getElementById('drawer').classList.contains('show')) renderDrawerBody(firm);
   } else {
-    const acct = { id: uid(), type:'eval', fundedStartEquity:null, ...vals };
+    const acct = { id: uid(), type:'eval', fundedStartEquity:null, reserved:false, ...vals };
     firm.accounts.push(acct);
     state.expandedFirms[firm.id] = true;
     save(); closeModal('modalAccount');
@@ -1838,6 +1863,7 @@ function upgradeToFunded(firmId, acctId){
   a.fundedStartEquity = currentEq;
   a.upgradedAt = Date.now();
   a.type = 'funded';
+  a.reserved = false;
   const fd = getFundedDefaults(firm);
   a.target = fd.target; a.dailyLoss = fd.dailyLoss; a.maxDD = fd.maxDD;
   a.dailyTarget = fd.dailyTarget; a.weeklyPayout = fd.weeklyPayout;
@@ -1855,6 +1881,15 @@ function blowAccount(firmId, acctId){
   if(state.scope===key) state.scope='ALL';
   save(); renderAll();
   pushFeed(`💥 Account <b>${a.nickname}</b> blown — removed from ${firm.name}, history preserved`, firm.color);
+}
+function toggleReserved(firmId, acctId){
+  const firm = getFirm(firmId); const a = getAccount(firmId, acctId);
+  if(!firm || !a || accountType(a)==='funded') return;
+  a.reserved = !a.reserved;
+  save(); renderAll();
+  pushFeed(a.reserved
+    ? `🕓 <b>${a.nickname}</b> marked Ready (Reserved) — passed but waiting on a funded slot at ${firm.name}`
+    : `<b>${a.nickname}</b> no longer marked Reserved`, firm.color);
 }
 function quickLogPL(firmId, acctId){
   populateTradeFirmSelect();
