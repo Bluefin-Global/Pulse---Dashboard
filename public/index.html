@@ -1171,8 +1171,7 @@ function renderNetwork(){
     svgLine(lines, cx,cy,fx,fy, firm.color, 0.5, 1);
 
     const eq = firmEquity(firm);
-    const startSum = firm.accounts.reduce((s,a)=>s+a.start,0);
-    const pl = eq - startSum;
+    const pl = firm.accounts.reduce((s,a)=>s+accountDisplayPL(firm.id,a),0);
     const expanded = isExpanded(firm.id);
     const prox = firmProximity(firm);
     const hitPayout = firm.accounts.some(a=>accountProximity(firm.id,a)>=100);
@@ -1652,8 +1651,7 @@ document.getElementById('drawerEditFirm').addEventListener('click', ()=>{ if(dra
 function renderDrawerBody(firm){
   const wrap = document.getElementById('drawerBody');
   const eq = firmEquity(firm);
-  const startSum = firm.accounts.reduce((s,a)=>s+a.start,0);
-  const pl = eq - startSum;
+  const pl = firm.accounts.reduce((s,a)=>s+accountDisplayPL(firm.id,a),0);
   const totalTarget = firm.accounts.reduce((s,a)=>s+(a.target||0),0);
   const totalRemaining = firm.accounts.reduce((s,a)=>{ const aPl = accountDisplayPL(firm.id,a); return s + Math.max(0,(a.target||0)-aPl); },0);
   const evalRemaining = firm.accounts.filter(a=>accountType(a)!=='funded').reduce((s,a)=>{ const aPl = accountDisplayPL(firm.id,a); return s + Math.max(0,(a.target||0)-aPl); },0);
@@ -1663,7 +1661,7 @@ function renderDrawerBody(firm){
   const fundedCount = firm.accounts.filter(a=>accountType(a)==='funded').length;
 
   const metricsHtml = `<div class="firm-metrics">
-    <div class="fm-cell"><div class="v" style="color:${pl>=0?'var(--green)':'var(--red)'}">${fmt(pl)}</div><div class="l">Total P&L</div></div>
+    <div class="fm-cell"><div class="v" style="color:${pl>=0?'var(--green)':'var(--red)'}">${fmt(pl)}</div><div class="l">Current P&L</div></div>
     <div class="fm-cell"><div class="v">${fmt(eq)}</div><div class="l">Firm Equity</div></div>
     <div class="fm-cell"><div class="v" style="color:${evalPL>=0?'var(--green)':'var(--red)'}">${fmt(evalPL)}</div><div class="l">Eval P&L</div></div>
     <div class="fm-cell"><div class="v" style="color:${fundedPL>=0?'var(--green)':'var(--red)'}">${fmt(fundedPL)}</div><div class="l">Funded P&L (${fundedCount})</div></div>
