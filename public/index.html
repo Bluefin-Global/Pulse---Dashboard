@@ -1052,11 +1052,11 @@ function renderOverview(){
   let nearPayout = 0, alerts = 0;
   state.firms.forEach(f=>f.accounts.forEach(a=>{
     const pct = accountProximity(f.id, a);
-    if(pct>=80) nearPayout++;
+    if(accountType(a)==='funded' && pct>=80) nearPayout++;
     const eq = accountEquity(f.id, a);
     const todayPL = state.trades.filter(t=>t.firmId===f.id && t.accountId===a.id && isToday(t.ts)).reduce((s,t)=>s+Number(t.pl||0),0);
     if(a.dailyLoss>0 && -todayPL>=a.dailyLoss) alerts++;
-    if(a.maxDD>0 && Math.max(0,a.start-eq)>=a.maxDD) alerts++;
+    if(a.maxDD>0 && Math.max(0,accountPhaseInfo(a).baseline-eq)>=a.maxDD) alerts++;
   }));
   const cells = [
     {l:'Total Equity', v: fmt(totalEquity)},
@@ -1128,7 +1128,7 @@ function renderNetworkFooter(){
   const totalBlown = state.firms.reduce((s,f)=>s+(f.blownCount||0),0);
   let nearPayout = 0, alerts = 0;
   state.firms.forEach(f=>f.accounts.forEach(a=>{
-    if(accountProximity(f.id,a)>=80) nearPayout++;
+    if(accountType(a)==='funded' && accountProximity(f.id,a)>=80) nearPayout++;
     const eq = accountEquity(f.id, a);
     const todayPL = state.trades.filter(t=>t.firmId===f.id && t.accountId===a.id && isToday(t.ts)).reduce((s,t)=>s+Number(t.pl||0),0);
     if(a.dailyLoss>0 && -todayPL>=a.dailyLoss) alerts++;
