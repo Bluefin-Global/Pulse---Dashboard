@@ -147,6 +147,34 @@ body::before{
 
 /* ---------- network stage ---------- */
 .network-panel{margin:18px 20px 6px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg, rgba(23,11,48,0.5), rgba(9,4,20,0.7));position:relative;overflow:hidden;}
+.network-body{display:grid;grid-template-columns:220px 1fr 220px;}
+.network-sidebar{display:flex;flex-direction:column;border-right:1px solid var(--line);}
+.network-sidebar.right{border-right:none;border-left:1px solid var(--line);}
+.mini-widget{padding:12px;border-bottom:1px solid var(--line);flex:1;display:flex;flex-direction:column;min-height:0;}
+.mini-widget:last-child{border-bottom:none;}
+.mini-widget-title{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;margin-bottom:10px;}
+.gauge-row{display:flex;align-items:center;gap:9px;margin-bottom:10px;}
+.gauge-ring{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.gauge-ring-inner{width:28px;height:28px;border-radius:50%;background:#0d0620;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:8px;font-weight:700;}
+.gauge-label{font-family:var(--mono);font-size:9px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.gauge-sub{font-size:8px;color:var(--dim);}
+.mini-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.mini-cal-dow{font-family:var(--mono);font-size:7px;color:var(--dim);text-align:center;}
+.mini-cal-cell{aspect-ratio:1;border-radius:3px;background:rgba(255,255,255,0.03);}
+.mini-cal-cell.pos{background:rgba(0,255,163,0.35);}
+.mini-cal-cell.neg{background:rgba(255,45,110,0.35);}
+.mini-cal-cell.empty{visibility:hidden;}
+.lb-row{margin-bottom:10px;}
+.lb-top{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;margin-bottom:4px;}
+.lb-bar{height:7px;border-radius:4px;background:var(--line);overflow:hidden;}
+.lb-bar-fill{height:100%;border-radius:4px;}
+.network-footer{border-top:1px solid var(--line);padding:20px;text-align:center;}
+.nf-equity{font-family:var(--disp);font-weight:800;font-size:34px;text-shadow:0 0 24px rgba(0,255,163,0.4);color:var(--bright);}
+.nf-stats{display:flex;justify-content:center;gap:30px;margin-top:12px;flex-wrap:wrap;}
+.nf-stat{text-align:center;}
+.nf-stat .v{font-family:var(--mono);font-weight:700;font-size:16px;}
+.nf-stat .l{font-family:var(--mono);font-size:8px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-top:2px;}
+@media(max-width:1200px){.network-body{grid-template-columns:1fr;} .network-sidebar{flex-direction:row;flex-wrap:wrap;border-right:none;border-bottom:1px solid var(--line);} .network-sidebar.right{border-left:none;} .mini-widget{flex:1 1 280px;border-bottom:none;border-right:1px solid var(--line);}}
 .network-head{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line);}
 .network-head .title{font-family:var(--mono);font-size:10px;letter-spacing:2.5px;color:var(--dim);text-transform:uppercase;display:flex;align-items:center;gap:8px;}
 .network-head .title span.b{color:var(--bright);}
@@ -316,6 +344,7 @@ body::before{
 .feed-row{display:flex;gap:9px;padding:8px 0;border-bottom:1px solid var(--line);}
 .feed-row:last-child{border-bottom:none;}
 .feed-time{font-family:var(--mono);font-size:9px;color:var(--dim);width:42px;flex-shrink:0;padding-top:1px;}
+.feed-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px;}
 .feed-text{font-size:11px;color:var(--bright);line-height:1.4;}
 .feed-text b{color:var(--purple);}
 
@@ -435,11 +464,33 @@ body::before{
     <div class="title">◆ <span class="b">FIRM NETWORK</span> — click a node to select · ✎ to manage · glow brightens near payout</div>
     <span class="tag" id="firmCountTag">0 FIRMS</span>
   </div>
-  <div class="network-stage" id="networkStage">
-    <svg class="node-lines" id="nodeLines"></svg>
-    <div class="hub-ring"></div>
-    <div class="hub-ring r2"></div>
-    <div class="hub-node" id="hubNode"><div class="hl">NETWORK</div><div class="hv">◆</div><div class="hs">CORE</div></div>
+  <div class="network-body">
+    <div class="network-sidebar left">
+      <div class="mini-widget">
+        <div class="mini-widget-title">Payout Gauges</div>
+        <div id="payoutGauges"></div>
+      </div>
+    </div>
+    <div class="network-stage" id="networkStage">
+      <svg class="node-lines" id="nodeLines"></svg>
+      <div class="hub-ring"></div>
+      <div class="hub-ring r2"></div>
+      <div class="hub-node" id="hubNode"><div class="hl">NETWORK</div><div class="hv">◆</div><div class="hs">CORE</div></div>
+    </div>
+    <div class="network-sidebar right">
+      <div class="mini-widget">
+        <div class="mini-widget-title" id="miniCalTitle">This Month</div>
+        <div class="mini-cal-grid" id="miniCalGrid"></div>
+      </div>
+      <div class="mini-widget">
+        <div class="mini-widget-title">Firm Leaderboard</div>
+        <div id="firmLeaderboard"></div>
+      </div>
+    </div>
+  </div>
+  <div class="network-footer">
+    <div class="nf-equity" id="nfEquity">$0</div>
+    <div class="nf-stats" id="nfStats"></div>
   </div>
 </div>
 
@@ -868,10 +919,31 @@ setInterval(tickClock,1000); tickClock();
 
 /* ================= HELPERS ================= */
 function fmt(n){ const v=Number(n||0); return (v<0?'-':'')+'$'+Math.abs(v).toLocaleString('en-US',{maximumFractionDigits:0}); }
-function isToday(ts){ const d=new Date(ts), n=new Date(); return d.toDateString()===n.toDateString(); }
+function etParts(ts){
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone:'America/New_York', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', hourCycle:'h23'
+  }).formatToParts(new Date(ts));
+  const o = {};
+  parts.forEach(p=>{ if(p.type!=='literal') o[p.type]=p.value; });
+  return o;
+}
+function tradingDayDate(ts){
+  // Futures-style trading day: 6:00pm ET opens a session that runs through 5:00pm ET the next
+  // calendar day, Sunday evening through Friday close. Anything at/after 5:00pm ET rolls forward
+  // to the next trading day's label (matching how CME/prop-firm sessions are conventionally named).
+  const p = etParts(ts);
+  const hour = Number(p.hour);
+  let y = Number(p.year), mo = Number(p.month), da = Number(p.day);
+  if(hour>=17){
+    const tmp = new Date(Date.UTC(y, mo-1, da+1));
+    y = tmp.getUTCFullYear(); mo = tmp.getUTCMonth()+1; da = tmp.getUTCDate();
+  }
+  return new Date(y, mo-1, da); // local-time midnight — safe for toDateString() comparisons
+}
+function dayKey(ts){ return tradingDayDate(ts).toDateString(); }
+function isToday(ts){ return dayKey(ts)===dayKey(Date.now()); }
 function startOfWeek(){ const d=new Date(); const day=d.getDay(); const diff=(day===0?-6:1-day); d.setDate(d.getDate()+diff); d.setHours(0,0,0,0); return d; }
 function isThisWeek(ts){ return new Date(ts) >= startOfWeek(); }
-function dayKey(ts){ return new Date(ts).toDateString(); }
 
 function tradesInScope(){
   const sc = scopeParts();
@@ -978,6 +1050,78 @@ function renderOverview(){
     {l:'Active Alerts', v: alerts, hot: alerts>0},
   ];
   wrap.innerHTML = cells.map(c=>`<div class="ov-cell"><div class="ov-label">${c.l}</div><div class="ov-value ${c.hot?'hot':''}">${c.v}</div></div>`).join('');
+}
+
+/* ================= NETWORK SIDEBAR WIDGETS ================= */
+function renderPayoutGauges(){
+  const wrap = document.getElementById('payoutGauges');
+  const all = [];
+  state.firms.forEach(f=>f.accounts.forEach(a=>{
+    if(!a.target || a.target<=0) return;
+    all.push({ firm:f, acct:a, pct: accountProximity(f.id,a) });
+  }));
+  all.sort((a,b)=>b.pct-a.pct);
+  const top = all.slice(0,3);
+  wrap.innerHTML = top.length===0 ? '<div class="empty" style="padding:0;">No targets set yet</div>' :
+    top.map(({firm,acct,pct})=>`
+      <div class="gauge-row">
+        <div class="gauge-ring" style="background:conic-gradient(${firm.color} calc(${pct}*1%), var(--line) 0);"><div class="gauge-ring-inner">${Math.round(pct)}%</div></div>
+        <div style="min-width:0;"><div class="gauge-label">${acct.nickname}</div><div class="gauge-sub">${firm.name}</div></div>
+      </div>`).join('');
+}
+
+function renderMiniCalendar(){
+  const wrap = document.getElementById('miniCalGrid');
+  const now = new Date();
+  document.getElementById('miniCalTitle').textContent = now.toLocaleDateString('en-US',{month:'long'});
+  const dayMap = {};
+  state.trades.forEach(t=>{ const td=tradingDayDate(t.ts); if(td.getMonth()===now.getMonth() && td.getFullYear()===now.getFullYear()){ const k=td.toDateString(); dayMap[k]=(dayMap[k]||0)+Number(t.pl||0); } });
+  const first = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startDow = first.getDay();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+  let cells = ['S','M','T','W','T','F','S'].map(d=>`<div class="mini-cal-dow">${d}</div>`).join('');
+  for(let i=0;i<startDow;i++) cells += `<div class="mini-cal-cell empty"></div>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const dt = new Date(now.getFullYear(), now.getMonth(), d);
+    const pl = dayMap[dt.toDateString()];
+    const cls = pl>0?'pos':pl<0?'neg':'';
+    cells += `<div class="mini-cal-cell ${cls}" title="${dt.toDateString()}${pl?': '+fmt(pl):''}"></div>`;
+  }
+  wrap.innerHTML = cells;
+}
+
+function renderFirmLeaderboard(){
+  const wrap = document.getElementById('firmLeaderboard');
+  if(state.firms.length===0){ wrap.innerHTML = '<div class="empty" style="padding:0;">No firms yet</div>'; return; }
+  const rows = state.firms.map(f=>{
+    const withTargets = f.accounts.filter(a=>a.target>0);
+    const pct = withTargets.length ? withTargets.reduce((s,a)=>s+accountProximity(f.id,a),0)/withTargets.length : 0;
+    return { firm:f, pct };
+  }).sort((a,b)=>b.pct-a.pct);
+  wrap.innerHTML = rows.map(({firm,pct})=>`
+    <div class="lb-row">
+      <div class="lb-top"><span>${firm.name}</span><span style="color:${firm.color};">${Math.round(pct)}%</span></div>
+      <div class="lb-bar"><div class="lb-bar-fill" style="width:${pct}%;background:${firm.color};box-shadow:0 0 8px ${firm.color};"></div></div>
+    </div>`).join('');
+}
+
+function renderNetworkFooter(){
+  const totalAccounts = state.firms.reduce((s,f)=>s+f.accounts.length,0);
+  const totalBlown = state.firms.reduce((s,f)=>s+(f.blownCount||0),0);
+  let nearPayout = 0, alerts = 0;
+  state.firms.forEach(f=>f.accounts.forEach(a=>{
+    if(accountProximity(f.id,a)>=80) nearPayout++;
+    const eq = accountEquity(f.id, a);
+    const todayPL = state.trades.filter(t=>t.firmId===f.id && t.accountId===a.id && isToday(t.ts)).reduce((s,t)=>s+Number(t.pl||0),0);
+    if(a.dailyLoss>0 && -todayPL>=a.dailyLoss) alerts++;
+    if(a.maxDD>0 && Math.max(0,accountPhaseInfo(a).baseline-eq)>=a.maxDD) alerts++;
+  }));
+  document.getElementById('nfEquity').textContent = fmt(allEquity());
+  const stats = [
+    {l:'Firms', v: state.firms.length}, {l:'Accounts', v: totalAccounts},
+    {l:'Near Payout', v: nearPayout}, {l:'Blown', v: totalBlown}, {l:'Alerts', v: alerts},
+  ];
+  document.getElementById('nfStats').innerHTML = stats.map(s=>`<div class="nf-stat"><div class="v">${s.v}</div><div class="l">${s.l}</div></div>`).join('');
 }
 
 /* ================= RENDER: NETWORK ================= */
@@ -1102,7 +1246,7 @@ function renderNetwork(){
             firm.accounts = firm.accounts.filter(x=>x.id!==a.id);
             if(state.scope===key) state.scope='ALL';
             save(); renderAll();
-            pushFeed(`Account <b>${a.nickname}</b> removed from ${firm.name}`);
+            pushFeed(`Account <b>${a.nickname}</b> removed from ${firm.name}`, firm.color);
           }
         });
         stage.appendChild(aDel);
@@ -1172,7 +1316,7 @@ function render(){
       if(confirm(`Delete this ${fmt(t.pl)} entry? This cannot be undone.`)){
         state.trades = state.trades.filter(x=>x.id!==t.id);
         save(); renderAll();
-        pushFeed(`Entry ${fmt(t.pl)} deleted`);
+        pushFeed(`Entry ${fmt(t.pl)} deleted`, getFirm(t.firmId)?.color);
       }
     });
   });
@@ -1185,6 +1329,10 @@ function render(){
   renderCore(s);
   renderNetwork();
   renderScopeBar();
+  renderPayoutGauges();
+  renderMiniCalendar();
+  renderFirmLeaderboard();
+  renderNetworkFooter();
 }
 function renderAll(){ render(); }
 
@@ -1227,8 +1375,8 @@ function renderTargets(s){
     <div class="target-block"><div class="ring" style="--pct:${weekPct};--rc:${s.weekPL>=weeklyPayout && weeklyPayout>0 ? 'var(--green)':'var(--purple)'}"><div class="ring-inner"><div class="ring-pct">${Math.round(weekPct)}%</div></div></div>
       <div class="target-info"><div class="ti-label">Weekly Payout Goal</div><div class="ti-val">${fmt(s.weekPL)} of $<input class="ti-input" type="number" id="inpWeeklyPayout" value="${weeklyPayout}"></div><div class="ti-remain" style="color:${weekRemain<=0 && weeklyPayout>0?'var(--green)':'var(--dim)'}">${weekRemain<=0 && weeklyPayout>0 ? '🎯 Hit this week' : fmt(weekRemain)+' to go this week'}</div></div></div>
   </div>`;
-  document.getElementById('inpDailyTarget').addEventListener('change', (e)=>{ a.dailyTarget = Number(e.target.value||0); save(); renderAll(); pushFeed(`Daily target for <b>${a.nickname}</b> set to ${fmt(a.dailyTarget)}`); });
-  document.getElementById('inpWeeklyPayout').addEventListener('change', (e)=>{ a.weeklyPayout = Number(e.target.value||0); save(); renderAll(); pushFeed(`Weekly payout goal for <b>${a.nickname}</b> set to ${fmt(a.weeklyPayout)}`); });
+  document.getElementById('inpDailyTarget').addEventListener('change', (e)=>{ a.dailyTarget = Number(e.target.value||0); save(); renderAll(); pushFeed(`Daily target for <b>${a.nickname}</b> set to ${fmt(a.dailyTarget)}`, s.firm?s.firm.color:null); });
+  document.getElementById('inpWeeklyPayout').addEventListener('change', (e)=>{ a.weeklyPayout = Number(e.target.value||0); save(); renderAll(); pushFeed(`Weekly payout goal for <b>${a.nickname}</b> set to ${fmt(a.weeklyPayout)}`, s.firm?s.firm.color:null); });
 }
 
 /* ================= CORE VISUAL ================= */
@@ -1288,11 +1436,12 @@ function drawCore(){
 drawCore();
 
 /* ================= FEED ================= */
-function pushFeed(msg){
+function pushFeed(msg, color){
   const wrap = document.getElementById('feedList');
   const time = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false});
   const row = document.createElement('div'); row.className='feed-row';
-  row.innerHTML = `<div class="feed-time">${time}</div><div class="feed-text">${msg}</div>`;
+  const dot = color ? `<span class="feed-dot" style="background:${color};box-shadow:0 0 6px ${color};"></span>` : '';
+  row.innerHTML = `<div class="feed-time">${time}</div>${dot}<div class="feed-text">${msg}</div>`;
   wrap.prepend(row);
   while(wrap.children.length>25) wrap.removeChild(wrap.lastChild);
 }
@@ -1541,7 +1690,7 @@ function renderDrawerBody(firm){
         firm.accounts = firm.accounts.filter(x=>x.id!==el.dataset.delAcct);
         if(state.scope === `${firm.id}::${el.dataset.delAcct}`) state.scope='ALL';
         save(); renderDrawerBody(firm); renderAll();
-        pushFeed(`Account removed from <b>${firm.name}</b>`);
+        pushFeed(`Account removed from <b>${firm.name}</b>`, firm.color);
       }
     });
   });
@@ -1554,7 +1703,7 @@ document.getElementById('btnDeleteFirm').addEventListener('click', ()=>{
     state.firms = state.firms.filter(f=>f.id!==firm.id);
     if(state.scope.startsWith(firm.id+'::')) state.scope='ALL';
     save(); closeDrawer(); renderAll();
-    pushFeed(`Firm <b>${firm.name}</b> deleted`);
+    pushFeed(`Firm <b>${firm.name}</b> deleted`, firm.color);
   }
 });
 
@@ -1598,13 +1747,13 @@ document.getElementById('btnSaveFirm').addEventListener('click', ()=>{
     const firm = getFirm(editingFirmId);
     firm.name = name; firm.color = pickedColor;
     save(); closeModal('modalFirm'); renderAll();
-    pushFeed(`Firm renamed to <b>${name}</b>`);
+    pushFeed(`Firm renamed to <b>${name}</b>`, pickedColor);
     if(document.getElementById('drawer').classList.contains('show')) openDrawer(editingFirmId);
   } else {
     const firm = { id:uid(), name, color:pickedColor, accounts:[], evalDefaults:{...DEFAULT_EVAL_PARAMS}, fundedDefaults:{...DEFAULT_FUNDED_PARAMS}, blownCount:0 };
     state.firms.push(firm);
     save(); closeModal('modalFirm'); renderAll();
-    pushFeed(`Firm <b>${name}</b> added to network — click its node's ✎ to add an account`);
+    pushFeed(`Firm <b>${name}</b> added to network — click its node's ✎ to add an account`, pickedColor);
   }
 });
 
@@ -1647,7 +1796,7 @@ document.getElementById('btnSaveAccount').addEventListener('click', ()=>{
     const acct = getAccount(firm.id, editingAccountId);
     Object.assign(acct, vals);
     save(); closeModal('modalAccount'); renderAll();
-    pushFeed(`Account <b>${nickname}</b> updated`);
+    pushFeed(`Account <b>${nickname}</b> updated`, firm.color);
     if(document.getElementById('drawer').classList.contains('show')) renderDrawerBody(firm);
   } else {
     const acct = { id: uid(), type:'eval', fundedStartEquity:null, ...vals };
@@ -1656,7 +1805,7 @@ document.getElementById('btnSaveAccount').addEventListener('click', ()=>{
     save(); closeModal('modalAccount');
     state.scope = `${firm.id}::${acct.id}`; save();
     renderAll();
-    pushFeed(`Account <b>${nickname}</b> added to ${firm.name}`);
+    pushFeed(`Account <b>${nickname}</b> added to ${firm.name}`, firm.color);
     if(document.getElementById('drawer').classList.contains('show')) renderDrawerBody(firm);
   }
 });
@@ -1675,7 +1824,7 @@ function upgradeToFunded(firmId, acctId){
   a.dailyTarget = fd.dailyTarget; a.weeklyPayout = fd.weeklyPayout;
   a.consistencyCap = fd.consistencyCap; a.minDays = fd.minDays;
   save(); renderAll();
-  pushFeed(`🎉 <b>${a.nickname}</b> upgraded to Funded at ${firm.name}`);
+  pushFeed(`🎉 <b>${a.nickname}</b> upgraded to Funded at ${firm.name}`, firm.color);
 }
 function blowAccount(firmId, acctId){
   const firm = getFirm(firmId); const a = getAccount(firmId, acctId);
@@ -1686,7 +1835,7 @@ function blowAccount(firmId, acctId){
   const key = `${firmId}::${acctId}`;
   if(state.scope===key) state.scope='ALL';
   save(); renderAll();
-  pushFeed(`💥 Account <b>${a.nickname}</b> blown — removed from ${firm.name}, history preserved`);
+  pushFeed(`💥 Account <b>${a.nickname}</b> blown — removed from ${firm.name}, history preserved`, firm.color);
 }
 function quickLogPL(firmId, acctId){
   populateTradeFirmSelect();
@@ -1732,7 +1881,7 @@ document.getElementById('btnSaveFirmDefaults').addEventListener('click', ()=>{
     consistencyCap: Number(document.getElementById('fdConsistency').value||0), minDays: Number(document.getElementById('fdMinDays').value||0),
   };
   save(); closeModal('modalFirmDefaults');
-  pushFeed(`Default parameters updated for <b>${firm.name}</b>`);
+  pushFeed(`Default parameters updated for <b>${firm.name}</b>`, firm.color);
 });
 
 function populateTradeFirmSelect(){
@@ -1787,7 +1936,7 @@ document.getElementById('btnSaveTrade').addEventListener('click', ()=>{
     const t = state.trades.find(x=>x.id===editingTradeId);
     if(t){ t.firmId=firmId; t.accountId=accountId; t.pl=pl; t.notes=notes; }
     save();
-    pushFeed(`Entry updated to ${fmt(pl)}`);
+    pushFeed(`Entry updated to ${fmt(pl)}`, getFirm(firmId)?.color);
     closeModal('modalTrade');
     editingTradeId = null;
     renderAll();
@@ -1796,7 +1945,7 @@ document.getElementById('btnSaveTrade').addEventListener('click', ()=>{
   const t = { id: uid(), firmId, accountId, status:'closed', pl, notes, ts: Date.now() };
   state.trades.push(t);
   save();
-  pushFeed(`${fmt(t.pl)} logged`);
+  pushFeed(`${fmt(t.pl)} logged`, getFirm(firmId)?.color);
   closeModal('modalTrade');
   ['fPL','fNotes'].forEach(id=>document.getElementById(id).value='');
   renderAll();
@@ -1842,7 +1991,7 @@ document.getElementById('cmdBar').addEventListener('keydown', (e)=>{
     const pl = Number(raw);
     state.trades.push({ id: uid(), firmId: sc.firmId, accountId: sc.acctId, status:'closed', pl, notes:'via command bar', ts: Date.now() });
     save(); renderAll();
-    pushFeed(`${fmt(pl)} logged via command`);
+    pushFeed(`${fmt(pl)} logged via command`, getFirm(sc.firmId)?.color);
     e.target.value='';
     return;
   }
