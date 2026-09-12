@@ -923,8 +923,8 @@ function scopeParts(){
 
 /* ================= CLOCK ================= */
 function tickClock(){
-  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US',{hour12:false}) + ' ET';
-  const etTime = new Date().toLocaleTimeString('en-US',{hour12:false, timeZone:'America/New_York'});
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US',{hour12:true}) + ' ET';
+  const etTime = new Date().toLocaleTimeString('en-US',{hour12:true, timeZone:'America/New_York'});
   const etEl = document.getElementById('etClock');
   if(etEl) etEl.textContent = 'ET ' + etTime;
 }
@@ -1451,7 +1451,7 @@ drawCore();
 /* ================= FEED ================= */
 function pushFeed(msg, color){
   const wrap = document.getElementById('feedList');
-  const time = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false});
+  const time = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
   const row = document.createElement('div'); row.className='feed-row';
   const dot = color ? `<span class="feed-dot" style="background:${color};box-shadow:0 0 6px ${color};"></span>` : '';
   row.innerHTML = `<div class="feed-time">${time}</div>${dot}<div class="feed-text">${msg}</div>`;
