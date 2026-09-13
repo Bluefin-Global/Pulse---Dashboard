@@ -175,10 +175,13 @@ body::before{
 .calc-net .l{font-size:8px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;font-family:var(--mono);}
 .calc-net .v{font-family:var(--disp);font-weight:800;font-size:20px;color:var(--green);text-shadow:0 0 12px rgba(0,255,163,0.5);margin-top:2px;}
 @keyframes calcNetPulse{0%,100%{box-shadow:0 0 10px rgba(0,255,163,0.25);border-color:var(--green);}50%{box-shadow:0 0 24px rgba(0,255,163,0.6);border-color:#8dffda;}}
-.calc-widget{position:relative;border:1px solid transparent;border-radius:8px;animation:calcWidgetGlow 3.2s ease-in-out infinite;}
+.calc-widget{position:relative;border:1px solid transparent;border-radius:8px;animation:calcWidgetGlow 3.2s ease-in-out infinite;overflow:hidden;}
 @keyframes calcWidgetGlow{0%,100%{box-shadow:0 0 0 rgba(168,85,255,0);}50%{box-shadow:0 0 18px rgba(168,85,255,0.18) inset;}}
-.calc-brain{display:inline-block;animation:brainPulse 1.8s ease-in-out infinite;filter:drop-shadow(0 0 3px var(--pink));}
-@keyframes brainPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.25);}}
+.calc-brain-bg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;overflow:hidden;}
+.bb-brain{font-size:170px;line-height:1;opacity:0.13;filter:drop-shadow(0 0 22px var(--purple)) saturate(0.6);animation:bbBrainPulse 4.5s ease-in-out infinite;}
+.bb-dollar{position:absolute;font-family:var(--disp);font-weight:800;font-size:56px;color:var(--green);text-shadow:0 0 26px rgba(0,255,163,0.9), 0 0 50px rgba(0,255,163,0.5);animation:bbDollarPulse 2.6s ease-in-out infinite;}
+@keyframes bbBrainPulse{0%,100%{transform:scale(1);opacity:0.11;}50%{transform:scale(1.08);opacity:0.19;}}
+@keyframes bbDollarPulse{0%,100%{transform:scale(1);opacity:0.5;}50%{transform:scale(1.18);opacity:0.8;}}
 .calc-row:nth-child(1) .v{color:var(--cyan);text-shadow:0 0 6px rgba(0,234,255,0.5);}
 .calc-row:nth-child(2) .v{color:var(--purple);text-shadow:0 0 6px rgba(168,85,255,0.5);}
 .calc-row:nth-child(3) .v{color:var(--pink);text-shadow:0 0 6px rgba(255,45,212,0.5);}
@@ -502,14 +505,15 @@ body::before{
         <div id="payoutGauges"></div>
       </div>
       <div class="mini-widget calc-widget">
-        <div class="mini-widget-title"><span class="calc-brain">🧠</span> Payout Projection Calculator</div>
-        <div class="calc-grid">
+        <div class="calc-brain-bg"><span class="bb-brain">🧠</span><span class="bb-dollar">$</span></div>
+        <div class="mini-widget-title" style="position:relative;z-index:1;">Payout Projection Calculator</div>
+        <div class="calc-grid" style="position:relative;z-index:1;">
           <div class="calc-field"><label>Daily Goal ($)</label><input type="number" id="calcDaily" class="ti-input" style="width:100%;"></div>
           <div class="calc-field"><label>Days / Week</label><input type="number" id="calcDays" class="ti-input" style="width:100%;"></div>
           <div class="calc-field"><label># Funded Accts</label><input type="number" id="calcAccts" class="ti-input" style="width:100%;"></div>
           <div class="calc-field"><label>Firm Keeps (%)</label><input type="number" id="calcCut" class="ti-input" style="width:100%;"></div>
         </div>
-        <div id="calcOutput"></div>
+        <div id="calcOutput" style="position:relative;z-index:1;"></div>
       </div>
     </div>
     <div class="network-stage" id="networkStage">
