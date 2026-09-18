@@ -213,15 +213,12 @@ body::before{
 .node-lines line{stroke-dasharray:3 4;animation:dashflow 3s linear infinite;}
 @keyframes dashflow{to{stroke-dashoffset:-70;}}
 
-.hub-node{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:118px;height:118px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 35% 30%, rgba(168,85,255,0.55), rgba(20,8,45,0.9) 72%);border:1px solid rgba(168,85,255,0.6);box-shadow:0 0 34px rgba(168,85,255,0.5), inset 0 0 20px rgba(168,85,255,0.25);cursor:default;z-index:5;animation:hubPulse 4s ease-in-out infinite;text-align:center;}
-@keyframes hubPulse{0%,100%{transform:translate(-50%,-50%) scale(1);box-shadow:0 0 28px rgba(168,85,255,0.4), inset 0 0 16px rgba(168,85,255,0.18);}50%{transform:translate(-50%,-50%) scale(1.07);box-shadow:0 0 52px rgba(168,85,255,0.8), inset 0 0 26px rgba(168,85,255,0.32);}}
 .hub-ring{position:absolute;left:50%;top:50%;width:150px;height:150px;margin-left:-75px;margin-top:-75px;border-radius:50%;border:1.5px dashed rgba(168,85,255,0.45);z-index:4;animation:hubSpin 16s linear infinite;pointer-events:none;}
 .hub-ring.r2{width:172px;height:172px;margin-left:-86px;margin-top:-86px;border-color:rgba(0,234,255,0.3);animation:hubSpinRev 24s linear infinite;}
 @keyframes hubSpin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
 @keyframes hubSpinRev{from{transform:rotate(360deg);}to{transform:rotate(0deg);}}
-.hub-node .hl{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:#e2c8ff;text-transform:uppercase;}
-.hub-node .hv{font-family:var(--disp);font-weight:800;font-size:16px;margin-top:4px;color:#fff;}
-.hub-node .hs{font-family:var(--mono);font-size:9px;margin-top:2px;}
+.hub-mesh-wrap{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:180px;height:180px;z-index:5;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+.hub-mesh-label{position:absolute;font-family:var(--mono);font-size:9px;letter-spacing:2px;color:#e2c8ff;text-transform:uppercase;text-shadow:0 0 8px rgba(0,0,0,0.8);}
 
 .firm-node{position:absolute;width:96px;height:84px;clip-path:polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0% 50%);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s;z-index:4;border:1px solid var(--fc,var(--cyan));background:linear-gradient(160deg, color-mix(in srgb, var(--fc,var(--cyan)) 26%, #0d0620), rgba(9,4,20,0.92));box-shadow:0 0 18px color-mix(in srgb, var(--fc,var(--cyan)) 55%, transparent);animation:nodePulse var(--pulsedur,4s) ease-in-out infinite;}
 .firm-node:hover{transform:scale(1.08);}
@@ -520,7 +517,10 @@ body::before{
       <svg class="node-lines" id="nodeLines"></svg>
       <div class="hub-ring"></div>
       <div class="hub-ring r2"></div>
-      <div class="hub-node" id="hubNode"><div class="hl">NETWORK</div><div class="hv">◆</div><div class="hs">CORE</div></div>
+      <div class="hub-mesh-wrap" id="hubMeshWrap">
+        <canvas id="meshCanvas" width="180" height="180"></canvas>
+        <div class="hub-mesh-label">NETWORK</div>
+      </div>
     </div>
     <div class="network-sidebar right">
       <div class="mini-widget">
@@ -585,8 +585,13 @@ body::before{
     <button class="btn primary view-dash-btn" id="btnViewDash" style="display:none;">📊 VIEW FULL ACCOUNT DASHBOARD</button>
     <div class="core-sub" id="coreSub">Pulse reflects account discipline — steady and slow when in control, fast and red under stress</div>
 
-    <div class="core-label" style="margin-top:24px;">NEURAL MESH</div>
-    <canvas id="meshCanvas" width="320" height="220" style="max-width:100%;"></canvas>
+    <div class="core-label" style="margin-top:24px;">NETWORK CORE</div>
+    <div class="core-name" id="netCoreName">PORTFOLIO CALM</div>
+    <div class="core-wrap" style="width:190px;height:190px;">
+      <canvas id="netCoreCanvas" width="190" height="190"></canvas>
+      <div class="core-readout"><div class="pl" id="netCorePL" style="font-size:20px;">$0 TODAY</div></div>
+    </div>
+    <div class="core-sub">Whole-portfolio pulse — reflects every account combined, not just the one selected above</div>
 
     <div class="cmd-bar-wrap">
       <input type="text" id="cmdBar" class="cmd-bar" placeholder="Quick command — e.g. +125, -80, reset, add firm">
@@ -1430,6 +1435,7 @@ function render(){
   renderRules(s);
   renderTargets(s);
   renderCore(s);
+  renderNetCore();
   renderNetwork();
   renderScopeBar();
   renderPayoutGauges();
@@ -1484,17 +1490,46 @@ function renderTargets(s){
 }
 
 /* ================= CORE VISUAL ================= */
-const canvas = document.getElementById('coreCanvas');
-const ctx = canvas.getContext('2d');
-let particles = [];
-for(let i=0;i<46;i++){ particles.push({baseAng:Math.random()*Math.PI*2, rad:60+Math.random()*45, speed:0.0015+Math.random()*0.002, wob:Math.random()*Math.PI*2}); }
-let coreColor={r:168,g:85,b:255}, pulseSpeed=0.02, t=0;
 function hexToRgb(pl){ if(pl>0) return {r:0,g:255,b:163}; if(pl<0) return {r:255,g:45,b:110}; return {r:168,g:85,b:255}; }
 
+function makeOrb(canvasEl){
+  const ctx = canvasEl.getContext('2d');
+  const particles = [];
+  for(let i=0;i<46;i++){ particles.push({baseAng:Math.random()*Math.PI*2, rad:60+Math.random()*45, speed:0.0015+Math.random()*0.002, wob:Math.random()*Math.PI*2}); }
+  const state = { color:{r:168,g:85,b:255}, pulseSpeed:0.02, t:0 };
+  const s = canvasEl.width/260; // scale factor relative to the original 260px design
+  function draw(){
+    const w=canvasEl.width,h=canvasEl.height,cx=w/2,cy=h/2;
+    ctx.clearRect(0,0,w,h);
+    state.t += state.pulseSpeed;
+    const pulse = 1+Math.sin(state.t)*0.06;
+    const coreR = 46*s*pulse;
+    const {r,g,b} = state.color;
+    for(let i=0;i<3;i++){ ctx.beginPath(); ctx.arc(cx,cy,(70+i*28)*s,0,Math.PI*2); ctx.strokeStyle=`rgba(${r},${g},${b},${0.12-i*0.02})`; ctx.lineWidth=1; ctx.stroke(); }
+    particles.forEach(p=>{
+      const ang = p.baseAng + state.t*p.speed*30;
+      const wob = Math.sin(state.t*0.7+p.wob)*6*s;
+      const x = cx+Math.cos(ang)*(p.rad*s+wob), y=cy+Math.sin(ang)*(p.rad*s+wob);
+      ctx.beginPath(); ctx.arc(x,y,1.4,0,Math.PI*2); ctx.fillStyle=`rgba(${r},${g},${b},0.6)`; ctx.fill();
+    });
+    const grad = ctx.createRadialGradient(cx,cy,0,cx,cy,coreR);
+    grad.addColorStop(0,`rgba(${r},${g},${b},0.95)`); grad.addColorStop(0.5,`rgba(${r},${g},${b},0.35)`); grad.addColorStop(1,`rgba(${r},${g},${b},0)`);
+    ctx.beginPath(); ctx.arc(cx,cy,coreR,0,Math.PI*2); ctx.fillStyle=grad; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx,cy,coreR*0.32,0,Math.PI*2); ctx.fillStyle='rgba(255,255,255,0.9)';
+    ctx.shadowColor=`rgba(${r},${g},${b},1)`; ctx.shadowBlur=22*s; ctx.fill(); ctx.shadowBlur=0;
+    requestAnimationFrame(draw);
+  }
+  draw();
+  return state;
+}
+
+const coreOrb = makeOrb(document.getElementById('coreCanvas'));
+const netCoreOrb = makeOrb(document.getElementById('netCoreCanvas'));
+
 function renderCore(s){
-  coreColor = hexToRgb(s.dayPL);
+  coreOrb.color = hexToRgb(s.dayPL);
   const breach = document.getElementById('alertBanner').classList.contains('show');
-  pulseSpeed = breach?0.09:(s.dayPL<0?0.045:0.02);
+  coreOrb.pulseSpeed = breach?0.09:(s.dayPL<0?0.045:0.02);
   document.getElementById('coreEquity').textContent = fmt(s.equity);
   const plEl = document.getElementById('corePL');
   plEl.textContent = fmt(s.dayPL)+' TODAY';
@@ -1518,28 +1553,19 @@ function renderCore(s){
     document.getElementById('cpBarFill').style.background = remaining<=0 ? 'var(--green)' : 'var(--cyan)';
   } else { payoutBox.style.display='none'; }
 }
-function drawCore(){
-  const w=canvas.width,h=canvas.height,cx=w/2,cy=h/2;
-  ctx.clearRect(0,0,w,h);
-  t += pulseSpeed;
-  const pulse = 1+Math.sin(t)*0.06;
-  const coreR = 46*pulse;
-  const {r,g,b} = coreColor;
-  for(let i=0;i<3;i++){ ctx.beginPath(); ctx.arc(cx,cy,70+i*28,0,Math.PI*2); ctx.strokeStyle=`rgba(${r},${g},${b},${0.12-i*0.02})`; ctx.lineWidth=1; ctx.stroke(); }
-  particles.forEach(p=>{
-    const ang = p.baseAng + t*p.speed*30;
-    const wob = Math.sin(t*0.7+p.wob)*6;
-    const x = cx+Math.cos(ang)*(p.rad+wob), y=cy+Math.sin(ang)*(p.rad+wob);
-    ctx.beginPath(); ctx.arc(x,y,1.4,0,Math.PI*2); ctx.fillStyle=`rgba(${r},${g},${b},0.6)`; ctx.fill();
-  });
-  const grad = ctx.createRadialGradient(cx,cy,0,cx,cy,coreR);
-  grad.addColorStop(0,`rgba(${r},${g},${b},0.95)`); grad.addColorStop(0.5,`rgba(${r},${g},${b},0.35)`); grad.addColorStop(1,`rgba(${r},${g},${b},0)`);
-  ctx.beginPath(); ctx.arc(cx,cy,coreR,0,Math.PI*2); ctx.fillStyle=grad; ctx.fill();
-  ctx.beginPath(); ctx.arc(cx,cy,coreR*0.32,0,Math.PI*2); ctx.fillStyle='rgba(255,255,255,0.9)';
-  ctx.shadowColor=`rgba(${r},${g},${b},1)`; ctx.shadowBlur=22; ctx.fill(); ctx.shadowBlur=0;
-  requestAnimationFrame(drawCore);
+
+function renderNetCore(){
+  const allTodayPL = state.trades.filter(t=>isToday(t.ts)).reduce((s,t)=>s+Number(t.pl||0),0);
+  netCoreOrb.color = hexToRgb(allTodayPL);
+  netCoreOrb.pulseSpeed = allTodayPL<0 ? 0.07 : 0.02;
+  const nameEl = document.getElementById('netCoreName');
+  if(allTodayPL<0){ nameEl.textContent='PORTFOLIO STRESSED'; nameEl.style.color='var(--red)'; }
+  else if(allTodayPL>0){ nameEl.textContent='PORTFOLIO POSITIVE'; nameEl.style.color='var(--green)'; }
+  else { nameEl.textContent='PORTFOLIO CALM'; nameEl.style.color='var(--bright)'; }
+  const plEl = document.getElementById('netCorePL');
+  plEl.textContent = fmt(allTodayPL)+' TODAY';
+  plEl.style.color = allTodayPL>0?'var(--green)':allTodayPL<0?'var(--red)':'var(--dim)';
 }
-drawCore();
 
 /* ================= FEED ================= */
 function pushFeed(msg, color){
@@ -2121,38 +2147,38 @@ document.getElementById('cmdBar').addEventListener('keydown', (e)=>{
   pushFeed(`Unrecognized command: "${raw}"`);
 });
 
-/* ================= NEURAL MESH ================= */
+/* ================= NEURAL MESH (now the Firm Network's central hub visual) ================= */
 const meshCanvas = document.getElementById('meshCanvas');
 const meshCtx = meshCanvas.getContext('2d');
 let meshPoints = [];
-const MESH_N = 55;
+const MESH_N = 50;
 for(let i=0;i<MESH_N;i++){
   const theta = Math.acos(2*Math.random()-1);
   const phi = Math.random()*Math.PI*2;
-  meshPoints.push({theta, phi, r: 70 + Math.random()*10});
+  meshPoints.push({theta, phi, r: 42 + Math.random()*6});
 }
 let meshT = 0;
 function drawMesh(){
   const w = meshCanvas.width, h = meshCanvas.height, cx=w/2, cy=h/2;
   meshCtx.clearRect(0,0,w,h);
   meshT += 0.004;
-  const {r:cr,g:cg,b:cb} = coreColor;
+  const {r:cr,g:cg,b:cb} = netCoreOrb.color;
   const proj = meshPoints.map(p=>{
     const phi = p.phi + meshT;
     const x3 = p.r * Math.sin(p.theta) * Math.cos(phi);
     const y3 = p.r * Math.cos(p.theta);
     const z3 = p.r * Math.sin(p.theta) * Math.sin(phi);
-    const scale = 1 / (1 + (z3/220));
-    return { x: cx + x3*scale*1.6, y: cy + y3*scale*0.85, z: z3, s: scale };
+    const scale = 1 / (1 + (z3/140));
+    return { x: cx + x3*scale, y: cy + y3*scale, z: z3, s: scale };
   });
   for(let i=0;i<proj.length;i++){
     for(let j=i+1;j<proj.length;j++){
       const dx=proj[i].x-proj[j].x, dy=proj[i].y-proj[j].y;
       const dist = Math.sqrt(dx*dx+dy*dy);
-      if(dist<34){
+      if(dist<22){
         meshCtx.beginPath();
         meshCtx.moveTo(proj[i].x, proj[i].y); meshCtx.lineTo(proj[j].x, proj[j].y);
-        meshCtx.strokeStyle = `rgba(${cr},${cg},${cb},${0.14*(1-dist/34)})`;
+        meshCtx.strokeStyle = `rgba(${cr},${cg},${cb},${0.16*(1-dist/22)})`;
         meshCtx.lineWidth=0.7;
         meshCtx.stroke();
       }
@@ -2160,8 +2186,8 @@ function drawMesh(){
   }
   proj.sort((a,b)=>a.z-b.z).forEach(p=>{
     meshCtx.beginPath();
-    meshCtx.arc(p.x, p.y, 1.6*p.s, 0, Math.PI*2);
-    meshCtx.fillStyle = `rgba(${cr},${cg},${cb},${0.5+0.4*p.s})`;
+    meshCtx.arc(p.x, p.y, 1.4*p.s, 0, Math.PI*2);
+    meshCtx.fillStyle = `rgba(${cr},${cg},${cb},${0.55+0.4*p.s})`;
     meshCtx.fill();
   });
   requestAnimationFrame(drawMesh);
