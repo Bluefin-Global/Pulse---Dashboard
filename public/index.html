@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<!-- saved from url=(0057)file:///C:/Users/Kyle/Downloads/pulse-firebase%20(4).html -->
-<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<html lang="en">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PULSE — Trading Command Bridge</title>
-<link rel="icon" type="image/x-icon" href="file:///C:/Users/Kyle/Downloads/favicon.ico">
-<link rel="icon" type="image/png" sizes="32x32" href="file:///C:/Users/Kyle/Downloads/favicon-32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="file:///C:/Users/Kyle/Downloads/icon-192.png">
-<link rel="apple-touch-icon" sizes="180x180" href="file:///C:/Users/Kyle/Downloads/apple-touch-icon.png">
-<link rel="manifest" href="file:///C:/Users/Kyle/Downloads/manifest.json">
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#05000f">
-<link rel="preconnect" href="https://fonts.googleapis.com/">
-<link href="./pulse-firebase (1)_files/css2" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
 <style>
 :root{
   --void:#05000f;
@@ -454,7 +454,7 @@ body::before{
 </style>
 </head>
 <body>
-<div class="loading-overlay hide" id="loadingOverlay"><div class="lo-orb"></div><div class="lo-text">Loading Pulse...</div></div>
+<div class="loading-overlay" id="loadingOverlay"><div class="lo-orb"></div><div class="lo-text">Loading Pulse...</div></div>
 
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card">
@@ -470,44 +470,44 @@ body::before{
   </div>
 </div>
 
-<canvas id="starfield" width="1536" height="695"></canvas>
-<canvas id="marketBg" class="market-bg" width="1536" height="695"></canvas>
-<div class="et-clock" id="etClock">ET 11:44:08 PM</div>
-<div class="app" id="appRoot" style="">
+<canvas id="starfield"></canvas>
+<canvas id="marketBg" class="market-bg"></canvas>
+<div class="et-clock" id="etClock">ET --:--:--</div>
+<div class="app" id="appRoot" style="display:none;">
 
 <div class="topbar">
   <div class="brand"><div class="brand-mark"></div><div class="brand-text"><div class="t1">PULSE</div><div class="t2">TRADING COMMAND BRIDGE</div></div>
     <div class="brand-badges"><span class="brand-badge"><span class="bdot"></span>Online</span><span class="brand-badge"><span class="bdot"></span>Synced</span><span class="brand-badge"><span class="bdot"></span>Encrypted</span></div>
   </div>
   <div class="top-actions">
-    <span class="clock" id="clock">11:44:08 PM ET</span>
+    <span class="clock" id="clock">--:--:--</span>
     <button class="btn" id="btnAddFirmTop">+ FIRM</button>
     <button class="btn danger" id="btnClearData">↺ RESET</button>
-    <button class="btn primary" id="btnAddTrade">+ LOG P&amp;L</button>
+    <button class="btn primary" id="btnAddTrade">+ LOG P&L</button>
     <button class="btn" id="btnLogout">⎋ LOG OUT</button>
   </div>
 </div>
 
-<div class="overview-strip" id="overviewStrip"><div class="ov-cell"><div class="ov-label">Total Equity</div><div class="ov-value ">$775,953</div></div><div class="ov-cell"><div class="ov-label">Today's P&amp;L</div><div class="ov-value hot">$16,828</div></div><div class="ov-cell"><div class="ov-label">Firms</div><div class="ov-value ">5</div></div><div class="ov-cell"><div class="ov-label">Accounts</div><div class="ov-value ">15</div></div><div class="ov-cell"><div class="ov-label">Near Payout</div><div class="ov-value ">0</div></div><div class="ov-cell"><div class="ov-label">Active Alerts</div><div class="ov-value ">0</div></div></div>
+<div class="overview-strip" id="overviewStrip"></div>
 
 <div class="alert-banner" id="alertBanner"><span class="alert-dot"></span><span id="alertText">RISK RULE BREACHED</span></div>
 
 <div class="scope-bar" id="scopeBar">
   <span class="scope-label">Viewing:</span>
-  <div class="scope-pill" data-scope="ALL" id="scopeAll">◆ All Accounts</div>
-  <div id="scopePills" style="display:flex;gap:8px;flex-wrap:wrap;"><div class="scope-pill active"><span class="scope-chip-dot" style="background:#00ffa3;box-shadow:0 0 6px #00ffa3;"></span>Lucid · Eval #693</div><div class="scope-pill"><span class="scope-chip-dot" style="background:#00ffa3;box-shadow:0 0 6px #00ffa3;"></span>Lucid · Eval #689</div><div class="scope-pill"><span class="scope-chip-dot" style="background:#00ffa3;box-shadow:0 0 6px #00ffa3;"></span>Lucid · Eval #690</div><div class="scope-pill"><span class="scope-chip-dot" style="background:#00ffa3;box-shadow:0 0 6px #00ffa3;"></span>Lucid · Eval #691</div><div class="scope-pill"><span class="scope-chip-dot" style="background:#00ffa3;box-shadow:0 0 6px #00ffa3;"></span>Lucid · Eval #692</div><div class="scope-pill"><span class="scope-chip-dot" style="background:#ffd23d;box-shadow:0 0 6px #ffd23d;"></span>Tradeify · Eva;l #504</div><div class="scope-pill"><span class="scope-chip-dot" style="background:#ffd23d;box-shadow:0 0 6px #ffd23d;"></span>Tradeify · Eval #596</div><div class="scope-pill"><span class="scope-chip-dot" style="background:#ffd23d;box-shadow:0 0 6px #ffd23d;"></span>Tradeify · Eval #898</div><div class="scope-pill"><span class="scope-chip-dot" style="background:#ffd23d;box-shadow:0 0 6px #ffd23d;"></span>Tradeify · Eval #949</div><div class="scope-pill"><span class="scope-chip-dot" style="background:#ffd23d;box-shadow:0 0 6px #ffd23d;"></span>Tradeify · Eval #468</div><div class="scope-pill"><span class="scope-chip-dot" style="background:#00eaff;box-shadow:0 0 6px #00eaff;"></span>FundedNext · Eval #174</div><div class="scope-pill"><span class="scope-chip-dot" style="background:#00eaff;box-shadow:0 0 6px #00eaff;"></span>FundedNext · Eval #100</div><div class="scope-pill"><span class="scope-chip-dot" style="background:#00eaff;box-shadow:0 0 6px #00eaff;"></span>FundedNext · Eval #227</div><div class="scope-pill"><span class="scope-chip-dot" style="background:#00eaff;box-shadow:0 0 6px #00eaff;"></span>FundedNext · Eval #042</div><div class="scope-pill"><span class="scope-chip-dot" style="background:#00eaff;box-shadow:0 0 6px #00eaff;"></span>FundedNext · Eval #558</div></div>
+  <div class="scope-pill active" data-scope="ALL" id="scopeAll">◆ All Accounts</div>
+  <div id="scopePills" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
 </div>
 
 <div class="network-panel">
   <div class="network-head">
     <div class="title">◆ <span class="b">FIRM NETWORK</span> — click a node to select · ✎ to manage · glow brightens near payout</div>
-    <span class="tag" id="firmCountTag">5 FIRMS</span>
+    <span class="tag" id="firmCountTag">0 FIRMS</span>
   </div>
   <div class="network-body">
     <div class="network-sidebar left">
       <div class="mini-widget">
         <div class="mini-widget-title">Payout Gauges</div>
-        <div id="payoutGauges"><div class="empty" style="padding:0;">No funded accounts working toward a target yet</div></div>
+        <div id="payoutGauges"></div>
       </div>
       <div class="mini-widget calc-widget">
         <div class="calc-brain-bg"><span class="bb-brain">🧠</span><span class="bb-dollar">$</span></div>
@@ -518,59 +518,32 @@ body::before{
           <div class="calc-field"><label># Funded Accts</label><input type="number" id="calcAccts" class="ti-input" style="width:100%;"></div>
           <div class="calc-field"><label>Firm Keeps (%)</label><input type="number" id="calcCut" class="ti-input" style="width:100%;"></div>
         </div>
-        <div id="calcOutput" style="position:relative;z-index:1;" class="calc-flash">
-    <div class="calc-row"><span class="l">Per Account / Week</span><span class="v">$1,000</span></div>
-    <div class="calc-row"><span class="l">Per Account / 2 Weeks</span><span class="v">$2,000</span></div>
-    <div class="calc-row"><span class="l">Per Account / Month</span><span class="v">$4,000</span></div>
-    <div class="calc-row"><span class="l">Total Gross / Month</span><span class="v">$60,000</span></div>
-    <div class="calc-row"><span class="l">Firm Cut (10%)</span><span class="v" style="color:var(--red);">-$6,000</span></div>
-    <div class="calc-net"><div class="l">Your Net / Month</div><div class="v">$54,000</div></div>
-  </div>
+        <div id="calcOutput" style="position:relative;z-index:1;"></div>
       </div>
     </div>
     <div class="network-stage" id="networkStage">
-      <svg class="node-lines" id="nodeLines" width="909" height="640"><line x1="454.5" y1="320" x2="454.5" y2="200" stroke="#00ffa3" stroke-width="1" opacity="0.5"></line><line x1="454.5" y1="200" x2="351.29919563343867" y2="142.78467007790016" stroke="#00ffa3" stroke-width="1" opacity="0.35"></line><line x1="454.5" y1="200" x2="413.5" y2="89.35190918953911" stroke="#00ffa3" stroke-width="1" opacity="0.35"></line><line x1="454.5" y1="200" x2="495.5" y2="89.35190918953911" stroke="#00ffa3" stroke-width="1" opacity="0.35"></line><line x1="454.5" y1="200" x2="557.7008043665613" y2="142.78467007790016" stroke="#00ffa3" stroke-width="1" opacity="0.35"></line><line x1="454.5" y1="200" x2="454.5" y2="-16" stroke="#00ffa3" stroke-width="1" opacity="0.35"></line><line x1="454.5" y1="320" x2="558.4230484541326" y2="260" stroke="#ffd23d" stroke-width="1" opacity="0.5"></line><line x1="558.4230484541326" y1="260" x2="556.3725754692983" y2="142.01781676651993" stroke="#ffd23d" stroke-width="1" opacity="0.35"></line><line x1="558.4230484541326" y1="260" x2="633.7471059762393" y2="169.16891303960756" stroke="#ffd23d" stroke-width="1" opacity="0.35"></line><line x1="558.4230484541326" y1="260" x2="674.7471059762393" y2="240.1829961499315" stroke="#ffd23d" stroke-width="1" opacity="0.35"></line><line x1="558.4230484541326" y1="260" x2="659.5733798358597" y2="320.7668533113802" stroke="#ffd23d" stroke-width="1" opacity="0.35"></line><line x1="558.4230484541326" y1="260" x2="745.4845356715714" y2="152" stroke="#ffd23d" stroke-width="1" opacity="0.35"></line><line x1="454.5" y1="320" x2="558.4230484541326" y2="380" stroke="#ff8a3d" stroke-width="1" opacity="0.5"></line><line x1="454.5" y1="320" x2="454.5" y2="440" stroke="#ffd23d" stroke-width="1" opacity="0.5"></line><line x1="454.5" y1="320" x2="350.57695154586736" y2="380.00000000000006" stroke="#00eaff" stroke-width="1" opacity="0.5"></line><line x1="350.57695154586736" y1="380.00000000000006" x2="352.62742453070166" y2="497.9821832334801" stroke="#00eaff" stroke-width="1" opacity="0.35"></line><line x1="350.57695154586736" y1="380.00000000000006" x2="275.25289402376075" y2="470.8310869603925" stroke="#00eaff" stroke-width="1" opacity="0.35"></line><line x1="350.57695154586736" y1="380.00000000000006" x2="234.25289402376075" y2="399.81700385006855" stroke="#00eaff" stroke-width="1" opacity="0.35"></line><line x1="350.57695154586736" y1="380.00000000000006" x2="249.42662016414027" y2="319.23314668861985" stroke="#00eaff" stroke-width="1" opacity="0.35"></line><line x1="350.57695154586736" y1="380.00000000000006" x2="163.51546432842864" y2="488.0000000000001" stroke="#00eaff" stroke-width="1" opacity="0.35"></line><line x1="454.5" y1="320" x2="350.57695154586736" y2="260" stroke="#3a2a5e" stroke-width="1" opacity="0.4"></line></svg>
+      <svg class="node-lines" id="nodeLines"></svg>
       <div class="hub-ring"></div>
       <div class="hub-ring r2"></div>
       <div class="hub-mesh-wrap" id="hubMeshWrap">
         <canvas id="meshCanvas" width="180" height="180"></canvas>
         <div class="hub-mesh-label">NETWORK</div>
       </div>
-    <div class="firm-node" style="--fc: #00ffa3; --pulsedur: 2.68s; left: 406.5px; top: 158px;"><div class="fn-name">Lucid</div><div class="fn-val" style="color:var(--green)">$7,543</div><div class="fn-acct">5 accts ▾</div></div><div class="node-icon" title="Edit firm / manage accounts" style="left: 484.5px; top: 154px;">✎</div><div class="acct-node active" style="--ac: #00ffa3; --pulsedur: 2.69s; left: 313.299px; top: 109.785px;"><div class="an-name">Eval #693</div><div class="an-pl" style="color:var(--green)">$1,509</div><div class="an-payout">$1,491 to pass</div></div><div class="node-icon view" title="View dashboard" style="left: 313.299px; top: 104.785px; width: 16px; height: 16px; font-size: 8px;">📊</div><div class="node-icon log" title="Log P&amp;L" style="left: 313.299px; top: 162.785px; width: 16px; height: 16px; font-size: 8px;">💰</div><div class="node-icon reserve" title="Mark Ready (Reserved)" style="left: 343.299px; top: 96.7847px; width: 16px; height: 16px; font-size: 8px;">🕓</div><div class="node-icon" title="Edit account" style="left: 373.299px; top: 104.785px; width: 16px; height: 16px; font-size: 8px;">✎</div><div class="node-icon del" title="Delete account" style="left: 373.299px; top: 162.785px; width: 16px; height: 16px; font-size: 8px;">×</div><div class="acct-node" style="--ac: #00ffa3; --pulsedur: 2.69s; left: 375.5px; top: 56.3519px;"><div class="an-name">Eval #689</div><div class="an-pl" style="color:var(--green)">$1,505</div><div class="an-payout">$1,495 to pass</div></div><div class="node-icon view" title="View dashboard" style="left: 375.5px; top: 51.3519px; width: 16px; height: 16px; font-size: 8px;">📊</div><div class="node-icon log" title="Log P&amp;L" style="left: 375.5px; top: 109.352px; width: 16px; height: 16px; font-size: 8px;">💰</div><div class="node-icon reserve" title="Mark Ready (Reserved)" style="left: 405.5px; top: 43.3519px; width: 16px; height: 16px; font-size: 8px;">🕓</div><div class="node-icon" title="Edit account" style="left: 435.5px; top: 51.3519px; width: 16px; height: 16px; font-size: 8px;">✎</div><div class="node-icon del" title="Delete account" style="left: 435.5px; top: 109.352px; width: 16px; height: 16px; font-size: 8px;">×</div><div class="acct-node" style="--ac: #00ffa3; --pulsedur: 2.69s; left: 457.5px; top: 56.3519px;"><div class="an-name">Eval #690</div><div class="an-pl" style="color:var(--green)">$1,511</div><div class="an-payout">$1,489 to pass</div></div><div class="node-icon view" title="View dashboard" style="left: 457.5px; top: 51.3519px; width: 16px; height: 16px; font-size: 8px;">📊</div><div class="node-icon log" title="Log P&amp;L" style="left: 457.5px; top: 109.352px; width: 16px; height: 16px; font-size: 8px;">💰</div><div class="node-icon reserve" title="Mark Ready (Reserved)" style="left: 487.5px; top: 43.3519px; width: 16px; height: 16px; font-size: 8px;">🕓</div><div class="node-icon" title="Edit account" style="left: 517.5px; top: 51.3519px; width: 16px; height: 16px; font-size: 8px;">✎</div><div class="node-icon del" title="Delete account" style="left: 517.5px; top: 109.352px; width: 16px; height: 16px; font-size: 8px;">×</div><div class="acct-node" style="--ac: #00ffa3; --pulsedur: 2.68s; left: 519.701px; top: 109.785px;"><div class="an-name">Eval #691</div><div class="an-pl" style="color:var(--green)">$1,513</div><div class="an-payout">$1,487 to pass</div></div><div class="node-icon view" title="View dashboard" style="left: 519.701px; top: 104.785px; width: 16px; height: 16px; font-size: 8px;">📊</div><div class="node-icon log" title="Log P&amp;L" style="left: 519.701px; top: 162.785px; width: 16px; height: 16px; font-size: 8px;">💰</div><div class="node-icon reserve" title="Mark Ready (Reserved)" style="left: 549.701px; top: 96.7847px; width: 16px; height: 16px; font-size: 8px;">🕓</div><div class="node-icon" title="Edit account" style="left: 579.701px; top: 104.785px; width: 16px; height: 16px; font-size: 8px;">✎</div><div class="node-icon del" title="Delete account" style="left: 579.701px; top: 162.785px; width: 16px; height: 16px; font-size: 8px;">×</div><div class="acct-node" style="--ac: #00ffa3; --pulsedur: 2.69s; left: 416.5px; top: -49px;"><div class="an-name">Eval #692</div><div class="an-pl" style="color:var(--green)">$1,505</div><div class="an-payout">$1,495 to pass</div></div><div class="node-icon view" title="View dashboard" style="left: 416.5px; top: -54px; width: 16px; height: 16px; font-size: 8px;">📊</div><div class="node-icon log" title="Log P&amp;L" style="left: 416.5px; top: 4px; width: 16px; height: 16px; font-size: 8px;">💰</div><div class="node-icon reserve" title="Mark Ready (Reserved)" style="left: 446.5px; top: -62px; width: 16px; height: 16px; font-size: 8px;">🕓</div><div class="node-icon" title="Edit account" style="left: 476.5px; top: -54px; width: 16px; height: 16px; font-size: 8px;">✎</div><div class="node-icon del" title="Delete account" style="left: 476.5px; top: 4px; width: 16px; height: 16px; font-size: 8px;">×</div><div class="firm-node" style="--fc: #ffd23d; --pulsedur: 2.09s; left: 510.423px; top: 218px;"><div class="fn-name">Tradeify</div><div class="fn-val" style="color:var(--green)">$10,050</div><div class="fn-acct">5 accts ▾</div></div><div class="node-icon" title="Edit firm / manage accounts" style="left: 588.423px; top: 214px;">✎</div><div class="acct-node" style="--ac: #ffd23d; --pulsedur: 2.09s; left: 518.373px; top: 109.018px;"><div class="an-name">Eva;l #504</div><div class="an-pl" style="color:var(--green)">$2,010</div><div class="an-payout">$990 to pass</div></div><div class="node-icon view" title="View dashboard" style="left: 518.373px; top: 104.018px; width: 16px; height: 16px; font-size: 8px;">📊</div><div class="node-icon log" title="Log P&amp;L" style="left: 518.373px; top: 162.018px; width: 16px; height: 16px; font-size: 8px;">💰</div><div class="node-icon reserve" title="Mark Ready (Reserved)" style="left: 548.373px; top: 96.0178px; width: 16px; height: 16px; font-size: 8px;">🕓</div><div class="node-icon" title="Edit account" style="left: 578.373px; top: 104.018px; width: 16px; height: 16px; font-size: 8px;">✎</div><div class="node-icon del" title="Delete account" style="left: 578.373px; top: 162.018px; width: 16px; height: 16px; font-size: 8px;">×</div><div class="acct-node" style="--ac: #ffd23d; --pulsedur: 2.09s; left: 595.747px; top: 136.169px;"><div class="an-name">Eval #596</div><div class="an-pl" style="color:var(--green)">$2,010</div><div class="an-payout">$990 to pass</div></div><div class="node-icon view" title="View dashboard" style="left: 595.747px; top: 131.169px; width: 16px; height: 16px; font-size: 8px;">📊</div><div class="node-icon log" title="Log P&amp;L" style="left: 595.747px; top: 189.169px; width: 16px; height: 16px; font-size: 8px;">💰</div><div class="node-icon reserve" title="Mark Ready (Reserved)" style="left: 625.747px; top: 123.169px; width: 16px; height: 16px; font-size: 8px;">🕓</div><div class="node-icon" title="Edit account" style="left: 655.747px; top: 131.169px; width: 16px; height: 16px; font-size: 8px;">✎</div><div class="node-icon del" title="Delete account" style="left: 655.747px; top: 189.169px; width: 16px; height: 16px; font-size: 8px;">×</div><div class="acct-node" style="--ac: #ffd23d; --pulsedur: 2.09s; left: 636.747px; top: 207.183px;"><div class="an-name">Eval #898</div><div class="an-pl" style="color:var(--green)">$2,010</div><div class="an-payout">$990 to pass</div></div><div class="node-icon view" title="View dashboard" style="left: 636.747px; top: 202.183px; width: 16px; height: 16px; font-size: 8px;">📊</div><div class="node-icon log" title="Log P&amp;L" style="left: 636.747px; top: 260.183px; width: 16px; height: 16px; font-size: 8px;">💰</div><div class="node-icon reserve" title="Mark Ready (Reserved)" style="left: 666.747px; top: 194.183px; width: 16px; height: 16px; font-size: 8px;">🕓</div><div class="node-icon" title="Edit account" style="left: 696.747px; top: 202.183px; width: 16px; height: 16px; font-size: 8px;">✎</div><div class="node-icon del" title="Delete account" style="left: 696.747px; top: 260.183px; width: 16px; height: 16px; font-size: 8px;">×</div><div class="acct-node" style="--ac: #ffd23d; --pulsedur: 2.09s; left: 621.573px; top: 287.767px;"><div class="an-name">Eval #949</div><div class="an-pl" style="color:var(--green)">$2,010</div><div class="an-payout">$990 to pass</div></div><div class="node-icon view" title="View dashboard" style="left: 621.573px; top: 282.767px; width: 16px; height: 16px; font-size: 8px;">📊</div><div class="node-icon log" title="Log P&amp;L" style="left: 621.573px; top: 340.767px; width: 16px; height: 16px; font-size: 8px;">💰</div><div class="node-icon reserve" title="Mark Ready (Reserved)" style="left: 651.573px; top: 274.767px; width: 16px; height: 16px; font-size: 8px;">🕓</div><div class="node-icon" title="Edit account" style="left: 681.573px; top: 282.767px; width: 16px; height: 16px; font-size: 8px;">✎</div><div class="node-icon del" title="Delete account" style="left: 681.573px; top: 340.767px; width: 16px; height: 16px; font-size: 8px;">×</div><div class="acct-node" style="--ac: #ffd23d; --pulsedur: 2.09s; left: 707.485px; top: 119px;"><div class="an-name">Eval #468</div><div class="an-pl" style="color:var(--green)">$2,010</div><div class="an-payout">$990 to pass</div></div><div class="node-icon view" title="View dashboard" style="left: 707.485px; top: 114px; width: 16px; height: 16px; font-size: 8px;">📊</div><div class="node-icon log" title="Log P&amp;L" style="left: 707.485px; top: 172px; width: 16px; height: 16px; font-size: 8px;">💰</div><div class="node-icon reserve" title="Mark Ready (Reserved)" style="left: 737.485px; top: 106px; width: 16px; height: 16px; font-size: 8px;">🕓</div><div class="node-icon" title="Edit account" style="left: 767.485px; top: 114px; width: 16px; height: 16px; font-size: 8px;">✎</div><div class="node-icon del" title="Delete account" style="left: 767.485px; top: 172px; width: 16px; height: 16px; font-size: 8px;">×</div><div class="firm-node" style="--fc: #ff8a3d; --pulsedur: 4.50s; left: 510.423px; top: 338px;"><div class="fn-name">TPT</div><div class="fn-val" style="color:var(--green)">$0</div><div class="fn-acct">0 accts ▾</div></div><div class="node-icon" title="Edit firm / manage accounts" style="left: 588.423px; top: 334px;">✎</div><div class="firm-node" style="--fc: #ffd23d; --pulsedur: 4.50s; left: 406.5px; top: 398px;"><div class="fn-name">FutureElite</div><div class="fn-val" style="color:var(--green)">$0</div><div class="fn-acct">0 accts ▾</div></div><div class="node-icon" title="Edit firm / manage accounts" style="left: 484.5px; top: 394px;">✎</div><div class="firm-node" style="--fc: #00eaff; --pulsedur: 2.09s; left: 302.577px; top: 338px;"><div class="fn-name">FundedNext</div><div class="fn-val" style="color:var(--green)">$8,360</div><div class="fn-acct">5 accts ▾</div></div><div class="node-icon" title="Edit firm / manage accounts" style="left: 380.577px; top: 334px;">✎</div><div class="acct-node" style="--ac: #00eaff; --pulsedur: 2.09s; left: 314.627px; top: 464.982px;"><div class="an-name">Eval #174</div><div class="an-pl" style="color:var(--green)">$1,672</div><div class="an-payout">$828 to pass</div></div><div class="node-icon view" title="View dashboard" style="left: 314.627px; top: 459.982px; width: 16px; height: 16px; font-size: 8px;">📊</div><div class="node-icon log" title="Log P&amp;L" style="left: 314.627px; top: 517.982px; width: 16px; height: 16px; font-size: 8px;">💰</div><div class="node-icon reserve" title="Mark Ready (Reserved)" style="left: 344.627px; top: 451.982px; width: 16px; height: 16px; font-size: 8px;">🕓</div><div class="node-icon" title="Edit account" style="left: 374.627px; top: 459.982px; width: 16px; height: 16px; font-size: 8px;">✎</div><div class="node-icon del" title="Delete account" style="left: 374.627px; top: 517.982px; width: 16px; height: 16px; font-size: 8px;">×</div><div class="acct-node" style="--ac: #00eaff; --pulsedur: 2.09s; left: 237.253px; top: 437.831px;"><div class="an-name">Eval #100</div><div class="an-pl" style="color:var(--green)">$1,672</div><div class="an-payout">$828 to pass</div></div><div class="node-icon view" title="View dashboard" style="left: 237.253px; top: 432.831px; width: 16px; height: 16px; font-size: 8px;">📊</div><div class="node-icon log" title="Log P&amp;L" style="left: 237.253px; top: 490.831px; width: 16px; height: 16px; font-size: 8px;">💰</div><div class="node-icon reserve" title="Mark Ready (Reserved)" style="left: 267.253px; top: 424.831px; width: 16px; height: 16px; font-size: 8px;">🕓</div><div class="node-icon" title="Edit account" style="left: 297.253px; top: 432.831px; width: 16px; height: 16px; font-size: 8px;">✎</div><div class="node-icon del" title="Delete account" style="left: 297.253px; top: 490.831px; width: 16px; height: 16px; font-size: 8px;">×</div><div class="acct-node" style="--ac: #00eaff; --pulsedur: 2.09s; left: 196.253px; top: 366.817px;"><div class="an-name">Eval #227</div><div class="an-pl" style="color:var(--green)">$1,672</div><div class="an-payout">$828 to pass</div></div><div class="node-icon view" title="View dashboard" style="left: 196.253px; top: 361.817px; width: 16px; height: 16px; font-size: 8px;">📊</div><div class="node-icon log" title="Log P&amp;L" style="left: 196.253px; top: 419.817px; width: 16px; height: 16px; font-size: 8px;">💰</div><div class="node-icon reserve" title="Mark Ready (Reserved)" style="left: 226.253px; top: 353.817px; width: 16px; height: 16px; font-size: 8px;">🕓</div><div class="node-icon" title="Edit account" style="left: 256.253px; top: 361.817px; width: 16px; height: 16px; font-size: 8px;">✎</div><div class="node-icon del" title="Delete account" style="left: 256.253px; top: 419.817px; width: 16px; height: 16px; font-size: 8px;">×</div><div class="acct-node" style="--ac: #00eaff; --pulsedur: 2.09s; left: 211.427px; top: 286.233px;"><div class="an-name">Eval #042</div><div class="an-pl" style="color:var(--green)">$1,672</div><div class="an-payout">$828 to pass</div></div><div class="node-icon view" title="View dashboard" style="left: 211.427px; top: 281.233px; width: 16px; height: 16px; font-size: 8px;">📊</div><div class="node-icon log" title="Log P&amp;L" style="left: 211.427px; top: 339.233px; width: 16px; height: 16px; font-size: 8px;">💰</div><div class="node-icon reserve" title="Mark Ready (Reserved)" style="left: 241.427px; top: 273.233px; width: 16px; height: 16px; font-size: 8px;">🕓</div><div class="node-icon" title="Edit account" style="left: 271.427px; top: 281.233px; width: 16px; height: 16px; font-size: 8px;">✎</div><div class="node-icon del" title="Delete account" style="left: 271.427px; top: 339.233px; width: 16px; height: 16px; font-size: 8px;">×</div><div class="acct-node" style="--ac: #00eaff; --pulsedur: 2.09s; left: 125.515px; top: 455px;"><div class="an-name">Eval #558</div><div class="an-pl" style="color:var(--green)">$1,672</div><div class="an-payout">$828 to pass</div></div><div class="node-icon view" title="View dashboard" style="left: 125.515px; top: 450px; width: 16px; height: 16px; font-size: 8px;">📊</div><div class="node-icon log" title="Log P&amp;L" style="left: 125.515px; top: 508px; width: 16px; height: 16px; font-size: 8px;">💰</div><div class="node-icon reserve" title="Mark Ready (Reserved)" style="left: 155.515px; top: 442px; width: 16px; height: 16px; font-size: 8px;">🕓</div><div class="node-icon" title="Edit account" style="left: 185.515px; top: 450px; width: 16px; height: 16px; font-size: 8px;">✎</div><div class="node-icon del" title="Delete account" style="left: 185.515px; top: 508px; width: 16px; height: 16px; font-size: 8px;">×</div><div class="add-node" style="left: 312.577px; top: 222px;"><div class="plus">+</div><div class="lbl">ADD FIRM</div></div></div>
+    </div>
     <div class="network-sidebar right">
       <div class="mini-widget">
-        <div class="mini-widget-title" id="miniCalTitle">September</div>
-        <div class="mini-cal-grid" id="miniCalGrid"><div class="mini-cal-dow">S</div><div class="mini-cal-dow">M</div><div class="mini-cal-dow">T</div><div class="mini-cal-dow">W</div><div class="mini-cal-dow">T</div><div class="mini-cal-dow">F</div><div class="mini-cal-dow">S</div><div class="mini-cal-cell empty"></div><div class="mini-cal-cell empty"></div><div class="mini-cal-cell pos" title="Tue Sep 01 2026: $3,032"></div><div class="mini-cal-cell pos" title="Wed Sep 02 2026: $3,095"></div><div class="mini-cal-cell " title="Thu Sep 03 2026"></div><div class="mini-cal-cell " title="Fri Sep 04 2026"></div><div class="mini-cal-cell " title="Sat Sep 05 2026"></div><div class="mini-cal-cell " title="Sun Sep 06 2026"></div><div class="mini-cal-cell " title="Mon Sep 07 2026"></div><div class="mini-cal-cell " title="Tue Sep 08 2026"></div><div class="mini-cal-cell pos" title="Wed Sep 09 2026: $6,048"></div><div class="mini-cal-cell pos" title="Thu Sep 10 2026: $8,918"></div><div class="mini-cal-cell pos" title="Fri Sep 11 2026: $15,750"></div><div class="mini-cal-cell " title="Sat Sep 12 2026"></div><div class="mini-cal-cell " title="Sun Sep 13 2026"></div><div class="mini-cal-cell pos" title="Mon Sep 14 2026: $10,664"></div><div class="mini-cal-cell neg" title="Tue Sep 15 2026: -$1,800"></div><div class="mini-cal-cell pos" title="Wed Sep 16 2026: $18,096"></div><div class="mini-cal-cell pos" title="Thu Sep 17 2026: $27,311"></div><div class="mini-cal-cell pos" title="Fri Sep 18 2026: $12,404"></div><div class="mini-cal-cell " title="Sat Sep 19 2026"></div><div class="mini-cal-cell " title="Sun Sep 20 2026"></div><div class="mini-cal-cell pos" title="Mon Sep 21 2026: $16,828"></div><div class="mini-cal-cell " title="Tue Sep 22 2026"></div><div class="mini-cal-cell " title="Wed Sep 23 2026"></div><div class="mini-cal-cell " title="Thu Sep 24 2026"></div><div class="mini-cal-cell " title="Fri Sep 25 2026"></div><div class="mini-cal-cell " title="Sat Sep 26 2026"></div><div class="mini-cal-cell " title="Sun Sep 27 2026"></div><div class="mini-cal-cell " title="Mon Sep 28 2026"></div><div class="mini-cal-cell " title="Tue Sep 29 2026"></div><div class="mini-cal-cell " title="Wed Sep 30 2026"></div></div>
+        <div class="mini-widget-title" id="miniCalTitle">This Month</div>
+        <div class="mini-cal-grid" id="miniCalGrid"></div>
       </div>
       <div class="mini-widget">
         <div class="mini-widget-title">Firm Leaderboard</div>
-        <div id="firmLeaderboard">
-    <div class="lb-row">
-      <div class="lb-top"><span>Tradeify</span><span style="color:#ffd23d;">67%</span></div>
-      <div class="lb-bar"><div class="lb-bar-fill" style="width:67%;background:#ffd23d;box-shadow:0 0 8px #ffd23d;"></div></div>
-    </div>
-    <div class="lb-row">
-      <div class="lb-top"><span>FundedNext</span><span style="color:#00eaff;">67%</span></div>
-      <div class="lb-bar"><div class="lb-bar-fill" style="width:66.88%;background:#00eaff;box-shadow:0 0 8px #00eaff;"></div></div>
-    </div>
-    <div class="lb-row">
-      <div class="lb-top"><span>Lucid</span><span style="color:#00ffa3;">50%</span></div>
-      <div class="lb-bar"><div class="lb-bar-fill" style="width:50.28666666666667%;background:#00ffa3;box-shadow:0 0 8px #00ffa3;"></div></div>
-    </div>
-    <div class="lb-row">
-      <div class="lb-top"><span>TPT</span><span style="color:#ff8a3d;">0%</span></div>
-      <div class="lb-bar"><div class="lb-bar-fill" style="width:0%;background:#ff8a3d;box-shadow:0 0 8px #ff8a3d;"></div></div>
-    </div>
-    <div class="lb-row">
-      <div class="lb-top"><span>FutureElite</span><span style="color:#ffd23d;">0%</span></div>
-      <div class="lb-bar"><div class="lb-bar-fill" style="width:0%;background:#ffd23d;box-shadow:0 0 8px #ffd23d;"></div></div>
-    </div></div>
+        <div id="firmLeaderboard"></div>
       </div>
     </div>
   </div>
   <div class="network-footer">
-    <div class="nf-equity" id="nfEquity">$775,953</div>
-    <div class="nf-stats" id="nfStats"><div class="nf-stat"><div class="v">5</div><div class="l">Firms</div></div><div class="nf-stat"><div class="v">15</div><div class="l">Accounts</div></div><div class="nf-stat"><div class="v">0</div><div class="l">Near Payout</div></div><div class="nf-stat"><div class="v">47</div><div class="l">Blown</div></div><div class="nf-stat"><div class="v">0</div><div class="l">Alerts</div></div></div>
+    <div class="nf-equity" id="nfEquity">$0</div>
+    <div class="nf-stats" id="nfStats"></div>
   </div>
 </div>
 
@@ -579,7 +552,7 @@ body::before{
     <div class="panel">
       <div class="panel-head"><div class="title"><span class="dot cyan"></span>QUICK ACTIONS</div></div>
       <div class="qa-grid">
-        <div class="qa-tile" id="qaLog"><div class="qi">📝</div><div class="ql">Log P&amp;L</div></div>
+        <div class="qa-tile" id="qaLog"><div class="qi">📝</div><div class="ql">Log P&L</div></div>
         <div class="qa-tile" id="qaAddFirm"><div class="qi">➕</div><div class="ql">Add Firm</div></div>
         <div class="qa-tile" id="qaAll"><div class="qi">◆</div><div class="ql">All Accounts</div></div>
         <div class="qa-tile" id="qaReset"><div class="qi">↺</div><div class="ql">Reset</div></div>
@@ -589,47 +562,42 @@ body::before{
       <div class="panel-head"><div class="title"><span class="dot green"></span>ACCOUNT PULSE</div><span class="tag">TODAY</span></div>
       <div class="panel-body">
         <div class="stat-grid">
-          <div class="stat"><div class="v" id="statEquity">$51,509</div><div class="l">Equity</div></div>
-          <div class="stat"><div class="v pos" id="statDayPL">$1,509</div><div class="l">Day P&amp;L</div></div>
-          <div class="stat"><div class="v" id="statWinRate">100%</div><div class="l">Positive Days</div></div>
-          <div class="stat"><div class="v" id="statTrades">1</div><div class="l">Entries Today</div></div>
+          <div class="stat"><div class="v" id="statEquity">$0</div><div class="l">Equity</div></div>
+          <div class="stat"><div class="v" id="statDayPL">$0</div><div class="l">Day P&L</div></div>
+          <div class="stat"><div class="v" id="statWinRate">0%</div><div class="l">Positive Days</div></div>
+          <div class="stat"><div class="v" id="statTrades">0</div><div class="l">Entries Today</div></div>
         </div>
       </div>
     </div>
     <div class="panel">
       <div class="panel-head"><div class="title"><span class="dot amber"></span>RISK RULES</div><span class="tag">LIVE</span></div>
-      <div class="panel-body" id="rulesList"><div class="rule-row"><div style="display:flex;justify-content:space-between;"><span class="rule-name">Daily Loss Limit</span><span class="rule-status ok">$1,509 / -$500</span></div><div class="rule-bar"><div class="rule-bar-fill" style="width:0%;background:var(--green);"></div></div></div><div class="rule-row"><div style="display:flex;justify-content:space-between;"><span class="rule-name">Max Drawdown</span><span class="rule-status ok">$0 / $2,000</span></div><div class="rule-bar"><div class="rule-bar-fill" style="width:0%;background:var(--green);"></div></div></div></div>
+      <div class="panel-body" id="rulesList"><div class="empty">Select an account to view its rules</div></div>
     </div>
     <div class="panel">
-      <div class="panel-head"><div class="title"><span class="dot cyan"></span>DAILY &amp; WEEKLY TARGETS</div><span class="tag" id="targetsTag">EVAL #693</span></div>
-      <div class="panel-body" id="targetsBody"><div class="targets-wrap">
-    <div class="target-block"><div class="ring" style="--pct:100;--rc:var(--green)"><div class="ring-inner"><div class="ring-pct">100%</div></div></div>
-      <div class="target-info"><div class="ti-label">Daily Target</div><div class="ti-val">$1,509 of $<input class="ti-input" type="number" id="inpDailyTarget" value="600"></div><div class="ti-remain" style="color:var(--green)">🎯 Hit today</div></div></div>
-    <div class="target-block"><div class="ring" style="--pct:0;--rc:var(--purple)"><div class="ring-inner"><div class="ring-pct">0%</div></div></div>
-      <div class="target-info"><div class="ti-label">Weekly Payout Goal</div><div class="ti-val">$1,509 of $<input class="ti-input" type="number" id="inpWeeklyPayout" value="0"></div><div class="ti-remain" style="color:var(--dim)">$0 to go this week</div></div></div>
-  </div></div>
+      <div class="panel-head"><div class="title"><span class="dot cyan"></span>DAILY & WEEKLY TARGETS</div><span class="tag" id="targetsTag">—</span></div>
+      <div class="panel-body" id="targetsBody"><div class="empty">Select an account to set targets</div></div>
     </div>
   </div>
 
   <div class="col core-col">
     <div class="core-label">EQUITY CORE</div>
-    <div class="core-name" id="coreName" style="color: var(--green);">IN CONTROL</div>
+    <div class="core-name" id="coreName">CALM STATE</div>
     <div class="core-wrap">
       <canvas id="coreCanvas" width="260" height="260"></canvas>
-      <div class="core-readout"><div class="eq" id="coreEquity">$51,509</div><div class="pl" id="corePL" style="color: var(--green);">$1,509 TODAY</div><div class="state" id="coreState">POSITIVE — STAY THE PLAN</div></div>
+      <div class="core-readout"><div class="eq" id="coreEquity">$0</div><div class="pl" id="corePL">$0.00 TODAY</div><div class="state" id="coreState">STANDING BY</div></div>
     </div>
-    <div class="core-payout" id="corePayoutBox" style="display: block;">
-      <div class="cp-l" id="cpLabel">To Pass Eval</div><div class="cp-v" id="cpValue">$1,491 TO GO</div>
-      <div class="cp-bar"><div class="cp-bar-fill" id="cpBarFill" style="width: 50.3%; background: var(--cyan);"></div></div>
+    <div class="core-payout" id="corePayoutBox" style="display:none;">
+      <div class="cp-l" id="cpLabel">To Next Payout</div><div class="cp-v" id="cpValue">$0</div>
+      <div class="cp-bar"><div class="cp-bar-fill" id="cpBarFill"></div></div>
     </div>
-    <button class="btn primary view-dash-btn" id="btnViewDash" style="">📊 VIEW FULL ACCOUNT DASHBOARD</button>
+    <button class="btn primary view-dash-btn" id="btnViewDash" style="display:none;">📊 VIEW FULL ACCOUNT DASHBOARD</button>
     <div class="core-sub" id="coreSub">Pulse reflects account discipline — steady and slow when in control, fast and red under stress</div>
 
     <div class="core-label" style="margin-top:24px;">NETWORK CORE</div>
-    <div class="core-name" id="netCoreName" style="color: var(--green);">PORTFOLIO POSITIVE</div>
+    <div class="core-name" id="netCoreName">PORTFOLIO CALM</div>
     <div class="core-wrap" style="width:190px;height:190px;">
       <canvas id="netCoreCanvas" width="190" height="190"></canvas>
-      <div class="core-readout"><div class="pl" id="netCorePL" style="font-size: 20px; color: var(--green);">$16,828 TODAY</div></div>
+      <div class="core-readout"><div class="pl" id="netCorePL" style="font-size:20px;">$0 TODAY</div></div>
     </div>
     <div class="core-sub">Whole-portfolio pulse — reflects every account combined, not just the one selected above</div>
 
@@ -643,20 +611,20 @@ body::before{
       <div class="panel-head"><div class="title"><span class="dot green"></span>PERFORMANCE</div><span class="tag">SCOPED</span></div>
       <div class="panel-body">
         <div class="stat-grid">
-          <div class="stat"><div class="v pos" id="statTotalPL">$1,509</div><div class="l">Total P&amp;L</div></div>
-          <div class="stat"><div class="v" id="statProfitFactor">1509.00</div><div class="l">Profit Factor</div></div>
-          <div class="stat"><div class="v pos" id="statAvgWin">$1,509</div><div class="l">Avg Win</div></div>
-          <div class="stat"><div class="v neg" id="statAvgLoss">$0</div><div class="l">Avg Loss</div></div>
+          <div class="stat"><div class="v" id="statTotalPL">$0</div><div class="l">Total P&L</div></div>
+          <div class="stat"><div class="v" id="statProfitFactor">0.0</div><div class="l">Profit Factor</div></div>
+          <div class="stat"><div class="v" id="statAvgWin">$0</div><div class="l">Avg Win</div></div>
+          <div class="stat"><div class="v" id="statAvgLoss">$0</div><div class="l">Avg Loss</div></div>
         </div>
       </div>
     </div>
     <div class="panel">
-      <div class="panel-head"><div class="title"><span class="dot cyan"></span>BALANCE LOG</div><span class="tag" id="journalCount">1 ENTRIES</span></div>
-      <div class="panel-body" id="journalList" style="max-height:340px;overflow-y:auto;"><div class="journal-row"><div class="journal-top"><span class="journal-date">Sep 20, 09:27 PM</span><span style="display:flex;align-items:center;gap:10px;"><span class="journal-pl" style="color:var(--green)">$1,509</span><span class="journal-actions"><span class="journal-act" data-edit-trade="muakf8ug11wsq">✎</span><span class="journal-act del" data-del-trade="muakf8ug11wsq">🗑</span></span></span></div><div class="journal-acct">Lucid · Eval #693</div></div></div>
+      <div class="panel-head"><div class="title"><span class="dot cyan"></span>BALANCE LOG</div><span class="tag" id="journalCount">0 ENTRIES</span></div>
+      <div class="panel-body" id="journalList" style="max-height:340px;overflow-y:auto;"><div class="empty">No entries yet</div></div>
     </div>
     <div class="panel">
       <div class="panel-head"><div class="title"><span class="dot amber"></span>ALERT FEED</div><span class="tag">LIVE</span></div>
-      <div class="panel-body" id="feedList" style="max-height:220px;overflow-y:auto;"><div class="feed-row"><div class="feed-time">11:43 PM</div><div class="feed-text">Command bridge online — synced to your account</div></div></div>
+      <div class="panel-body" id="feedList" style="max-height:220px;overflow-y:auto;"></div>
     </div>
   </div>
 </div>
@@ -731,7 +699,7 @@ body::before{
 <!-- LOG P&L MODAL -->
 <div class="modal-bg" id="modalTrade">
   <div class="modal">
-    <div class="modal-head"><h3 id="tradeModalTitle">LOG P&amp;L</h3><span class="modal-close" data-close="modalTrade">×</span></div>
+    <div class="modal-head"><h3 id="tradeModalTitle">LOG P&L</h3><span class="modal-close" data-close="modalTrade">×</span></div>
     <div class="modal-body">
       <div class="row2"><div class="field"><label>Firm</label><select id="fFirm"></select></div><div class="field"><label>Account</label><select id="fAccount"></select></div></div>
       <div class="field"><label>Amount ($) — use minus for a loss</label><input type="number" id="fPL" step="0.01" placeholder="e.g. 125 or -80"></div>
@@ -2338,6 +2306,5 @@ drawMesh();
 window.addEventListener('resize', ()=>renderNetwork());
 setInterval(()=>{ if(currentUser) render(); }, 5000);
 </script>
-
-
-</body></html>
+</body>
+</html>
