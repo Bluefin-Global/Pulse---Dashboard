@@ -266,6 +266,7 @@ body::before{
 .node-icon.reserve:hover{border-color:var(--amber);color:var(--amber);}
 .node-icon.upgrade:hover{border-color:var(--gold);color:var(--gold);}
 .node-icon.blown:hover{border-color:var(--red);color:var(--red);}
+.node-icon.payout:hover{border-color:var(--gold);color:var(--gold);}
 .node-icon.log:hover{border-color:var(--green);color:var(--green);}
 .firm-metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
 .fm-cell{background:rgba(255,255,255,0.03);border:1px solid var(--line);border-radius:8px;padding:10px 12px;}
@@ -690,6 +691,7 @@ body::before{
           <div class="row2"><div class="field"><label>Consistency Cap (%)</label><input type="number" id="fdConsistency"></div><div class="field"><label>Min Trading Days</label><input type="number" id="fdMinDays"></div></div>
         </div>
       </div>
+      <div class="row2" style="margin-top:10px;"><div class="field"><label>Firm Payout Cut (%) — default for payout requests</label><input type="number" id="fdPayoutCut" step="0.1" min="0" max="100"></div><div class="field"></div></div>
       <div style="font-size:10px;color:var(--dim);font-family:var(--mono);">New accounts pull from Eval Defaults. Upgrading an account to Funded switches it to these Funded Defaults automatically.</div>
     </div>
     <div class="modal-foot"><button class="btn" data-close="modalFirmDefaults">CANCEL</button><button class="btn primary" id="btnSaveFirmDefaults">SAVE DEFAULTS</button></div>
@@ -714,6 +716,23 @@ body::before{
   <div class="modal wide">
     <div class="modal-head"><h3>ACCOUNT DASHBOARD</h3><span class="modal-close" data-close="modalDash">×</span></div>
     <div class="modal-body" id="dashBody"></div>
+  </div>
+</div>
+
+<!-- PAYOUT REQUEST MODAL -->
+<div class="modal-bg" id="modalPayout">
+  <div class="modal">
+    <div class="modal-head"><h3>💸 PAYOUT REQUEST — <span id="poAcctName"></span></h3><span class="modal-close" data-close="modalPayout">×</span></div>
+    <div class="modal-body">
+      <div class="row2"><div class="field"><label>Profit Requested ($)</label><input type="number" id="poRequested" step="0.01" min="0"></div><div class="field"><label>Firm Cut (%)</label><input type="number" id="poPct" step="0.1" min="0" max="100"></div></div>
+      <div class="field"><label>Deduct From Account Balance ($) — editable</label><input type="number" id="poDeduct" step="0.01" min="0"></div>
+      <div id="poSummary" style="font-family:var(--mono);font-size:11px;line-height:1.7;margin:4px 0 10px;"></div>
+      <div class="field"><label>Date</label><input type="date" id="poDate"></div>
+      <div class="field"><label>Note (optional)</label><input type="text" id="poNote" placeholder="e.g. Payout #1"></div>
+      <div class="dash-section-title" style="margin-top:12px;">Payout History</div>
+      <div id="poHistory"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" data-close="modalPayout">CANCEL</button><button class="btn primary" id="btnSavePayout">RECORD PAYOUT</button></div>
   </div>
 </div>
 
@@ -1014,11 +1033,16 @@ function tradesInScope(){
   if(!sc) return state.trades;
   return state.trades.filter(t=>t.firmId===sc.firmId && t.accountId===sc.acctId);
 }
-function accountEquity(firmId, acct){
+function accountPayoutsTotal(acct){ return (acct.payouts||[]).reduce((s,p)=>s+Number(p.deducted||0),0); }
+function accountPayoutsReceived(acct){ return (acct.payouts||[]).reduce((s,p)=>s+Number(p.netReceived||0),0); }
+// Equity from trading entries only — payout deductions are NOT trading losses (used for drawdown/risk checks)
+function accountTradingEquity(firmId, acct){
   const closed = state.trades.filter(t=>t.firmId===firmId && t.accountId===acct.id);
   const pl = closed.reduce((s,t)=>s+Number(t.pl||0),0);
   return acct.start + pl;
 }
+// Actual account balance: trading equity minus any payout deductions
+function accountEquity(firmId, acct){ return accountTradingEquity(firmId, acct) - accountPayoutsTotal(acct); }
 function firmEquity(firm){ return firm.accounts.reduce((s,a)=>s+accountEquity(firm.id,a),0); }
 function allEquity(){ return state.firms.reduce((s,f)=>s+firmEquity(f),0); }
 
@@ -1079,16 +1103,17 @@ function computeStats(){
   const profitFactor = grossLoss>0 ? (grossWin/grossLoss) : (grossWin>0?grossWin:0);
 
   const sc = scopeParts();
-  let equity, account=null, firm=null;
+  let equity, tradingEquity=0, account=null, firm=null;
   if(sc){
     firm = getFirm(sc.firmId);
     account = firm ? getAccount(sc.firmId, sc.acctId) : null;
     equity = account ? accountEquity(sc.firmId, account) : 0;
+    tradingEquity = account ? accountTradingEquity(sc.firmId, account) : 0;
   } else {
     equity = allEquity();
   }
   const openContracts = 0;
-  return {trades, today, dayPL, weekPL, totalPL, winRate, avgWin, avgLoss, profitFactor, equity, openContracts, closedCount:closed.length, account, firm};
+  return {trades, today, dayPL, weekPL, totalPL, winRate, avgWin, avgLoss, profitFactor, equity, tradingEquity, openContracts, closedCount:closed.length, account, firm};
 }
 
 /* ================= OVERVIEW STRIP ================= */
@@ -1101,7 +1126,7 @@ function renderOverview(){
   state.firms.forEach(f=>f.accounts.forEach(a=>{
     const pct = accountProximity(f.id, a);
     if(accountType(a)==='funded' && pct>=80) nearPayout++;
-    const eq = accountEquity(f.id, a);
+    const eq = accountTradingEquity(f.id, a);
     const todayPL = state.trades.filter(t=>t.firmId===f.id && t.accountId===a.id && isToday(t.ts)).reduce((s,t)=>s+Number(t.pl||0),0);
     if(a.dailyLoss>0 && -todayPL>=a.dailyLoss) alerts++;
     if(a.maxDD>0 && Math.max(0,accountPhaseInfo(a).baseline-eq)>=a.maxDD) alerts++;
@@ -1212,7 +1237,7 @@ function renderNetworkFooter(){
   let nearPayout = 0, alerts = 0;
   state.firms.forEach(f=>f.accounts.forEach(a=>{
     if(accountType(a)==='funded' && accountProximity(f.id,a)>=80) nearPayout++;
-    const eq = accountEquity(f.id, a);
+    const eq = accountTradingEquity(f.id, a);
     const todayPL = state.trades.filter(t=>t.firmId===f.id && t.accountId===a.id && isToday(t.ts)).reduce((s,t)=>s+Number(t.pl||0),0);
     if(a.dailyLoss>0 && -todayPL>=a.dailyLoss) alerts++;
     if(a.maxDD>0 && Math.max(0,accountPhaseInfo(a).baseline-eq)>=a.maxDD) alerts++;
@@ -1345,6 +1370,15 @@ function renderNetwork(){
           stage.appendChild(aReserve);
         }
 
+        if(isFunded){
+          const aPay = document.createElement('div');
+          aPay.className='node-icon payout'; aPay.style.left=(ax-8)+'px'; aPay.style.top=(ay-46)+'px';
+          aPay.style.width='16px'; aPay.style.height='16px'; aPay.style.fontSize='8px';
+          aPay.innerHTML='💸'; aPay.title='Request payout';
+          aPay.addEventListener('click',(e)=>{ e.stopPropagation(); openPayoutModal(firm.id, a.id); });
+          stage.appendChild(aPay);
+        }
+
         const aEdit = document.createElement('div');
         aEdit.className='node-icon'; aEdit.style.left=(ax+22)+'px'; aEdit.style.top=(ay-38)+'px';
         aEdit.style.width='16px'; aEdit.style.height='16px'; aEdit.style.fontSize='8px';
@@ -1460,7 +1494,7 @@ function renderRules(s){
   const a = s.account;
   const items = [
     {name:'Daily Loss Limit', val:-s.dayPL, cap:a.dailyLoss, fmt:v=>fmt(-v)},
-    {name:'Max Drawdown', val: Math.max(0, accountPhaseInfo(a).baseline - s.equity), cap:a.maxDD, fmt:v=>fmt(v)},
+    {name:'Max Drawdown', val: Math.max(0, accountPhaseInfo(a).baseline - s.tradingEquity), cap:a.maxDD, fmt:v=>fmt(v)},
   ];
   let breach=false, warnMsg='';
   wrap.innerHTML = items.map(it=>{
@@ -1695,14 +1729,17 @@ function renderDashBody(firm, acct){
     peak = Math.max(peak, balance);
     points.push({ts:e.ts, balance, floor: acct.maxDD>0 ? peak-acct.maxDD : null});
   });
-  const totalProfit = balance - phase.baseline;
+  const tradingProfit = balance - phase.baseline;
+  const paidOut = accountPayoutsTotal(acct);
+  const totalProfit = tradingProfit - paidOut;
+  const displayBalance = balance - paidOut;
 
   // daily buckets for calendar + highest profit day + trading days
   const dayMap = {};
   entries.forEach(e=>{ const k=dayKey(e.ts); dayMap[k]=(dayMap[k]||0)+Number(e.pl||0); });
   const tradingDays = Object.keys(dayMap).length;
   const highestProfitDay = Object.values(dayMap).length ? Math.max(...Object.values(dayMap)) : 0;
-  const consistencyPct = totalProfit>0 ? Math.min(999,(highestProfitDay/totalProfit)*100) : 0;
+  const consistencyPct = tradingProfit>0 ? Math.min(999,(highestProfitDay/tradingProfit)*100) : 0;
   const consistencyCap = acct.consistencyCap||40;
   const consistencyBreach = consistencyPct > consistencyCap;
 
@@ -1726,10 +1763,12 @@ function renderDashBody(firm, acct){
     <div class="dash-grid2">
       <div class="dash-section">
         <div class="dash-section-title">Summary</div>
-        <div class="dash-summary-row"><span class="dash-summary-label">Balance</span><span class="dash-summary-val" style="color:${totalProfit>=0?'var(--green)':'var(--red)'}">${fmt(balance)} ${totalProfit>=0?'↑':'↓'} ${fmt(totalProfit)}</span></div>
+        <div class="dash-summary-row"><span class="dash-summary-label">Balance</span><span class="dash-summary-val" style="color:${totalProfit>=0?'var(--green)':'var(--red)'}">${fmt(displayBalance)} ${totalProfit>=0?'↑':'↓'} ${fmt(totalProfit)}</span></div>
         <div class="dash-summary-row"><span class="dash-summary-label">Trailing Max Drawdown</span><span class="dash-summary-val">${acct.maxDD>0?fmt(peak-acct.maxDD):'None'}</span></div>
         <div class="dash-summary-row"><span class="dash-summary-label">Daily Loss Limit</span><span class="dash-summary-val">${acct.dailyLoss>0?fmt(acct.dailyLoss):'None'}</span></div>
         <div class="dash-summary-row"><span class="dash-summary-label">Total Profit</span><span class="dash-summary-val">${fmt(totalProfit)}</span></div>
+        ${phase.funded?`<button class="btn" id="btnDashPayout" style="margin-top:8px;">💸 REQUEST PAYOUT</button>`:''}
+        ${(acct.payouts&&acct.payouts.length)?`<div class="dash-summary-row"><span class="dash-summary-label">Payouts Received</span><span class="dash-summary-val" style="color:var(--gold);">${fmt(accountPayoutsReceived(acct))}</span></div>`:''}
       </div>
       <div class="dash-section">
         <div class="dash-section-title">Objectives</div>
@@ -1758,6 +1797,7 @@ function renderDashBody(firm, acct){
   `;
 
   renderDashChart(points, acct);
+  const bdp=document.getElementById('btnDashPayout'); if(bdp) bdp.addEventListener('click',()=>openPayoutModal(firm.id, acct.id));
   renderDashCalendar(dayMap);
   renderDashProfile(firm, acct);
 }
@@ -1873,6 +1913,7 @@ function renderDrawerBody(firm){
     <div class="fm-cell"><div class="v" style="color:${fundedPL>=0?'var(--green)':'var(--red)'}">${fmt(fundedPL)}</div><div class="l">Funded P&L (${fundedCount})</div></div>
     <div class="fm-cell"><div class="v">${fmt(evalRemaining)}</div><div class="l">To Pass (Eval)</div></div>
     <div class="fm-cell"><div class="v">${fmt(fundedRemaining)}</div><div class="l">To Payout (Funded)</div></div>
+    <div class="fm-cell"><div class="v" style="color:var(--gold);">${fmt(firm.accounts.reduce((s,a)=>s+accountPayoutsReceived(a),0))}</div><div class="l">Payouts Received</div></div>
     <div class="fm-cell"><div class="v">${firm.blownCount||0}</div><div class="l">Accounts Blown</div></div>
   </div>`;
 
@@ -1892,6 +1933,7 @@ function renderDrawerBody(firm){
           <div class="acct-del" data-view-acct="${a.id}" title="View dashboard">📊</div>
           <div class="acct-del" data-edit-acct="${a.id}" title="Edit">✎</div>
           ${!isFunded?`<div class="acct-del" data-reserve-acct="${a.id}" title="${isReserved?'Unmark Reserved':'Mark Ready (Reserved)'}">🕓</div>`:''}
+          ${isFunded?`<div class="acct-del" data-payout-acct="${a.id}" title="Request payout">💸</div>`:''}
           ${!isFunded?`<div class="acct-del" data-upgrade-acct="${a.id}" title="Upgrade to Funded">⬆</div>`:''}
           <div class="acct-del" data-blown-acct="${a.id}" title="Mark blown">💥</div>
           <div class="acct-del" data-del-acct="${a.id}" title="Delete">🗑</div>
@@ -1913,6 +1955,9 @@ function renderDrawerBody(firm){
   });
   wrap.querySelectorAll('[data-log-acct]').forEach(el=>{
     el.addEventListener('click', (e)=>{ e.stopPropagation(); quickLogPL(firm.id, el.dataset.logAcct); });
+  });
+  wrap.querySelectorAll('[data-payout-acct]').forEach(el=>{
+    el.addEventListener('click', (e)=>{ e.stopPropagation(); openPayoutModal(firm.id, el.dataset.payoutAcct); });
   });
   wrap.querySelectorAll('[data-upgrade-acct]').forEach(el=>{
     el.addEventListener('click', (e)=>{ e.stopPropagation(); upgradeToFunded(firm.id, el.dataset.upgradeAcct); renderDrawerBody(firm); });
@@ -2095,6 +2140,78 @@ function toggleReserved(firmId, acctId){
     ? `🕓 <b>${a.nickname}</b> marked Ready (Reserved) — passed but waiting on a funded slot at ${firm.name}`
     : `<b>${a.nickname}</b> no longer marked Reserved`, firm.color);
 }
+/* ================= PAYOUT REQUESTS ================= */
+function firmPayoutCutPct(firm){
+  if(firm && firm.payoutCutPct!=null) return firm.payoutCutPct;
+  return (state.payoutCalc && state.payoutCalc.firmCutPct!=null) ? state.payoutCalc.firmCutPct : 10;
+}
+let payoutCtx = null, poDeductEdited = false;
+function ymd(ts){ const d=new Date(ts); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function poRecalc(fromRequested){
+  const req = Number(document.getElementById('poRequested').value||0);
+  const pct = Number(document.getElementById('poPct').value||0);
+  if(fromRequested && !poDeductEdited){
+    document.getElementById('poDeduct').value = req>0 ? (Math.round(req*(1-pct/100)*100)/100) : '';
+  }
+  const cut = Math.round(req*pct)/100;
+  const ded = Number(document.getElementById('poDeduct').value||0);
+  const a = payoutCtx ? getAccount(payoutCtx.firmId, payoutCtx.acctId) : null;
+  const bal = a ? accountEquity(payoutCtx.firmId, a) : 0;
+  document.getElementById('poSummary').innerHTML =
+    `<div>Firm keeps (${pct}%): <b style="color:var(--red)">${fmt(cut)}</b> · You receive: <b style="color:var(--gold)">${fmt(req-cut)}</b></div>`+
+    `<div>Balance now <b>${fmt(bal)}</b> → after payout <b style="color:var(--cyan)">${fmt(bal-ded)}</b></div>`;
+}
+function renderPayoutHistory(){
+  const a = payoutCtx ? getAccount(payoutCtx.firmId, payoutCtx.acctId) : null;
+  const wrap = document.getElementById('poHistory');
+  const list = a && a.payouts ? a.payouts.slice().sort((x,y)=>y.ts-x.ts) : [];
+  if(!list.length){ wrap.innerHTML = '<div class="empty">No payouts recorded yet</div>'; return; }
+  wrap.innerHTML = list.map(p=>`<div class="dash-summary-row" style="align-items:center;">
+    <span class="dash-summary-label">${new Date(p.ts).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}${p.note?' · '+String(p.note).replace(/</g,'&lt;'):''}<br><span style="font-size:9px;">requested ${fmt(p.requested)} · firm ${fmt(p.firmCut)} (${p.firmPct}%) · deducted ${fmt(p.deducted)}</span></span>
+    <span class="dash-summary-val" style="color:var(--gold);">${fmt(p.netReceived)} <span class="acct-del" data-del-payout="${p.id}" title="Delete payout (restores balance)" style="display:inline-block;margin-left:6px;">🗑</span></span></div>`).join('');
+  wrap.querySelectorAll('[data-del-payout]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      if(!confirm('Delete this payout record? The deducted amount returns to the account balance.')) return;
+      a.payouts = a.payouts.filter(p=>p.id!==el.dataset.delPayout);
+      save(); renderAll(); renderPayoutHistory(); poRecalc(false);
+      if(document.getElementById('modalDash').classList.contains('show')) renderDashBody(getFirm(payoutCtx.firmId), a);
+    });
+  });
+}
+function openPayoutModal(firmId, acctId){
+  const firm = getFirm(firmId), a = getAccount(firmId, acctId);
+  if(!firm || !a) return;
+  payoutCtx = {firmId, acctId}; poDeductEdited = false;
+  document.getElementById('poAcctName').textContent = firm.name+' · '+a.nickname;
+  document.getElementById('poRequested').value = '';
+  document.getElementById('poPct').value = firmPayoutCutPct(firm);
+  document.getElementById('poDeduct').value = '';
+  document.getElementById('poDate').value = ymd(Date.now());
+  document.getElementById('poNote').value = '';
+  poRecalc(true); renderPayoutHistory();
+  openModal('modalPayout');
+}
+document.getElementById('poRequested').addEventListener('input', ()=>poRecalc(true));
+document.getElementById('poPct').addEventListener('input', ()=>poRecalc(true));
+document.getElementById('poDeduct').addEventListener('input', ()=>{ poDeductEdited = true; poRecalc(false); });
+document.getElementById('btnSavePayout').addEventListener('click', ()=>{
+  if(!payoutCtx) return;
+  const firm = getFirm(payoutCtx.firmId), a = getAccount(payoutCtx.firmId, payoutCtx.acctId);
+  if(!firm || !a) return;
+  const req = Number(document.getElementById('poRequested').value||0);
+  const pct = Number(document.getElementById('poPct').value||0);
+  const ded = Number(document.getElementById('poDeduct').value||0);
+  if(!(req>0)){ alert('Enter the profit amount requested.'); return; }
+  const cut = Math.round(req*pct)/100;
+  const dv = document.getElementById('poDate').value;
+  const ts = dv ? new Date(dv+'T12:00:00').getTime() : Date.now();
+  if(!a.payouts) a.payouts = [];
+  a.payouts.push({ id:'po'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), ts, requested:req, firmPct:pct, firmCut:cut, netReceived:Math.round((req-cut)*100)/100, deducted:ded, note:document.getElementById('poNote').value.trim() });
+  save(); closeModal('modalPayout'); renderAll();
+  if(document.getElementById('modalDash').classList.contains('show')) renderDashBody(firm, a);
+  pushFeed(`💸 Payout requested on <b>${a.nickname}</b> (${firm.name}) — ${fmt(req-cut)} to you, balance reduced by ${fmt(ded)}`, firm.color);
+});
+
 function quickLogPL(firmId, acctId){
   populateTradeFirmSelect();
   document.getElementById('fFirm').value = firmId;
@@ -2122,6 +2239,7 @@ function openFirmDefaultsModal(firmId){
   document.getElementById('fdDailyLoss').value = fd.dailyLoss; document.getElementById('fdMaxDD').value = fd.maxDD;
   document.getElementById('fdDailyTarget').value = fd.dailyTarget; document.getElementById('fdWeeklyPayout').value = fd.weeklyPayout;
   document.getElementById('fdConsistency').value = fd.consistencyCap; document.getElementById('fdMinDays').value = fd.minDays;
+  document.getElementById('fdPayoutCut').value = firmPayoutCutPct(firm);
   openModal('modalFirmDefaults');
 }
 document.getElementById('btnSaveFirmDefaults').addEventListener('click', ()=>{
@@ -2138,6 +2256,7 @@ document.getElementById('btnSaveFirmDefaults').addEventListener('click', ()=>{
     dailyTarget: Number(document.getElementById('fdDailyTarget').value||0), weeklyPayout: Number(document.getElementById('fdWeeklyPayout').value||0),
     consistencyCap: Number(document.getElementById('fdConsistency').value||0), minDays: Number(document.getElementById('fdMinDays').value||0),
   };
+  firm.payoutCutPct = Math.max(0,Math.min(100,Number(document.getElementById('fdPayoutCut').value||0)));
   save(); closeModal('modalFirmDefaults');
   pushFeed(`Default parameters updated for <b>${firm.name}</b>`, firm.color);
 });
