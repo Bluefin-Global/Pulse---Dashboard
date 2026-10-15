@@ -261,9 +261,9 @@ body::before{
 
 .acct-node.funded{border-width:2px;box-shadow:0 0 16px color-mix(in srgb, var(--ac,var(--cyan)) 60%, transparent), 0 0 4px var(--gold) inset;}
 .acct-node .an-badge{position:absolute;top:-8px;right:-6px;font-size:9px;background:var(--gold);color:#1a1400;padding:1px 5px;border-radius:8px;font-family:var(--mono);font-weight:800;letter-spacing:0.5px;}
-.acct-node .an-badge.reserved{background:var(--amber);color:#3a2400;}
-.acct-node.reserved{border-color:var(--amber)!important;box-shadow:0 0 14px rgba(255,184,0,0.5)!important;}
-.node-icon.reserve:hover{border-color:var(--amber);color:var(--amber);}
+.acct-node .an-badge.reserved{background:var(--red);color:#fff;}
+.acct-node.reserved{border-color:var(--red)!important;box-shadow:0 0 14px rgba(255,45,110,0.55)!important;}
+.node-icon.reserve:hover{border-color:var(--red);color:var(--red);}
 .node-icon.upgrade:hover{border-color:var(--gold);color:var(--gold);}
 .node-icon.blown:hover{border-color:var(--red);color:var(--red);}
 .node-icon.payout:hover{border-color:var(--gold);color:var(--gold);}
@@ -1927,7 +1927,7 @@ function renderDrawerBody(firm){
     const isFunded = accountType(a)==='funded';
     const isReserved = !isFunded && !!a.reserved;
     return `<div class="acct-card ${active?'active':''}" data-key="${key}">
-      <div class="acct-top"><div class="acct-name">${isFunded?'★ ':''}${a.nickname} <span style="color:${isReserved?'var(--amber)':'var(--dim)'};font-size:9px;">${isFunded?'FUNDED':(isReserved?'🕓 READY (RESERVED)':'EVAL')}</span></div>
+      <div class="acct-top"><div class="acct-name">${isFunded?'★ ':''}${a.nickname} <span style="color:${isReserved?'var(--red)':'var(--dim)'};font-size:9px;">${isFunded?'FUNDED':(isReserved?'🕓 READY (RESERVED)':'EVAL')}</span></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
           <div class="acct-del" data-log-acct="${a.id}" title="Log P&L">💰</div>
           <div class="acct-del" data-view-acct="${a.id}" title="View dashboard">📊</div>
@@ -1939,7 +1939,7 @@ function renderDrawerBody(firm){
           <div class="acct-del" data-del-acct="${a.id}" title="Delete">🗑</div>
         </div></div>
       <div class="acct-stats"><div class="as"><span class="l">Balance</span>${fmt(aEq)}</div><div class="as"><span class="l">P&L</span><span style="color:${aPl>=0?'var(--green)':'var(--red)'}">${fmt(aPl)}</span></div></div>
-      ${a.target>0?`<div class="acct-bar"><div class="acct-bar-fill" style="width:${pct}%;background:${remaining<=0?(isReserved?'var(--amber)':'var(--green)'):firm.color};"></div></div><div class="acct-payout" style="color:${remaining<=0?(isReserved?'var(--amber)':'var(--green)'):'var(--bright)'}">${remaining<=0?(isReserved?'🕓 READY — QUEUED':(isFunded?'🎯 PAYOUT READY':'✅ EVAL PASSED')):fmt(remaining)+(isFunded?' to payout':' to pass')}</div>`:'<div class="acct-payout" style="color:var(--dim);">No target set</div>'}
+      ${a.target>0?`<div class="acct-bar"><div class="acct-bar-fill" style="width:${pct}%;background:${remaining<=0?(isReserved?'var(--red)':'var(--green)'):firm.color};"></div></div><div class="acct-payout" style="color:${remaining<=0?(isReserved?'var(--red)':'var(--green)'):'var(--bright)'}">${remaining<=0?(isReserved?'🕓 READY — QUEUED':(isFunded?'🎯 PAYOUT READY':'✅ EVAL PASSED')):fmt(remaining)+(isFunded?' to payout':' to pass')}</div>`:'<div class="acct-payout" style="color:var(--dim);">No target set</div>'}
     </div>`;
   }).join('');
 
