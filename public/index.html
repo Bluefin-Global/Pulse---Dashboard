@@ -1265,7 +1265,7 @@ function computeNetworkLayout(W){
   const n = state.firms.length, total = n+1, start = -Math.PI/2;
   const acctCount = state.firms.reduce((s,f)=>s+(isExpanded(f.id)?f.accounts.length:0),0);
   const rx = Math.max(240, W/2 - 200);
-  const ry = Math.max(230, 110 + acctCount*4);
+  const ry = Math.max(210, 100 + acctCount*3);
   const firms = [], accts = [], fixed = [];
   const half = W/2 - 56;
   state.firms.forEach((firm,i)=>{
@@ -1280,8 +1280,8 @@ function computeNetworkLayout(W){
       const ring = Math.floor(idx/PER_RING);
       const inRing = Math.min(PER_RING, firm.accounts.length - ring*PER_RING);
       const pos = idx % PER_RING;
-      const radius = 125 + ring*100;
-      const step = 2*Math.asin(Math.min(0.95, 50/radius));
+      const radius = 112 + ring*88;
+      const step = 2*Math.asin(Math.min(0.95, 44/radius));
       const off = inRing===1 ? 0 : (pos/(inRing-1)-0.5)*step*(inRing-1);
       const ax = fx + Math.cos(dir+off)*radius, ay = fy + Math.sin(dir+off)*radius;
       accts.push({key:firm.id+'::'+a.id, firmIdx:i, x:ax, y:ay, ax, ay});
@@ -1289,29 +1289,45 @@ function computeNetworkLayout(W){
   });
   const t = start + (n/total)*Math.PI*2;
   const addPos = {x:Math.cos(t)*rx, y:Math.sin(t)*ry};
-  fixed.push({x:addPos.x, y:addPos.y, r:58});
-  fixed.push({x:0, y:0, r:150}); // network core orb
-  const MIN_AA = 98;
-  for(let it=0; it<300; it++){
+  fixed.push({x:addPos.x, y:addPos.y, r:58, add:true});
+  fixed.push({x:0, y:0, r:140, core:true}); // network core orb
+  // Box-based collision (nodes are rectangles): resolve along the axis of least overlap for a tight packing
+  const BW = 92, BH = 88;               // account node footprint incl. badge/icons + small gap
+  const FW = 48+42+6, FH = 42+40+6;     // firm hex half-size + account half-size + gap
+  for(let it=0; it<800; it++){
     for(let i=0;i<accts.length;i++){
       const A = accts[i];
       for(let j=i+1;j<accts.length;j++){
         const B = accts[j];
-        let dx = B.x-A.x, dy = B.y-A.y, d = Math.hypot(dx,dy)||0.01;
-        if(d<MIN_AA){ const push=(MIN_AA-d)/2; dx/=d; dy/=d; A.x-=dx*push; A.y-=dy*push; B.x+=dx*push; B.y+=dy*push; }
+        const dx = B.x-A.x, dy = B.y-A.y;
+        const ox = BW-Math.abs(dx), oy = BH-Math.abs(dy);
+        if(ox>0 && oy>0){
+          const wall = Math.abs(A.x)>=half-0.5 || Math.abs(B.x)>=half-0.5;
+          if(ox<oy && !wall){ const m=ox/2*(dx<0?-1:1); A.x-=m; B.x+=m; }
+          else { const m=oy/2*(dy<0?-1:1); A.y-=m; B.y+=m; }
+        }
       }
       fixed.forEach(F=>{
-        let dx = A.x-F.x, dy = A.y-F.y, d = Math.hypot(dx,dy)||0.01;
-        const min = F.r + 50;
-        if(d<min){ dx/=d; dy/=d; A.x += dx*(min-d); A.y += dy*(min-d); }
+        if(F.core){
+          let dx = A.x-F.x, dy = A.y-F.y, d = Math.hypot(dx,dy)||0.01;
+          const min = F.r + 46;
+          if(d<min){ dx/=d; dy/=d; A.x += dx*(min-d); A.y += dy*(min-d); }
+        } else {
+          const w = F.add ? 58+40 : FW, h = F.add ? 58+38 : FH;
+          const dx = A.x-F.x, dy = A.y-F.y;
+          const ox = w-Math.abs(dx), oy = h-Math.abs(dy);
+          if(ox>0 && oy>0){
+            if(ox<oy) A.x += ox*(dx<0?-1:1); else A.y += oy*(dy<0?-1:1);
+          }
+        }
       });
-      A.x += (A.ax-A.x)*0.01; A.y += (A.ay-A.y)*0.01;
+      if(it<400){ A.x += (A.ax-A.x)*0.03; A.y += (A.ay-A.y)*0.03; }
       A.x = Math.max(-half, Math.min(half, A.x));
     }
   }
   let maxDy = 0;
   firms.forEach(f=>{ maxDy = Math.max(maxDy, Math.abs(f.y)+70); });
-  accts.forEach(a=>{ maxDy = Math.max(maxDy, Math.abs(a.y)+62); });
+  accts.forEach(a=>{ maxDy = Math.max(maxDy, Math.abs(a.y)+50); });
   maxDy = Math.max(maxDy, Math.abs(addPos.y)+60);
   const H = Math.max(640, Math.ceil(maxDy*2 + 30));
   const map = {}; accts.forEach(a=>{ map[a.key] = a; });
