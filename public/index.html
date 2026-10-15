@@ -260,7 +260,7 @@ body::before{
 .drawer-foot{padding:14px 18px;border-top:1px solid var(--line);}
 
 .acct-node.funded{border-width:2px;box-shadow:0 0 16px color-mix(in srgb, var(--ac,var(--cyan)) 60%, transparent), 0 0 4px var(--gold) inset;}
-.acct-node .an-badge{position:absolute;top:-8px;right:-6px;font-size:9px;background:var(--gold);color:#1a1400;padding:1px 5px;border-radius:8px;font-family:var(--mono);font-weight:800;letter-spacing:0.5px;}
+.acct-node .an-badge{position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);z-index:7;font-size:9px;background:var(--gold);color:#1a1400;padding:1px 5px;border-radius:8px;font-family:var(--mono);font-weight:800;letter-spacing:0.5px;}
 .acct-node .an-badge.reserved{background:var(--red);color:#fff;}
 .acct-node.reserved{border-width:2px;box-shadow:0 0 16px color-mix(in srgb, var(--ac,var(--cyan)) 60%, transparent), 0 0 4px var(--gold) inset;}
 .node-icon.reserve:hover{border-color:var(--amber);color:var(--amber);}
@@ -1259,6 +1259,65 @@ function svgLine(lines, x1,y1,x2,y2,color,opacity,width){
   lines.appendChild(line);
 }
 
+/* Collision-free network layout: firms on an ellipse, accounts fanned outward, then a relaxation pass
+   pushes any overlapping nodes apart. Returns positions relative to the stage center plus the stage height needed. */
+function computeNetworkLayout(W){
+  const n = state.firms.length, total = n+1, start = -Math.PI/2;
+  const acctCount = state.firms.reduce((s,f)=>s+(isExpanded(f.id)?f.accounts.length:0),0);
+  const rx = Math.max(240, W/2 - 200);
+  const ry = Math.max(230, 110 + acctCount*4);
+  const firms = [], accts = [], fixed = [];
+  const half = W/2 - 56;
+  state.firms.forEach((firm,i)=>{
+    const t = start + (i/total)*Math.PI*2;
+    const fx = Math.cos(t)*rx, fy = Math.sin(t)*ry;
+    const dir = Math.atan2(fy, fx);
+    firms.push({id:firm.id, x:fx, y:fy});
+    fixed.push({x:fx, y:fy, r:64});
+    if(!isExpanded(firm.id)) return;
+    const PER_RING = 4;
+    firm.accounts.forEach((a,idx)=>{
+      const ring = Math.floor(idx/PER_RING);
+      const inRing = Math.min(PER_RING, firm.accounts.length - ring*PER_RING);
+      const pos = idx % PER_RING;
+      const radius = 125 + ring*100;
+      const step = 2*Math.asin(Math.min(0.95, 50/radius));
+      const off = inRing===1 ? 0 : (pos/(inRing-1)-0.5)*step*(inRing-1);
+      const ax = fx + Math.cos(dir+off)*radius, ay = fy + Math.sin(dir+off)*radius;
+      accts.push({key:firm.id+'::'+a.id, firmIdx:i, x:ax, y:ay, ax, ay});
+    });
+  });
+  const t = start + (n/total)*Math.PI*2;
+  const addPos = {x:Math.cos(t)*rx, y:Math.sin(t)*ry};
+  fixed.push({x:addPos.x, y:addPos.y, r:58});
+  fixed.push({x:0, y:0, r:150}); // network core orb
+  const MIN_AA = 98;
+  for(let it=0; it<300; it++){
+    for(let i=0;i<accts.length;i++){
+      const A = accts[i];
+      for(let j=i+1;j<accts.length;j++){
+        const B = accts[j];
+        let dx = B.x-A.x, dy = B.y-A.y, d = Math.hypot(dx,dy)||0.01;
+        if(d<MIN_AA){ const push=(MIN_AA-d)/2; dx/=d; dy/=d; A.x-=dx*push; A.y-=dy*push; B.x+=dx*push; B.y+=dy*push; }
+      }
+      fixed.forEach(F=>{
+        let dx = A.x-F.x, dy = A.y-F.y, d = Math.hypot(dx,dy)||0.01;
+        const min = F.r + 50;
+        if(d<min){ dx/=d; dy/=d; A.x += dx*(min-d); A.y += dy*(min-d); }
+      });
+      A.x += (A.ax-A.x)*0.01; A.y += (A.ay-A.y)*0.01;
+      A.x = Math.max(-half, Math.min(half, A.x));
+    }
+  }
+  let maxDy = 0;
+  firms.forEach(f=>{ maxDy = Math.max(maxDy, Math.abs(f.y)+70); });
+  accts.forEach(a=>{ maxDy = Math.max(maxDy, Math.abs(a.y)+62); });
+  maxDy = Math.max(maxDy, Math.abs(addPos.y)+60);
+  const H = Math.max(640, Math.ceil(maxDy*2 + 30));
+  const map = {}; accts.forEach(a=>{ map[a.key] = a; });
+  return { firms, accts: map, add: addPos, H };
+}
+
 function renderNetwork(){
   const stage = document.getElementById('networkStage');
   const lines = document.getElementById('nodeLines');
@@ -1266,16 +1325,15 @@ function renderNetwork(){
   lines.innerHTML = '';
   document.getElementById('firmCountTag').textContent = state.firms.length + ' FIRM' + (state.firms.length!==1?'S':'');
 
-  const W = stage.clientWidth, H = stage.clientHeight;
+  const layout = computeNetworkLayout(stage.clientWidth);
+  stage.style.height = layout.H + 'px';
+  const W = stage.clientWidth, H = layout.H;
   const cx = W/2, cy = H/2;
-  const firmRadius = Math.min(W,H)/2 - 200;
-  const total = state.firms.length + 1;
-  const startAngle = -Math.PI/2;
   lines.setAttribute('width', W); lines.setAttribute('height', H);
 
   state.firms.forEach((firm, i)=>{
-    const ang = startAngle + (i/total)*Math.PI*2;
-    const fx = cx + Math.cos(ang)*firmRadius, fy = cy + Math.sin(ang)*firmRadius;
+    const fl = layout.firms[i];
+    const fx = cx + fl.x, fy = cy + fl.y;
     svgLine(lines, cx,cy,fx,fy, firm.color, 0.5, 1);
 
     const eq = firmEquity(firm);
@@ -1300,26 +1358,9 @@ function renderNetwork(){
     stage.appendChild(editIcon);
 
     if(expanded && firm.accounts.length>0){
-      const NODE_GAP = 82; // minimum chord distance between adjacent account nodes
-      const PER_RING = 4;
-      const totalRings = Math.ceil(firm.accounts.length/PER_RING);
-      const acctPositions = [];
-      for(let ring=0; ring<totalRings; ring++){
-        const ringAccounts = firm.accounts.slice(ring*PER_RING, ring*PER_RING+PER_RING);
-        const count = ringAccounts.length;
-        const radius = 118 + ring*98;
-        let arcSpan = 0;
-        if(count>1){
-          const angleStep = 2*Math.asin(Math.min(0.95, NODE_GAP/(2*radius)));
-          arcSpan = Math.min(angleStep*(count-1), Math.PI*1.55);
-        }
-        ringAccounts.forEach((a,i)=>{
-          const off = count===1 ? 0 : (i/(count-1)-0.5)*arcSpan;
-          acctPositions.push({ a, ang: ang+off, radius });
-        });
-      }
-      acctPositions.forEach(({a, ang: aAng, radius: acctRadius})=>{
-        const ax = fx + Math.cos(aAng)*acctRadius, ay = fy + Math.sin(aAng)*acctRadius;
+      const acctPositions = firm.accounts.map(a=>({a, pos: layout.accts[firm.id+'::'+a.id]}));
+      acctPositions.forEach(({a, pos})=>{
+        const ax = cx + pos.x, ay = cy + pos.y;
         svgLine(lines, fx,fy,ax,ay, firm.color, 0.35, 1);
 
         const aEq = accountEquity(firm.id, a);
@@ -1404,8 +1445,7 @@ function renderNetwork(){
     }
   });
 
-  const ang = startAngle + (state.firms.length/total)*Math.PI*2;
-  const x = cx + Math.cos(ang)*firmRadius, y = cy + Math.sin(ang)*firmRadius;
+  const x = cx + layout.add.x, y = cy + layout.add.y;
   svgLine(lines, cx,cy,x,y,'#3a2a5e',0.4,1);
   const addNode = document.createElement('div');
   addNode.className='add-node'; addNode.style.left=(x-38)+'px'; addNode.style.top=(y-38)+'px';
