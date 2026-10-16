@@ -155,9 +155,25 @@ body::before{
 /* ---------- network stage ---------- */
 .network-panel{width:calc(100% - 40px);max-width:1900px;margin:18px auto 6px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg, rgba(23,11,48,0.5), rgba(9,4,20,0.7));position:relative;overflow:hidden;}
 .network-body{display:grid;grid-template-columns:250px 1fr 250px;}
-.network-sidebar{display:flex;flex-direction:column;border-right:1px solid var(--line);}
+.network-sidebar{position:relative;border-right:1px solid var(--line);min-width:0;}
+.sb-inner{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;}
+.gauge-widget{flex:1 1 0;overflow-y:auto;}
+.gauge-widget::-webkit-scrollbar{width:4px;} .gauge-widget::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px;}
+.pg-firm{margin-bottom:14px;}
+.pg-head{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:10px;font-weight:700;padding-bottom:5px;margin-bottom:8px;border-bottom:1px solid var(--line);}
+.pg-head .pg-avg{font-size:9px;font-weight:600;}
+.pg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 4px;}
+.pg-item{display:flex;flex-direction:column;align-items:center;min-width:0;}
+.pg-ring{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.pg-ring-inner{width:51px;height:51px;border-radius:50%;background:#0d0620;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:800;}
+.pg-ring.hit{animation:pgGlow 1.6s ease-in-out infinite;}
+@keyframes pgGlow{0%,100%{box-shadow:0 0 6px var(--gc);}50%{box-shadow:0 0 18px var(--gc),0 0 4px var(--gc);}}
+.pg-name{font-family:var(--mono);font-size:9px;margin-top:4px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pg-sub{font-family:var(--mono);font-size:8px;color:var(--dim);}
 .network-sidebar.right{border-right:none;border-left:1px solid var(--line);}
 .mini-widget{padding:12px;border-bottom:1px solid var(--line);flex:1;display:flex;flex-direction:column;min-height:0;}
+.mini-widget.calc-widget{flex:0 0 auto;}
+.rb-widget{flex:1 1 auto;overflow-y:auto;}
 .mini-widget:last-child{border-bottom:none;}
 .mini-widget-title{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;margin-bottom:10px;}
 .gauge-row{display:flex;align-items:center;gap:9px;margin-bottom:10px;}
@@ -205,6 +221,7 @@ body::before{
 .nf-stat .v{font-family:var(--mono);font-weight:700;font-size:16px;}
 .nf-stat .l{font-family:var(--mono);font-size:8px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-top:2px;}
 @media(max-width:1200px){.network-body{grid-template-columns:1fr;} .network-sidebar{flex-direction:row;flex-wrap:wrap;border-right:none;border-bottom:1px solid var(--line);} .network-sidebar.right{border-left:none;} .mini-widget{flex:1 1 280px;border-bottom:none;border-right:1px solid var(--line);}}
+@media(max-width:1200px){.sb-inner{position:static;flex-direction:row;flex-wrap:wrap;} .network-sidebar{display:block;} .gauge-widget{overflow:visible;flex:1 1 auto;}}
 .network-head{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line);}
 .network-head .title{font-family:var(--mono);font-size:10px;letter-spacing:2.5px;color:var(--dim);text-transform:uppercase;display:flex;align-items:center;gap:8px;}
 .network-head .title span.b{color:var(--bright);}
@@ -505,10 +522,29 @@ body::before{
     <span class="tag" id="firmCountTag">0 FIRMS</span>
   </div>
   <div class="network-body">
-    <div class="network-sidebar left">
-      <div class="mini-widget">
-        <div class="mini-widget-title">Payout Gauges</div>
+    <div class="network-sidebar left"><div class="sb-inner">
+      <div class="mini-widget gauge-widget">
+        <div class="mini-widget-title">Payout Gauges — Funded Accounts</div>
         <div id="payoutGauges"></div>
+      </div>
+    </div></div>
+    <div class="network-stage" id="networkStage">
+      <svg class="node-lines" id="nodeLines"></svg>
+      <div class="hub-ring"></div>
+      <div class="hub-ring r2"></div>
+      <div class="hub-mesh-wrap" id="hubMeshWrap">
+        <canvas id="meshCanvas" width="180" height="180"></canvas>
+        <div class="hub-mesh-label">NETWORK</div>
+      </div>
+    </div>
+    <div class="network-sidebar right"><div class="sb-inner">
+      <div class="mini-widget" style="flex:0 0 auto;">
+        <div class="mini-widget-title" id="miniCalTitle">This Month</div>
+        <div class="mini-cal-grid" id="miniCalGrid"></div>
+      </div>
+      <div class="mini-widget rb-widget">
+        <div class="mini-widget-title">Firm Leaderboard</div>
+        <div id="firmLeaderboard" style="flex:1;display:flex;flex-direction:column;justify-content:space-evenly;gap:10px;"></div>
       </div>
       <div class="mini-widget calc-widget">
         <div class="calc-brain-bg"><span class="bb-brain">🧠</span><span class="bb-dollar">$</span></div>
@@ -521,26 +557,7 @@ body::before{
         </div>
         <div id="calcOutput" style="position:relative;z-index:1;"></div>
       </div>
-    </div>
-    <div class="network-stage" id="networkStage">
-      <svg class="node-lines" id="nodeLines"></svg>
-      <div class="hub-ring"></div>
-      <div class="hub-ring r2"></div>
-      <div class="hub-mesh-wrap" id="hubMeshWrap">
-        <canvas id="meshCanvas" width="180" height="180"></canvas>
-        <div class="hub-mesh-label">NETWORK</div>
-      </div>
-    </div>
-    <div class="network-sidebar right">
-      <div class="mini-widget">
-        <div class="mini-widget-title" id="miniCalTitle">This Month</div>
-        <div class="mini-cal-grid" id="miniCalGrid"></div>
-      </div>
-      <div class="mini-widget">
-        <div class="mini-widget-title">Firm Leaderboard</div>
-        <div id="firmLeaderboard"></div>
-      </div>
-    </div>
+    </div></div>
   </div>
   <div class="network-footer">
     <div class="nf-equity" id="nfEquity">$0</div>
@@ -1145,20 +1162,26 @@ function renderOverview(){
 /* ================= NETWORK SIDEBAR WIDGETS ================= */
 function renderPayoutGauges(){
   const wrap = document.getElementById('payoutGauges');
-  const all = [];
-  state.firms.forEach(f=>f.accounts.forEach(a=>{
-    if(!a.target || a.target<=0) return;
-    if(accountType(a)!=='funded') return; // only real funded accounts count toward a payout
-    all.push({ firm:f, acct:a, pct: accountProximity(f.id,a) });
-  }));
-  all.sort((a,b)=>b.pct-a.pct);
-  const top = all.slice(0,3);
-  wrap.innerHTML = top.length===0 ? '<div class="empty" style="padding:0;">No funded accounts working toward a target yet</div>' :
-    top.map(({firm,acct,pct})=>`
-      <div class="gauge-row">
-        <div class="gauge-ring" style="background:conic-gradient(${firm.color} calc(${pct}*1%), var(--line) 0);"><div class="gauge-ring-inner">${Math.round(pct)}%</div></div>
-        <div style="min-width:0;"><div class="gauge-label">${acct.nickname}</div><div class="gauge-sub">${firm.name}</div></div>
-      </div>`).join('');
+  const groups = [];
+  state.firms.forEach(f=>{
+    const items = f.accounts.filter(a=>accountType(a)==='funded').map(a=>({
+      acct:a, hasTarget: a.target>0, pct: a.target>0 ? accountProximity(f.id,a) : 0
+    })).sort((x,y)=>y.pct-x.pct);
+    if(items.length) groups.push({ firm:f, items, avg: items.reduce((s,i)=>s+i.pct,0)/items.length });
+  });
+  groups.sort((x,y)=>y.avg-x.avg);
+  if(!groups.length){ wrap.innerHTML = '<div class="empty" style="padding:0;">No funded accounts yet — upgrade an eval to see its payout gauge here</div>'; return; }
+  wrap.innerHTML = groups.map(({firm,items,avg})=>`
+    <div class="pg-firm">
+      <div class="pg-head"><span style="color:${firm.color};text-shadow:0 0 8px ${firm.color};">${firm.name}</span><span class="pg-avg" style="color:var(--dim);">${items.length} funded · avg ${Math.round(avg)}%</span></div>
+      <div class="pg-grid">${items.map(({acct,pct,hasTarget})=>{
+        const a = acct, rem = hasTarget ? Math.max(0, a.target-accountDisplayPL(firm.id,a)) : null;
+        return `<div class="pg-item" title="${a.nickname} — ${hasTarget ? (rem<=0?'payout ready':fmt(rem)+' to payout') : 'no target set'}">
+          <div class="pg-ring${pct>=100?' hit':''}" style="--gc:${firm.color};background:conic-gradient(${firm.color} calc(${pct}*1%), var(--line) 0);"><div class="pg-ring-inner" style="${pct>=100?'color:var(--green);':''}">${hasTarget?Math.round(pct)+'%':'—'}</div></div>
+          <div class="pg-name">${a.nickname}</div>
+          <div class="pg-sub">${hasTarget ? (rem<=0?'🎯 ready':fmt(rem)) : 'no target'}</div>
+        </div>`;}).join('')}</div>
+    </div>`).join('');
 }
 
 function renderPayoutCalc(){
@@ -1222,12 +1245,15 @@ function renderFirmLeaderboard(){
   const rows = state.firms.map(f=>{
     const withTargets = f.accounts.filter(a=>a.target>0);
     const pct = withTargets.length ? withTargets.reduce((s,a)=>s+accountProximity(f.id,a),0)/withTargets.length : 0;
-    return { firm:f, pct };
+    const today = state.trades.filter(t=>t.firmId===f.id && isToday(t.ts)).reduce((s,t)=>s+Number(t.pl||0),0);
+    const funded = f.accounts.filter(a=>accountType(a)==='funded').length;
+    return { firm:f, pct, today, funded };
   }).sort((a,b)=>b.pct-a.pct);
-  wrap.innerHTML = rows.map(({firm,pct})=>`
-    <div class="lb-row">
-      <div class="lb-top"><span>${firm.name}</span><span style="color:${firm.color};">${Math.round(pct)}%</span></div>
-      <div class="lb-bar"><div class="lb-bar-fill" style="width:${pct}%;background:${firm.color};box-shadow:0 0 8px ${firm.color};"></div></div>
+  wrap.innerHTML = rows.map(({firm,pct,today,funded})=>`
+    <div class="lb-row" style="margin-bottom:0;">
+      <div class="lb-top" style="font-size:11px;"><span>${firm.name}</span><span style="color:${firm.color};">${Math.round(pct)}%</span></div>
+      <div class="lb-bar" style="height:10px;"><div class="lb-bar-fill" style="width:${pct}%;background:${firm.color};box-shadow:0 0 8px ${firm.color};"></div></div>
+      <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:4px;"><span>${funded} funded · ${firm.accounts.length} total</span><span style="color:${today>=0?'var(--green)':'var(--red)'};">${fmt(today)} today</span></div>
     </div>`).join('');
 }
 
