@@ -280,6 +280,18 @@ body::before{
 .acct-node .an-badge{position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);z-index:7;font-size:9px;background:var(--gold);color:#1a1400;padding:1px 5px;border-radius:8px;font-family:var(--mono);font-weight:800;letter-spacing:0.5px;}
 .acct-node .an-badge.reserved{background:var(--red);color:#fff;}
 .acct-node.reserved{border-width:2px;box-shadow:0 0 16px color-mix(in srgb, var(--ac,var(--cyan)) 60%, transparent), 0 0 4px var(--gold) inset;}
+.node-icon.tr-dot{width:19px;height:19px;border-radius:50%;font-size:12px;font-weight:900;padding:0;line-height:1;background:rgba(6,2,16,0.96);border-width:2px;}
+.node-icon.tr-dot.done{border-color:#39ff14;color:#39ff14;text-shadow:0 0 6px #39ff14;box-shadow:0 0 8px #39ff14,0 0 18px rgba(57,255,20,0.55),inset 0 0 6px rgba(57,255,20,0.35);}
+.node-icon.tr-dot.skip{border-color:var(--cyan);color:var(--cyan);text-shadow:0 0 6px var(--cyan);box-shadow:0 0 8px var(--cyan),0 0 16px rgba(0,234,255,0.45);}
+.node-icon.tr-dot.todo{border-color:#ff9d00;box-shadow:0 0 7px rgba(255,157,0,0.8);animation:trPend 2.2s ease-in-out infinite;}
+.node-icon.tr-dot.done:hover{border-color:#39ff14;color:#39ff14;transform:none;}
+.node-icon.tr-dot.skip:hover{border-color:var(--cyan);color:var(--cyan);}
+.node-icon.tr-dot.todo:hover{border-color:#ffd000;}
+@keyframes trPend{0%,100%{box-shadow:0 0 4px rgba(255,157,0,0.5);}50%{box-shadow:0 0 12px rgba(255,157,0,1);}}
+.node-icon.firm-tr{width:28px;height:28px;border:none;padding:0;font-size:15px;font-weight:900;cursor:default;}
+.node-icon.firm-tr:hover{transform:none;}
+.node-icon.firm-tr.done{background:#39ff14;color:#04210a;box-shadow:0 0 10px #39ff14,0 0 26px rgba(57,255,20,0.7);}
+.node-icon.firm-tr .ftr-in{width:20px;height:20px;border-radius:50%;background:#0b0418;display:flex;align-items:center;justify-content:center;color:#ff9d00;font-size:10px;}
 .node-icon.reserve:hover{border-color:var(--amber);color:var(--amber);}
 .node-icon.upgrade:hover{border-color:var(--gold);color:var(--gold);}
 .node-icon.blown:hover{border-color:var(--red);color:var(--red);}
@@ -1016,6 +1028,8 @@ function tickClock(){
   if(etEl) etEl.textContent = 'ET ' + etTime;
 }
 setInterval(tickClock,1000); tickClock();
+let lastTradingDayKey = null;
+setInterval(()=>{ const k=dayKey(Date.now()); if(lastTradingDayKey && k!==lastTradingDayKey && typeof renderAll==='function' && state && state.firms){ renderAll(); } lastTradingDayKey=k; }, 30000);
 
 /* ================= HELPERS ================= */
 function fmt(n){ const v=Number(n||0); return (v<0?'-':'')+'$'+Math.abs(v).toLocaleString('en-US',{maximumFractionDigits:0}); }
@@ -1059,6 +1073,18 @@ function accountTradingEquity(firmId, acct){
   return acct.start + pl;
 }
 // Actual account balance: trading equity minus any payout deductions
+// Has this account been traded in the current trading day (6pm-5pm ET)? Reserved (Ready) accounts are excluded -> null
+function accountTradeStatus(firmId, a){
+  if(accountType(a)!=='funded' && a.reserved) return null;
+  if(state.trades.some(t=>t.firmId===firmId && t.accountId===a.id && isToday(t.ts))) return 'traded';
+  if(a.skipDay && a.skipDay===dayKey(Date.now())) return 'skipped';
+  return 'none';
+}
+function firmTradeProgress(firm){
+  let total=0, done=0;
+  firm.accounts.forEach(a=>{ const st=accountTradeStatus(firm.id,a); if(st===null) return; total++; if(st!=='none') done++; });
+  return {total, done};
+}
 function accountEquity(firmId, acct){ return accountTradingEquity(firmId, acct) - accountPayoutsTotal(acct); }
 function firmEquity(firm){ return firm.accounts.reduce((s,a)=>s+accountEquity(firm.id,a),0); }
 function allEquity(){ return state.firms.reduce((s,f)=>s+firmEquity(f),0); }
@@ -1399,6 +1425,23 @@ function renderNetwork(){
     editIcon.addEventListener('click',(e)=>{ e.stopPropagation(); openDrawer(firm.id); });
     stage.appendChild(editIcon);
 
+    const tp = firmTradeProgress(firm);
+    if(tp.total>0){
+      const ft = document.createElement('div');
+      const allDone = tp.done===tp.total;
+      ft.className = 'node-icon firm-tr' + (allDone?' done':'');
+      ft.style.left=(fx-58)+'px'; ft.style.top=(fy-48)+'px';
+      ft.title = allDone ? `All ${tp.total} accounts traded today` : `${tp.done} of ${tp.total} accounts traded today`;
+      if(allDone){ ft.innerHTML='✓'; }
+      else {
+        const pct = (tp.done/tp.total)*100;
+        ft.style.background = `conic-gradient(#39ff14 calc(${pct}*1%), #ff9d00 0)`;
+        ft.style.boxShadow = '0 0 8px rgba(255,157,0,0.7)';
+        ft.innerHTML = `<div class="ftr-in">${tp.done}/${tp.total}</div>`;
+      }
+      stage.appendChild(ft);
+    }
+
     if(expanded && firm.accounts.length>0){
       const acctPositions = firm.accounts.map(a=>({a, pos: layout.accts[firm.id+'::'+a.id]}));
       acctPositions.forEach(({a, pos})=>{
@@ -1460,6 +1503,22 @@ function renderNetwork(){
           aPay.innerHTML='💸'; aPay.title='Request payout';
           aPay.addEventListener('click',(e)=>{ e.stopPropagation(); openPayoutModal(firm.id, a.id); });
           stage.appendChild(aPay);
+        }
+
+        const trSt = accountTradeStatus(firm.id, a);
+        if(trSt){
+          const aTr = document.createElement('div');
+          aTr.className = 'node-icon tr-dot ' + (trSt==='traded'?'done':(trSt==='skipped'?'skip':'todo'));
+          aTr.style.left=(ax+30)+'px'; aTr.style.top=(ay-10)+'px';
+          aTr.innerHTML = trSt==='none' ? '' : '✓';
+          aTr.title = trSt==='traded' ? 'Traded today' : (trSt==='skipped' ? 'Marked no-trade today (click to undo)' : 'Not traded yet today — click to mark no-trade');
+          aTr.addEventListener('click',(e)=>{
+            e.stopPropagation();
+            if(trSt==='traded') return;
+            a.skipDay = (trSt==='skipped') ? null : dayKey(Date.now());
+            save(); renderAll();
+          });
+          stage.appendChild(aTr);
         }
 
         const aEdit = document.createElement('div');
