@@ -146,6 +146,12 @@ body::before{
 
 /* ---------- scope bar ---------- */
 .scope-bar{display:flex;align-items:center;gap:10px;padding:10px 24px;flex-wrap:wrap;border-bottom:1px solid var(--line);background:rgba(6,2,16,0.5);}
+.scope-toggle{font-family:var(--mono);font-size:13px;width:24px;height:24px;border-radius:50%;border:1px solid var(--line);color:var(--cyan);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0;user-select:none;}
+.scope-toggle:hover{border-color:var(--cyan);box-shadow:0 0 10px rgba(0,234,255,0.4);}
+.scope-toggle .arr{display:inline-block;transition:transform .2s;}
+.scope-bar.collapsed #scopePills{display:none !important;}
+.scope-bar.collapsed .scope-toggle .arr{transform:rotate(-90deg);}
+.scope-count{font-family:var(--mono);font-size:10px;color:var(--dim);}
 .scope-label{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;}
 .scope-pill{font-family:var(--mono);font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid var(--line);color:var(--bright);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px;}
 .scope-pill:hover{border-color:var(--cyan);}
@@ -458,6 +464,15 @@ body::before{
 .profile-title{font-family:var(--disp);font-weight:800;font-size:22px;margin-top:4px;background:linear-gradient(90deg,#fff,#d9b9ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
 .profile-count{font-family:var(--mono);font-size:9px;padding:5px 10px;border:1px solid var(--line);border-radius:20px;color:var(--dim);white-space:nowrap;}
 .profile-radar-wrap{display:flex;justify-content:center;margin:10px 0;}
+.tp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.tp-tile{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:rgba(255,255,255,0.02);}
+.tp-top{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);}
+.tp-l{font-size:9px;letter-spacing:1px;color:var(--dim);text-transform:uppercase;}
+.tp-v{font-size:15px;font-weight:800;}
+.tp-bar{height:6px;border-radius:3px;background:var(--line);margin:8px 0 6px;overflow:hidden;}
+.tp-fill{height:100%;border-radius:3px;}
+.tp-raw{font-family:var(--mono);font-size:9px;color:var(--dim);}
+@media(max-width:700px){.tp-grid{grid-template-columns:1fr 1fr;}}
 .profile-desc{font-size:12px;color:var(--bright);line-height:1.6;margin:14px 0;}
 .profile-tags{display:flex;flex-wrap:wrap;gap:8px;}
 .profile-tag{font-family:var(--mono);font-size:10px;padding:5px 12px;border-radius:16px;border:1px solid var(--line);color:var(--bright);background:rgba(255,255,255,0.03);}
@@ -523,8 +538,10 @@ body::before{
 <div class="alert-banner" id="alertBanner"><span class="alert-dot"></span><span id="alertText">RISK RULE BREACHED</span></div>
 
 <div class="scope-bar" id="scopeBar">
+  <div class="scope-toggle" id="scopeToggle" title="Show / hide account list"><span class="arr">▾</span></div>
   <span class="scope-label">Viewing:</span>
   <div class="scope-pill active" data-scope="ALL" id="scopeAll">◆ All Accounts</div>
+  <span class="scope-count" id="scopeSelected"></span>
   <div id="scopePills" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
 </div>
 
@@ -1570,7 +1587,17 @@ function renderScopeBar(){
     });
   });
   document.getElementById('scopeAll').classList.toggle('active', state.scope==='ALL');
+  const bar = document.getElementById('scopeBar');
+  bar.classList.toggle('collapsed', !!state.scopeCollapsed);
+  const sel = document.getElementById('scopeSelected');
+  if(state.scopeCollapsed){
+    const sc = scopeParts();
+    const f = sc && getFirm(sc.firmId), a = sc && getAccount(sc.firmId, sc.acctId);
+    const total = state.firms.reduce((n,fi)=>n+fi.accounts.length,0);
+    sel.textContent = (f && a) ? `→ ${f.name} · ${a.nickname}` : `${total} accounts hidden`;
+  } else { sel.textContent = ''; }
 }
+document.getElementById('scopeToggle').addEventListener('click', ()=>{ state.scopeCollapsed = !state.scopeCollapsed; save(); renderScopeBar(); });
 document.getElementById('scopeAll').addEventListener('click', ()=>{ state.scope='ALL'; save(); renderAll(); });
 
 /* ================= MAIN RENDER ================= */
@@ -1781,58 +1808,84 @@ function computeTraderProfile(firmId, acctId){
   const entries = state.trades.filter(t=>t.firmId===firmId && t.accountId===acctId).sort((a,b)=>a.ts-b.ts);
   const n = entries.length;
   if(n===0) return null;
+  const clamp = v => Math.max(0, Math.min(100, Math.round(v)));
+  const pls = entries.map(e=>Number(e.pl||0));
 
-  const wins = entries.filter(e=>Number(e.pl)>0).length;
-  const hitRate = Math.round((wins/n)*100);
+  // Win %
+  const wins = pls.filter(v=>v>0), losses = pls.filter(v=>v<0);
+  const winPct = (wins.length/n)*100;
 
+  // Profit factor
+  const grossWin = wins.reduce((s,v)=>s+v,0), grossLoss = Math.abs(losses.reduce((s,v)=>s+v,0));
+  const pf = grossLoss>0 ? grossWin/grossLoss : (grossWin>0 ? Infinity : 0);
+  const pfScore = pf===Infinity ? 100 : clamp((pf/3)*100);
+
+  // Consistency — no single day carries the profit
   const dayCount = {}, dayPL = {};
   entries.forEach(e=>{ const k=dayKey(e.ts); dayCount[k]=(dayCount[k]||0)+1; dayPL[k]=(dayPL[k]||0)+Number(e.pl||0); });
   const tradingDays = Object.keys(dayCount).length;
-  const avgPerDay = tradingDays>0 ? n/tradingDays : 0;
-  const frequency = Math.max(0, Math.min(100, Math.round((avgPerDay/8)*100)));
+  const totalPL = pls.reduce((s,v)=>s+v,0);
+  const bestDay = Math.max(...Object.values(dayPL));
+  const consistency = (totalPL>0 && bestDay>0) ? clamp((1-(bestDay/totalPL))*100) : 0;
 
-  const totalPL = Object.values(dayPL).reduce((s,v)=>s+v,0);
-  const bestDay = Object.values(dayPL).length ? Math.max(...Object.values(dayPL)) : 0;
-  const consistency = (totalPL>0 && bestDay>0) ? Math.round(Math.max(0,Math.min(100,(1-(bestDay/totalPL))*100))) : 0;
+  // Avg win / avg loss
+  const avgWin = wins.length ? grossWin/wins.length : 0;
+  const avgLoss = losses.length ? grossLoss/losses.length : 0;
+  const wlRatio = avgLoss>0 ? avgWin/avgLoss : (avgWin>0 ? Infinity : 0);
+  const wlScore = wlRatio===Infinity ? 100 : clamp((wlRatio/2)*100);
 
-  let discipline = 100;
-  if(acct.dailyLoss>0){
-    const lossDays = Object.values(dayPL).filter(v=>v<0);
-    if(lossDays.length>0){
-      const withinLimit = lossDays.filter(v=>Math.abs(v)<=acct.dailyLoss).length;
-      discipline = Math.round((withinLimit/lossDays.length)*100);
-    }
-  }
+  // Max drawdown (peak-to-trough on trading results; payouts are not losses) vs the account's limit
+  let bal = acct.start, peak = acct.start, maxDD = 0;
+  pls.forEach(v=>{ bal += v; peak = Math.max(peak, bal); maxDD = Math.max(maxDD, peak-bal); });
+  const ddLimit = acct.maxDD>0 ? acct.maxDD : acct.start*0.05;
+  const ddScore = clamp(100 - (maxDD/ddLimit)*100);
 
-  const abs = entries.map(e=>Math.abs(Number(e.pl||0)));
-  const mean = abs.reduce((s,v)=>s+v,0)/n;
-  const variance = abs.reduce((s,v)=>s+(v-mean)*(v-mean),0)/n;
-  const cv = mean>0 ? Math.sqrt(variance)/mean : 0;
-  const sizeVar = Math.max(0, Math.min(100, Math.round(cv*100)));
+  // Recovery factor = net profit / max drawdown
+  const recov = maxDD>0 ? totalPL/maxDD : (totalPL>0 ? Infinity : 0);
+  const recScore = recov===Infinity ? 100 : clamp((Math.max(0,recov)/3)*100);
 
-  return { hitRate, frequency, consistency, discipline, sizeVar, n, tradingDays, avgPerDay: avgPerDay.toFixed(1) };
+  // Revenge control — losing entries NOT immediately followed (same trading day) by a bigger loss
+  let revenge = 0;
+  entries.forEach((e,i)=>{
+    const v = Number(e.pl||0), nx = entries[i+1];
+    if(v<0 && nx && dayKey(nx.ts)===dayKey(e.ts) && Number(nx.pl)<0 && Math.abs(Number(nx.pl))>Math.abs(v)) revenge++;
+  });
+  const revScore = losses.length ? clamp((1-revenge/losses.length)*100) : 100;
+
+  const axes = [
+    { key:'win',  label:'Win %',          score:clamp(winPct), raw:`${Math.round(winPct)}% of entries green` },
+    { key:'pf',   label:'Profit Factor',  score:pfScore, raw:pf===Infinity?'no losing entries':pf.toFixed(2)+'x' },
+    { key:'cons', label:'Consistency',    score:consistency, raw:totalPL>0?`best day ${Math.round((bestDay/totalPL)*100)}% of profit`:'needs net profit' },
+    { key:'wl',   label:'Avg Win/Loss',   score:wlScore, raw:wlRatio===Infinity?'no losing entries':wlRatio.toFixed(2)+':1' },
+    { key:'dd',   label:'Max Drawdown',   score:ddScore, raw:`${fmt(maxDD)} of ${fmt(ddLimit)} limit` },
+    { key:'rec',  label:'Recovery Factor',score:recScore, raw:recov===Infinity?'no drawdown':recov.toFixed(2)+'x' },
+    { key:'rev',  label:'Revenge Control',score:revScore, raw:`${revenge} chase-loss${revenge!==1?'es':''}` },
+  ];
+  return { axes, n, tradingDays, winPct: Math.round(winPct), pf };
 }
 
 function traderArchetype(p){
-  const axes = [
-    { name:'Accuracy', v:p.hitRate, tag:'High Hit Rate', archetype:'Sharpshooter' },
-    { name:'Speed', v:p.frequency, tag:'High Frequency', archetype:'High-Frequency Operator' },
-    { name:'Consistency', v:p.consistency, tag:'Steady', archetype:'Steady Grinder' },
-    { name:'Discipline', v:p.discipline, tag:'Disciplined', archetype:'Disciplined Sniper' },
-    { name:'Variability', v:p.sizeVar, tag:'Variable Size', archetype:'Heavy Hitter' },
-  ];
-  const dominant = axes.reduce((a,b)=>b.v>a.v?b:a);
-  const tags = axes.filter(a=>a.v>=60).map(a=>a.tag);
+  const meta = {
+    win:  { tag:'High Hit Rate', archetype:'Sharpshooter' },
+    pf:   { tag:'Strong Edge', archetype:'Profit Engine' },
+    cons: { tag:'Steady', archetype:'Steady Grinder' },
+    wl:   { tag:'Big Winners', archetype:'Asymmetric Hunter' },
+    dd:   { tag:'Capital Guardian', archetype:'Capital Guardian' },
+    rec:  { tag:'Bounces Back', archetype:'Resilient Recoverer' },
+    rev:  { tag:'Cool Under Loss', archetype:'Cool-Headed Sniper' },
+  };
+  const dominant = p.axes.reduce((a,b)=>b.score>a.score?b:a);
+  const tags = p.axes.filter(a=>a.score>=70).map(a=>meta[a.key].tag);
   if(tags.length===0) tags.push('Developing Style');
-  const desc = `${p.n} entr${p.n!==1?'ies':'y'} logged across ${p.tradingDays} trading day${p.tradingDays!==1?'s':''}, averaging ${p.avgPerDay} per day with a ${p.hitRate}% hit rate.`;
-  return { title: dominant.archetype, tags, desc };
+  const weakest = p.axes.reduce((a,b)=>b.score<a.score?b:a);
+  const desc = `${p.n} entr${p.n!==1?'ies':'y'} across ${p.tradingDays} trading day${p.tradingDays!==1?'s':''}. Strongest area: ${dominant.label} (${dominant.score}). Biggest room to grow: ${weakest.label} (${weakest.score}).`;
+  return { title: meta[dominant.key].archetype, tags, desc };
 }
 
 function renderRadarSVG(p){
-  const labels = ['Discipline','Accuracy','Speed','Consistency','Variability'];
-  const vals = [p.discipline, p.hitRate, p.frequency, p.consistency, p.sizeVar];
-  const cx=150, cy=135, R=88;
-  const angleFor = i => -Math.PI/2 + i*(2*Math.PI/5);
+  const labels = p.axes.map(a=>a.label), vals = p.axes.map(a=>a.score), N = vals.length;
+  const cx=200, cy=150, R=100;
+  const angleFor = i => -Math.PI/2 + i*(2*Math.PI/N);
   const pointFor = (i,val) => { const ang=angleFor(i), r=(val/100)*R; return [cx+Math.cos(ang)*r, cy+Math.sin(ang)*r]; };
   const polyPoints = vals.map((v,i)=>pointFor(i,v).join(',')).join(' ');
   let gridHtml='';
@@ -1844,15 +1897,16 @@ function renderRadarSVG(p){
   labels.forEach((label,i)=>{
     const [ex,ey] = pointFor(i,100);
     axisHtml += `<line x1="${cx}" y1="${cy}" x2="${ex}" y2="${ey}" stroke="#2a1a4a" stroke-width="1"/>`;
-    const [lx,ly] = pointFor(i,124);
+    const [lx,ly] = pointFor(i,118);
     const c = Math.cos(angleFor(i));
     const anchor = Math.abs(c)<0.3 ? 'middle' : (c>0?'start':'end');
-    axisHtml += `<text x="${lx}" y="${ly}" fill="#a390c9" font-size="10" font-family="JetBrains Mono" text-anchor="${anchor}">${label} <tspan fill="#fff" font-weight="700">${vals[i]}</tspan></text>`;
+    axisHtml += `<text x="${lx}" y="${ly+3}" fill="#a390c9" font-size="11" font-family="JetBrains Mono" text-anchor="${anchor}">${label}</text>`;
   });
-  const dots = vals.map((v,i)=>{ const [x,y]=pointFor(i,v); return `<circle cx="${x}" cy="${y}" r="3.5" fill="#c9a8ff"/>`; }).join('');
-  return `<svg viewBox="0 0 300 270" style="width:100%;max-width:320px;">
+  const dots = vals.map((v,i)=>{ const [x,y]=pointFor(i,v); return `<circle cx="${x}" cy="${y}" r="4" fill="#e29bff" stroke="#fff" stroke-width="0.5"/>`; }).join('');
+  return `<svg viewBox="0 0 400 310" style="width:100%;max-width:440px;">
+    <defs><radialGradient id="tpFill"><stop offset="0%" stop-color="rgba(255,0,230,0.12)"/><stop offset="100%" stop-color="rgba(255,0,230,0.5)"/></radialGradient></defs>
     ${gridHtml}${axisHtml}
-    <polygon points="${polyPoints}" fill="rgba(168,85,255,0.28)" stroke="#a855ff" stroke-width="2"/>
+    <polygon points="${polyPoints}" fill="url(#tpFill)" stroke="#ff2df0" stroke-width="2" style="filter:drop-shadow(0 0 6px rgba(255,45,240,0.7));"/>
     ${dots}
   </svg>`;
 }
@@ -1954,6 +2008,10 @@ function renderDashProfile(firm, acct){
       <div class="profile-count">From ${p.n} trade${p.n!==1?'s':''}</div>
     </div>
     <div class="profile-radar-wrap">${renderRadarSVG(p)}</div>
+    <div class="tp-grid">${p.axes.map(ax=>{
+      const col = ax.score>=80 ? 'var(--green)' : (ax.score>=50 ? 'var(--amber)' : 'var(--red)');
+      return `<div class="tp-tile"><div class="tp-top"><span class="tp-l">${ax.label}</span><span class="tp-v">${ax.score}</span></div><div class="tp-bar"><div class="tp-fill" style="width:${ax.score}%;background:${col};box-shadow:0 0 8px ${col};"></div></div><div class="tp-raw">${ax.raw}</div></div>`;
+    }).join('')}</div>
     <div class="profile-desc">${a.desc}</div>
     <div class="profile-tags">${a.tags.map(t=>`<span class="profile-tag">${t}</span>`).join('')}</div>
   `;
