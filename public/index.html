@@ -163,8 +163,19 @@ body::before{
 .network-body{display:grid;grid-template-columns:250px 1fr 250px;}
 .network-sidebar{position:relative;border-right:1px solid var(--line);min-width:0;}
 .sb-inner{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;}
-.gauge-widget{flex:1 1 0;overflow-y:auto;}
+.mini-widget.gauge-widget{flex:0 1 auto;overflow-y:auto;min-height:0;}
+.mini-widget.traded-widget{flex:1 0 270px;border-top:1px solid var(--line);border-bottom:none;justify-content:center;}
 .gauge-widget::-webkit-scrollbar{width:4px;} .gauge-widget::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px;}
+.tg-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;}
+.tg-ring{width:168px;height:168px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:conic-gradient(#39ff14 calc(var(--p)*1%), rgba(57,255,20,0.12) 0);box-shadow:0 0 14px rgba(57,255,20,0.55),0 0 34px rgba(57,255,20,0.3);}
+.tg-ring.all{animation:tgPulse 2s ease-in-out infinite;}
+@keyframes tgPulse{0%,100%{box-shadow:0 0 14px rgba(57,255,20,0.55),0 0 34px rgba(57,255,20,0.3);}50%{box-shadow:0 0 22px #39ff14,0 0 52px rgba(57,255,20,0.65);}}
+.tg-in{width:138px;height:138px;border-radius:50%;background:#07100a;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid rgba(57,255,20,0.25);}
+.tg-big{font-family:var(--disp);font-weight:800;font-size:34px;color:#39ff14;text-shadow:0 0 12px #39ff14,0 0 26px rgba(57,255,20,0.6);line-height:1;}
+.tg-lbl{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:#39ff14;opacity:0.85;margin-top:7px;text-transform:uppercase;}
+.tg-sub{font-family:var(--mono);font-size:10px;color:var(--dim);text-align:center;}
+.tg-left{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:100%;}
+.tg-chip{font-family:var(--mono);font-size:9px;padding:3px 9px;border-radius:12px;border:1px solid rgba(255,157,0,0.55);color:#ff9d00;white-space:nowrap;}
 .pg-firm{margin-bottom:14px;}
 .pg-head{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:10px;font-weight:700;padding-bottom:5px;margin-bottom:8px;border-bottom:1px solid var(--line);}
 .pg-head .pg-avg{font-size:9px;font-weight:600;}
@@ -555,6 +566,10 @@ body::before{
       <div class="mini-widget gauge-widget">
         <div class="mini-widget-title">Payout Gauges — Funded Accounts</div>
         <div id="payoutGauges"></div>
+      </div>
+      <div class="mini-widget traded-widget">
+        <div class="mini-widget-title">Traded Today — All Firms</div>
+        <div id="tradedGauge"></div>
       </div>
     </div></div>
     <div class="network-stage" id="networkStage">
@@ -1203,6 +1218,24 @@ function renderOverview(){
 }
 
 /* ================= NETWORK SIDEBAR WIDGETS ================= */
+function renderTradedGauge(){
+  const wrap = document.getElementById('tradedGauge');
+  if(!wrap) return;
+  let total=0, done=0; const left=[];
+  state.firms.forEach(f=>{
+    const t = firmTradeProgress(f);
+    total += t.total; done += t.done;
+    if(t.total-t.done>0) left.push({name:f.name, n:t.total-t.done, color:f.color});
+  });
+  if(total===0){ wrap.innerHTML = '<div class="empty" style="padding:0;">No active accounts to track yet</div>'; return; }
+  const pct = (done/total)*100, all = done===total;
+  wrap.innerHTML = `<div class="tg-wrap">
+    <div class="tg-ring${all?' all':''}" style="--p:${pct};"><div class="tg-in"><div class="tg-big">${all?'✓':done+'/'+total}</div><div class="tg-lbl">${all?'All traded':'Traded'}</div></div></div>
+    <div class="tg-sub">${all?'Every active account is done for this trading day':(total-done)+' account'+(total-done!==1?'s':'')+' still to trade'}</div>
+    ${all?'':`<div class="tg-left">${left.map(l=>`<span class="tg-chip">${l.name} · ${l.n}</span>`).join('')}</div>`}
+  </div>`;
+}
+
 function renderPayoutGauges(){
   const wrap = document.getElementById('payoutGauges');
   const groups = [];
@@ -1649,6 +1682,7 @@ function render(){
   renderNetwork();
   renderScopeBar();
   renderPayoutGauges();
+  renderTradedGauge();
   renderPayoutCalc();
   renderMiniCalendar();
   renderFirmLeaderboard();
