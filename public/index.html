@@ -2167,6 +2167,7 @@ function renderDrawerBody(firm){
           <div class="acct-del" data-edit-acct="${a.id}" title="Edit">✎</div>
           ${!isFunded?`<div class="acct-del" data-reserve-acct="${a.id}" title="${isReserved?'Unmark Reserved':'Mark Ready (Reserved)'}">🕓</div>`:''}
           ${isFunded?`<div class="acct-del" data-payout-acct="${a.id}" title="Request payout">💸</div>`:''}
+          ${isFunded?`<div class="acct-del" data-revert-acct="${a.id}" title="Revert to Eval">↩</div>`:''}
           ${!isFunded?`<div class="acct-del" data-upgrade-acct="${a.id}" title="Upgrade to Funded">⬆</div>`:''}
           <div class="acct-del" data-blown-acct="${a.id}" title="Mark blown">💥</div>
           <div class="acct-del" data-del-acct="${a.id}" title="Delete">🗑</div>
@@ -2188,6 +2189,9 @@ function renderDrawerBody(firm){
   });
   wrap.querySelectorAll('[data-log-acct]').forEach(el=>{
     el.addEventListener('click', (e)=>{ e.stopPropagation(); quickLogPL(firm.id, el.dataset.logAcct); });
+  });
+  wrap.querySelectorAll('[data-revert-acct]').forEach(el=>{
+    el.addEventListener('click', (e)=>{ e.stopPropagation(); revertToEval(firm.id, el.dataset.revertAcct); renderDrawerBody(firm); });
   });
   wrap.querySelectorAll('[data-payout-acct]').forEach(el=>{
     el.addEventListener('click', (e)=>{ e.stopPropagation(); openPayoutModal(firm.id, el.dataset.payoutAcct); });
@@ -2337,6 +2341,25 @@ document.getElementById('btnSaveAccount').addEventListener('click', ()=>{
 });
 
 /* ================= UPGRADE / BLOWN / QUICK LOG ================= */
+function revertToEval(firmId, acctId){
+  const firm = getFirm(firmId); const a = getAccount(firmId, acctId);
+  if(!firm || !a || accountType(a)!=='funded') return;
+  if(a.payouts && a.payouts.length){
+    alert(`"${a.nickname}" has ${a.payouts.length} recorded payout${a.payouts.length!==1?'s':''}, so it was genuinely funded.\n\nIf the upgrade was a mistake, open 💸 Request Payout on this account and delete the payout record(s) first, then revert.`);
+    return;
+  }
+  if(!confirm(`Revert "${a.nickname}" back to Eval?\n\nIts funded tracking is removed, limits and targets return to this firm's Eval defaults, and P&L counts from the original starting balance again. Every logged entry stays. You can then mark it Ready (Reserved) with the 🕓 button if you want.`)) return;
+  a.type = 'eval';
+  a.fundedStartEquity = null;
+  a.upgradedAt = null;
+  a.reserved = false;
+  const ed = getEvalDefaults(firm);
+  a.target = ed.target; a.dailyLoss = ed.dailyLoss; a.maxDD = ed.maxDD;
+  a.dailyTarget = ed.dailyTarget; a.weeklyPayout = ed.weeklyPayout;
+  a.consistencyCap = ed.consistencyCap; a.minDays = ed.minDays;
+  save(); renderAll();
+  pushFeed(`↩ <b>${a.nickname}</b> reverted to Eval at ${firm.name}`, firm.color);
+}
 function upgradeToFunded(firmId, acctId){
   const firm = getFirm(firmId); const a = getAccount(firmId, acctId);
   if(!firm || !a || accountType(a)==='funded') return;
