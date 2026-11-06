@@ -441,6 +441,15 @@ body::before{
 .color-picker{display:flex;gap:8px;flex-wrap:wrap;}
 .color-dot{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s;}
 .color-dot.picked{border-color:#fff;transform:scale(1.15);}
+.color-picker{display:flex;flex-wrap:wrap;gap:10px;}
+.color-dot.color-custom{display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:15px;color:var(--dim);background:conic-gradient(#ff1744,#ffb300,#39ff14,#00f0ff,#7c4dff,#ff2df0,#ff1744);position:relative;overflow:hidden;}
+.color-custom input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.mode-switch{display:flex;border:1px solid var(--line);border-radius:20px;overflow:hidden;background:rgba(6,2,16,0.6);}
+.mode-btn{font-family:var(--mono);font-size:10px;letter-spacing:2px;padding:7px 16px;cursor:pointer;color:var(--dim);transition:all .2s;user-select:none;}
+.mode-btn:hover{color:var(--bright);}
+.mode-btn.active[data-mode="futures"]{background:rgba(0,240,255,0.16);color:#00f0ff;text-shadow:0 0 8px #00f0ff;box-shadow:inset 0 0 14px rgba(0,240,255,0.25);}
+.mode-btn.active[data-mode="options"]{background:rgba(255,45,240,0.16);color:#ff2df0;text-shadow:0 0 8px #ff2df0;box-shadow:inset 0 0 14px rgba(255,45,240,0.25);}
+body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);box-shadow:0 1px 18px rgba(255,45,240,0.25);}
 
 .qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px;}
 .qa-tile{
@@ -536,6 +545,7 @@ body::before{
     <div class="brand-badges"><span class="brand-badge"><span class="bdot"></span>Online</span><span class="brand-badge"><span class="bdot"></span>Synced</span><span class="brand-badge"><span class="bdot"></span>Encrypted</span></div>
   </div>
   <div class="top-actions">
+    <div class="mode-switch" id="modeSwitch"><div class="mode-btn active" data-mode="futures">FUTURES</div><div class="mode-btn" data-mode="options">OPTIONS</div></div>
     <span class="clock" id="clock">--:--:--</span>
     <button class="btn" id="btnAddFirmTop">+ FIRM</button>
     <button class="btn danger" id="btnClearData">↺ RESET</button>
@@ -711,6 +721,9 @@ body::before{
     <div class="modal-body">
       <div class="field"><label>Firm Name</label><input type="text" id="firmName" placeholder="e.g. Apex Trader Funding"></div>
       <div class="field"><label>Node Color</label><div class="color-picker" id="colorPicker"></div></div>
+      <label style="display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11px;color:var(--bright);cursor:pointer;margin-top:4px;"><input type="checkbox" id="firmTrackTraded" checked style="width:16px;height:16px;accent-color:#39ff14;"> Include in "Traded Today" tracking</label>
+      <div style="font-size:10px;color:var(--dim);font-family:var(--mono);margin:4px 0 0 26px;">Uncheck to hide this firm from the traded-today circles, counters and gauge.</div>
+      <button class="btn" id="btnMoveFirm" style="margin-top:14px;display:none;"></button>
     </div>
     <div class="modal-foot"><button class="btn" data-close="modalFirm">CANCEL</button><button class="btn primary" id="btnSaveFirm">ADD FIRM</button></div>
   </div>
@@ -868,6 +881,7 @@ onAuthStateChanged(auth, async (user)=>{
     loadingOverlay.classList.remove('hide');
     appRoot.style.display = '';
     await load();
+    applyModeUI();
     renderAll();
     loadingOverlay.classList.add('hide');
     pushFeed('Command bridge online — synced to your account');
@@ -1012,12 +1026,54 @@ initMarket(); drawMarket();
 window.addEventListener('resize', initMarket);
 
 /* ================= COLORS ================= */
-const FIRM_COLORS = ['#00eaff','#ff8a3d','#a855ff','#ff2dd4','#00ffa3','#ffd23d','#5c9eff','#ff2d6e'];
+const FIRM_COLORS = ['#00f0ff','#39ff14','#b6ff00','#fff200','#ffb300','#ff6a00','#ff1744','#ff2d95','#ff2df0','#c026ff','#7c4dff','#2d7bff','#00ffd0','#00ff85','#ffffff','#ff9ec7'];
 const DEFAULT_EVAL_PARAMS = { start:50000, target:2750, dailyLoss:1000, maxDD:2000, dailyTarget:200, weeklyPayout:1000, consistencyCap:40, minDays:3 };
 const DEFAULT_FUNDED_PARAMS = { start:50000, target:0, dailyLoss:1500, maxDD:2500, dailyTarget:250, weeklyPayout:1500, consistencyCap:0, minDays:0 };
 
 /* ================= STATE ================= */
-let state = { firms: [], trades: [], scope: 'ALL', expandedFirms: {} };
+let state = { firms: [], trades: [], scope: 'ALL', expandedFirms: {}, mode: 'futures', books: {} };
+/* Two dashboards (Futures / Options) share the same UI. The ACTIVE book lives at the top level of `state`
+   (firms, trades, scope, ...) so all existing code keeps working; the inactive one is parked in state.books. */
+const BOOK_KEYS = ['firms','trades','scope','expandedFirms','payoutCalc'];
+function emptyBook(){ return { firms:[], trades:[], scope:'ALL', expandedFirms:{}, payoutCalc:{ dailyGoal:200, daysPerWeek:5, numAccts:20, firmCutPct:10 } }; }
+function otherMode(){ return state.mode==='futures' ? 'options' : 'futures'; }
+function applyModeUI(){
+  document.body.dataset.mode = state.mode;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active', b.dataset.mode===state.mode));
+  const t2 = document.querySelector('.brand-text .t2');
+  if(t2) t2.textContent = (state.mode==='options' ? 'OPTIONS' : 'FUTURES') + ' COMMAND BRIDGE';
+}
+function switchMode(newMode){
+  if(newMode===state.mode) return;
+  const snap = {}; BOOK_KEYS.forEach(k=>{ snap[k] = state[k]; });
+  state.books = state.books || {};
+  state.books[state.mode] = snap;
+  const next = state.books[newMode] || emptyBook();
+  const base = emptyBook();
+  BOOK_KEYS.forEach(k=>{ state[k] = next[k]!==undefined ? next[k] : base[k]; });
+  delete state.books[newMode];
+  state.mode = newMode;
+  closeDrawer(); ['modalDash','modalTrade','modalAccount','modalFirm','modalFirmDefaults','modalPayout'].forEach(id=>{ const m=document.getElementById(id); if(m) m.classList.remove('show'); });
+  save(); applyModeUI(); renderAll();
+  pushFeed(`Switched to the <b>${newMode==='options'?'Options':'Futures'}</b> dashboard`);
+}
+function moveFirmToOtherBook(firmId){
+  const firm = getFirm(firmId); if(!firm) return;
+  const target = otherMode(), label = target==='options' ? 'Options' : 'Futures';
+  if(!confirm(`Move "${firm.name}" — with all of its accounts and logged entries — to the ${label} dashboard?`)) return;
+  const moved = state.trades.filter(t=>t.firmId===firmId);
+  state.trades = state.trades.filter(t=>t.firmId!==firmId);
+  state.firms = state.firms.filter(f=>f.id!==firmId);
+  if(typeof state.scope==='string' && state.scope.startsWith(firmId+'::')) state.scope = 'ALL';
+  if(state.expandedFirms) delete state.expandedFirms[firmId];
+  state.books = state.books || {};
+  if(!state.books[target]) state.books[target] = emptyBook();
+  state.books[target].firms.push(firm);
+  state.books[target].trades.push(...moved);
+  closeDrawer(); closeModal('modalFirm');
+  save(); renderAll();
+  pushFeed(`<b>${firm.name}</b> moved to the ${label} dashboard`, firm.color);
+}
 
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 
@@ -1034,6 +1090,8 @@ async function load(){
   if(!state.scope) state.scope='ALL';
   if(!state.expandedFirms) state.expandedFirms={};
   if(!state.payoutCalc) state.payoutCalc = { dailyGoal:200, daysPerWeek:5, numAccts:20, firmCutPct:10 };
+  if(!state.mode) state.mode='futures';
+  if(!state.books) state.books={};
 }
 async function save(){
   try{
@@ -1107,6 +1165,8 @@ function accountTradingEquity(firmId, acct){
 // Actual account balance: trading equity minus any payout deductions
 // Has this account been traded in the current trading day (6pm-5pm ET)? Reserved (Ready) accounts are excluded -> null
 function accountTradeStatus(firmId, a){
+  const fr = getFirm(firmId);
+  if(fr && fr.trackTraded===false) return null;
   if(accountType(a)!=='funded' && a.reserved) return null;
   if(state.trades.some(t=>t.firmId===firmId && t.accountId===a.id && isToday(t.ts))) return 'traded';
   if(a.skipDay && a.skipDay===dayKey(Date.now())) return 'skipped';
@@ -2247,12 +2307,18 @@ let pickedColor = FIRM_COLORS[0];
 let editingFirmId = null;
 function buildColorPicker(){
   const wrap = document.getElementById('colorPicker');
-  wrap.innerHTML = FIRM_COLORS.map(c=>`<div class="color-dot ${c===pickedColor?'picked':''}" style="background:${c};" data-color="${c}"></div>`).join('');
-  wrap.querySelectorAll('.color-dot').forEach(d=>{ d.addEventListener('click', ()=>{ pickedColor=d.dataset.color; buildColorPicker(); }); });
+  const inPalette = FIRM_COLORS.some(c=>c.toLowerCase()===String(pickedColor).toLowerCase());
+  wrap.innerHTML = FIRM_COLORS.map(c=>`<div class="color-dot ${c.toLowerCase()===String(pickedColor).toLowerCase()?'picked':''}" style="background:${c};box-shadow:0 0 10px ${c};" data-color="${c}"></div>`).join('') +
+    `<label class="color-dot color-custom ${inPalette?'':'picked'}" title="Custom color" style="${inPalette?'':'background:'+pickedColor+';box-shadow:0 0 10px '+pickedColor+';'}">+<input type="color" id="customColorInput" value="${/^#[0-9a-f]{6}$/i.test(pickedColor)?pickedColor:'#00f0ff'}"></label>`;
+  wrap.querySelectorAll('.color-dot[data-color]').forEach(d=>{ d.addEventListener('click', ()=>{ pickedColor=d.dataset.color; buildColorPicker(); }); });
+  const ci = document.getElementById('customColorInput');
+  if(ci) ci.addEventListener('input', ()=>{ pickedColor = ci.value; buildColorPicker(); });
 }
 function openAddFirmModal(){
   editingFirmId = null;
   document.getElementById('firmName').value='';
+  document.getElementById('firmTrackTraded').checked = true;
+  document.getElementById('btnMoveFirm').style.display='none';
   document.querySelector('#modalFirm h3').textContent = 'ADD FIRM';
   document.getElementById('btnSaveFirm').textContent = 'ADD FIRM';
   pickedColor = FIRM_COLORS[state.firms.length % FIRM_COLORS.length];
@@ -2263,6 +2329,8 @@ function openEditFirmModal(firmId){
   const firm = getFirm(firmId); if(!firm) return;
   editingFirmId = firmId;
   document.getElementById('firmName').value = firm.name;
+  document.getElementById('firmTrackTraded').checked = firm.trackTraded!==false;
+  const mv = document.getElementById('btnMoveFirm'); mv.style.display=''; mv.textContent = `⇄ Move to ${state.mode==='futures'?'Options':'Futures'} dashboard`;
   document.querySelector('#modalFirm h3').textContent = 'EDIT FIRM';
   document.getElementById('btnSaveFirm').textContent = 'SAVE CHANGES';
   pickedColor = firm.color;
@@ -2270,17 +2338,19 @@ function openEditFirmModal(firmId){
   openModal('modalFirm');
 }
 document.getElementById('btnAddFirmTop').addEventListener('click', openAddFirmModal);
+document.getElementById('btnMoveFirm').addEventListener('click', ()=>{ if(editingFirmId) moveFirmToOtherBook(editingFirmId); });
+document.querySelectorAll('.mode-btn').forEach(b=>b.addEventListener('click', ()=>switchMode(b.dataset.mode)));
 document.getElementById('btnSaveFirm').addEventListener('click', ()=>{
   const name = document.getElementById('firmName').value.trim();
   if(!name){ alert('Enter a firm name'); return; }
   if(editingFirmId){
     const firm = getFirm(editingFirmId);
-    firm.name = name; firm.color = pickedColor;
+    firm.name = name; firm.color = pickedColor; firm.trackTraded = document.getElementById('firmTrackTraded').checked;
     save(); closeModal('modalFirm'); renderAll();
     pushFeed(`Firm renamed to <b>${name}</b>`, pickedColor);
     if(document.getElementById('drawer').classList.contains('show')) openDrawer(editingFirmId);
   } else {
-    const firm = { id:uid(), name, color:pickedColor, accounts:[], evalDefaults:{...DEFAULT_EVAL_PARAMS}, fundedDefaults:{...DEFAULT_FUNDED_PARAMS}, blownCount:0 };
+    const firm = { id:uid(), name, color:pickedColor, accounts:[], evalDefaults:{...DEFAULT_EVAL_PARAMS}, fundedDefaults:{...DEFAULT_FUNDED_PARAMS}, blownCount:0, trackTraded: document.getElementById('firmTrackTraded').checked };
     state.firms.push(firm);
     save(); closeModal('modalFirm'); renderAll();
     pushFeed(`Firm <b>${name}</b> added to network — click its node's ✎ to add an account`, pickedColor);
@@ -2585,10 +2655,12 @@ document.getElementById('btnSaveTrade').addEventListener('click', ()=>{
 });
 
 document.getElementById('btnClearData').addEventListener('click', ()=>{
-  if(confirm('Reset everything — all firms, accounts, and entries? This cannot be undone.')){
-    state = {firms:[], trades:[], scope:'ALL', expandedFirms:{}};
+  const lbl = state.mode==='options' ? 'Options' : 'Futures';
+  if(confirm(`Reset the ${lbl} dashboard — all of its firms, accounts, and entries? (The ${state.mode==='options'?'Futures':'Options'} dashboard is not touched.) This cannot be undone.`)){
+    const keepMode = state.mode, keepBooks = state.books || {}, keepCollapsed = state.scopeCollapsed;
+    state = Object.assign(emptyBook(), { mode: keepMode, books: keepBooks, scopeCollapsed: keepCollapsed });
     save(); renderAll();
-    pushFeed('Dashboard reset');
+    pushFeed(lbl+' dashboard reset');
   }
 });
 
