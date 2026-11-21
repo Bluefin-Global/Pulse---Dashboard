@@ -3145,16 +3145,15 @@ requestAnimationFrame(drawVoOrb);
 const dnCv = document.getElementById('dancerCanvas');
 let dnT = 0;
 function dancerMood(){
-  const pl = state.trades.filter(t=>isToday(t.ts)).reduce((x,t)=>x+Number(t.pl||0),0);
-  return pl>0 ? {name:'IN THE GROOVE', speed:1.7, amp:1.0} : pl<0 ? {name:'SLOW & STEADY', speed:0.6, amp:0.45} : {name:'WARMING UP', speed:1.0, amp:0.7};
+  // fixed fast tempo and full energy, regardless of how the day is going
+  return {name:'ON BEAT', speed:1.5, amp:1.0};
 }
-/* particle-mesh human: points ride on a dancing skeleton and link to near neighbours */
-const DN_BONES = ['torso','head','uarmL','farmL','uarmR','farmR','thighL','shinL','thighR','shinR'];
-const DN_W = {torso:[0.8,0.5], head:[0.4,0.36], uarmL:[0.2,0.16], farmL:[0.16,0.11], uarmR:[0.2,0.16], farmR:[0.16,0.11], thighL:[0.28,0.2], shinL:[0.19,0.12], thighR:[0.28,0.2], shinR:[0.19,0.12]};
-const DN_COUNT = {torso:90, head:26, uarmL:18, farmL:16, uarmR:18, farmR:16, thighL:26, shinL:22, thighR:26, shinR:22};
-const dnPts = [];
+/* 3D particle-hologram human: points live on the SURFACE of tapered 3D volumes (torso ellipse, limbs, head, joints) so the body turns, has depth and a glowing rim */
+const DNP = [];
 (function(){ let seed=7; const rnd=()=>{ seed=(seed*16807)%2147483647; return seed/2147483647; };
-  DN_BONES.forEach(b=>{ for(let i=0;i<DN_COUNT[b];i++){ const t=rnd(), w=DN_W[b][0]+(DN_W[b][1]-DN_W[b][0])*t; dnPts.push({b, t, off:(rnd()*2-1)*w*(b==='head'?0.9:1), pink:rnd()<0.35, z:rnd()}); } });
+  const spec = {torso:1300, head:420, neck:50, shL:90, shR:90, uarmL:190, farmL:160, uarmR:190, farmR:160, thighL:300, shinL:250, thighR:300, shinR:250, handL:80, handR:80, hipS:160};
+  Object.keys(spec).forEach(b=>{ for(let i=0;i<spec[b];i++){
+    DNP.push({b, t:rnd(), ph:rnd()*6.2832, z:rnd(), big:rnd()<0.012}); } });
 })();
 /* ---- dance library: each returns {cx,sway,twist,lean,nod,arms[[upL,foreL],[upR,foreR]],thL,shL,thR,shR}; arm/leg angles are "outward from straight down" ---- */
 const DANCES = [
@@ -3233,7 +3232,7 @@ const DANCES = [
 let dnForce = -1;
 function pickDance(t,mood){
   if(dnForce>=0) return dnForce;
-  const list = mood.speed<0.8 ? [3,0,2] : [0,1,4,5,6,2,1,6];
+  const list = [0,1,4,5,6,2,1,6];
   return list[Math.floor(t/9)%list.length];
 }
 function drawDancer(){
@@ -3243,7 +3242,7 @@ function drawDancer(){
   const c = dnCv.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,w,h);
   const m = dancerMood();
   dnT += 0.016*m.speed*1.7; const t = dnT, A = m.amp;
-  const U = Math.min((h-20)/7.6, w/4.2), floor = h - U*0.2;
+  const U = Math.min((h-20)/7.6, w/5.6), floor = h - U*0.2;
   const di = pickDance(t, m), D = DANCES[di](t, A);
   const cx = w/2 + D.cx*U;
   const tw = 0.6+0.4*Math.cos(D.twist);
@@ -3266,58 +3265,79 @@ function drawDancer(){
     uarmL:[shL,eL], farmL:[eL,wL], uarmR:[shR,eR], farmR:[eR,wR],
     thighL:[hpL,kL], shinL:[kL,aL], thighR:[hpR,kR], shinR:[kR,aR]
   };
-  /* ---- holographic body: translucent cyan/blue glass with rim light, inner circuitry and glowing joint orbs ---- */
-  const CY='0,225,255', BL='30,110,255';
-  const cap = (p,q,wd,glow)=>{                                  // one limb segment as a rounded capsule, 3 passes
-    c.lineCap='round'; c.lineJoin='round';
-    c.shadowColor='rgba('+CY+',0.9)'; c.shadowBlur=glow;
-    c.strokeStyle='rgba('+CY+',0.55)'; c.lineWidth=wd+2.5; c.beginPath(); c.moveTo(p[0],p[1]); c.lineTo(q[0],q[1]); c.stroke();      // rim
-    c.shadowBlur=0;
-    const g=c.createLinearGradient(p[0],p[1],q[0],q[1]); g.addColorStop(0,'rgba('+BL+',0.55)'); g.addColorStop(1,'rgba('+CY+',0.45)');
-    c.strokeStyle=g; c.lineWidth=wd; c.beginPath(); c.moveTo(p[0],p[1]); c.lineTo(q[0],q[1]); c.stroke();                             // glass body
-    c.strokeStyle='rgba(190,250,255,0.45)'; c.lineWidth=Math.max(1,wd*0.18); c.beginPath(); c.moveTo(p[0],p[1]); c.lineTo(q[0],q[1]); c.stroke(); // inner highlight
+  /* ---- 3D particle hologram ---- */
+  const yaw = 0.75*Math.sin(t*0.33) + 0.55*Math.sin(D.twist||0) + Math.sin(t*0.9)*0.08, cY=Math.cos(yaw), sY=Math.sin(yaw);
+  const FOC = U*10;
+  const rel = (pt,dx,dz)=>[pt[0]-hipX+dx, pt[1]-hipY, dz];
+  const sx0 = U*1.15;
+  const J = {
+    hip:[0,0,0],
+    neck:[neck[0]-hipX, neck[1]-hipY, -U*0.05*Math.sin(lean)],
+    head:[head[0]-hipX, head[1]-hipY, U*0.08],
+    shL:[neck[0]-hipX-sx0, neck[1]-hipY, 0], shR:[neck[0]-hipX+sx0, neck[1]-hipY, 0],
+    hpL:[-U*0.45,0,0], hpR:[U*0.45,0,0]
   };
-  const orb = (x,y,r,a)=>{ const g=c.createRadialGradient(x,y,0,x,y,r); g.addColorStop(0,'rgba(255,255,255,'+a+')'); g.addColorStop(0.35,'rgba('+CY+','+(a*0.8)+')'); g.addColorStop(1,'rgba('+CY+',0)'); c.fillStyle=g; c.beginPath(); c.arc(x,y,r,0,6.2832); c.fill(); };
-  const ring = (x,y,r)=>{ c.strokeStyle='rgba('+CY+',0.8)'; c.lineWidth=1.4; c.beginPath(); c.arc(x,y,r,0,6.2832); c.stroke(); };
-  // soft aura
-  const aura = c.createRadialGradient(hipX,hipY-U*1.8,0,hipX,hipY-U*1.8,U*4.4); aura.addColorStop(0,'rgba('+CY+',0.16)'); aura.addColorStop(1,'rgba('+CY+',0)');
-  c.fillStyle=aura; c.fillRect(0,0,w,h);
-  // legs, then torso, then arms, then head (rear to front)
-  cap(hpL,kL,U*0.58,14); cap(kL,aL,U*0.42,14); cap(hpR,kR,U*0.58,14); cap(kR,aR,U*0.42,14);
-  // feet
-  [aL,aR].forEach(f=>{ cap(f,[f[0]+(f===aL?-1:1)*U*0.1,f[1]+U*0.05],U*0.32,10); });
-  // torso: tapered glass polygon
-  const tg = c.createLinearGradient(neck[0],neck[1],hipX,hipY); tg.addColorStop(0,'rgba('+CY+',0.55)'); tg.addColorStop(1,'rgba('+BL+',0.5)');
-  c.shadowColor='rgba('+CY+',0.9)'; c.shadowBlur=16; c.fillStyle=tg; c.strokeStyle='rgba('+CY+',0.85)'; c.lineWidth=2;
-  c.beginPath(); c.moveTo(shL[0],shL[1]); c.quadraticCurveTo(shL[0]+U*0.1,(shL[1]+hipY)/2,hpL[0]-U*0.05,hpL[1]); c.lineTo(hpR[0]+U*0.05,hpR[1]); c.quadraticCurveTo(shR[0]-U*0.1,(shR[1]+hipY)/2,shR[0],shR[1]); c.closePath(); c.fill(); c.stroke();
-  c.shadowBlur=0;
-  // inner circuitry on the torso (flowing pulses)
-  c.save(); c.clip(); c.lineWidth=1; c.strokeStyle='rgba(200,250,255,0.35)';
-  for(let i=-2;i<=2;i++){ const fx=i/2.6; c.beginPath(); c.moveTo(neck[0]+fx*U*0.9,neck[1]+U*0.2); c.lineTo(hipX+fx*U*0.5,hipY); c.stroke(); }
-  for(let k=0;k<5;k++){ const yy=neck[1]+(hipY-neck[1])*(k+1)/6; c.beginPath(); c.moveTo(neck[0]-U*0.8,yy); c.lineTo(neck[0]+U*0.8,yy); c.stroke(); }
-  c.lineWidth=2; c.strokeStyle='rgba(255,255,255,0.8)';
-  for(let i=-2;i<=2;i+=2){ const fx=i/2.6, ph=((t*0.9+i*0.17)%1+1)%1; const x0=neck[0]+fx*U*0.9, y0=neck[1]+U*0.2, x1=hipX+fx*U*0.5, y1=hipY;
-    c.beginPath(); c.moveTo(x0+(x1-x0)*ph,y0+(y1-y0)*ph); c.lineTo(x0+(x1-x0)*(ph+0.08),y0+(y1-y0)*(ph+0.08)); c.stroke(); }
-  c.restore();
-  // arms
-  cap(shL,eL,U*0.4,12); cap(eL,wL,U*0.3,12); cap(shR,eR,U*0.4,12); cap(eR,wR,U*0.3,12);
-  [wL,wR].forEach(x=>orb(x[0],x[1],U*0.34,0.8));                // glowing hands
-  // glowing joint orbs: shoulders, elbows, knees
-  [shL,shR].forEach(x=>{ orb(x[0],x[1],U*0.5,0.9); ring(x[0],x[1],U*0.2); });
-  [eL,eR,kL,kR].forEach(x=>orb(x[0],x[1],U*0.28,0.6));
-  // chest core
-  const chX=(neck[0]*0.6+hipX*0.4), chY=(neck[1]*0.6+hipY*0.4), pulse=1+0.12*Math.sin(t*4);
-  orb(chX,chY,U*0.8*pulse,1); ring(chX,chY,U*0.34); ring(chX,chY,U*0.5);
-  // neck + head (glass ellipse with a bright forehead orb)
-  cap([neck[0],neck[1]],[head[0],head[1]+U*0.3],U*0.34,10);
-  const hg = c.createRadialGradient(head[0]-U*0.1,head[1]-U*0.15,0,head[0],head[1],U*0.55); hg.addColorStop(0,'rgba(200,250,255,0.75)'); hg.addColorStop(1,'rgba('+BL+',0.45)');
-  c.shadowColor='rgba('+CY+',0.9)'; c.shadowBlur=16; c.fillStyle=hg; c.strokeStyle='rgba('+CY+',0.9)'; c.lineWidth=2;
-  c.beginPath(); c.ellipse(head[0],head[1],U*0.4,U*0.52,lean*1.2,0,6.2832); c.fill(); c.stroke(); c.shadowBlur=0;
-  orb(head[0]+U*0.05,head[1]-U*0.1,U*0.3,0.9);                  // glowing eye / forehead orb
-  // floating hex "data" tiles orbiting the figure
-  for(let i=0;i<4;i++){ const ang=t*0.5+i*1.57, hx=hipX+Math.cos(ang)*U*2.2, hy=hipY-U*2.1+Math.sin(ang*1.3)*U*1.7, r=U*(0.22+0.05*i%2);
-    c.strokeStyle='rgba('+CY+','+(0.35+0.25*Math.sin(t*2+i))+')'; c.lineWidth=1.3; c.beginPath(); for(let k=0;k<6;k++){ const a2=k*1.047+ang; k?c.lineTo(hx+Math.cos(a2)*r,hy+Math.sin(a2)*r):c.moveTo(hx+Math.cos(a2)*r,hy+Math.sin(a2)*r);} c.closePath(); c.stroke(); }
-  const fg = c.createRadialGradient(cx,floor+U*0.1,0,cx,floor+U*0.1,U*3); fg.addColorStop(0,'rgba(0,225,255,0.22)'); fg.addColorStop(1,'rgba(0,225,255,0)');
+  J.eL=[J.shL[0]+(eL[0]-shL[0]), J.shL[1]+(eL[1]-shL[1]), -U*0.12]; J.wL=[J.shL[0]+(wL[0]-shL[0]), J.shL[1]+(wL[1]-shL[1]), U*0.18*Math.sin(D.arms[0][1]-D.arms[0][0])];
+  J.eR=[J.shR[0]+(eR[0]-shR[0]), J.shR[1]+(eR[1]-shR[1]), -U*0.12]; J.wR=[J.shR[0]+(wR[0]-shR[0]), J.shR[1]+(wR[1]-shR[1]), U*0.18*Math.sin(D.arms[1][1]-D.arms[1][0])];
+  J.kL=[J.hpL[0]+(kL[0]-hpL[0]), J.hpL[1]+(kL[1]-hpL[1]), U*0.28*Math.sin(Math.abs(D.thL))];  J.aL=[J.hpL[0]+(aL[0]-hpL[0]), J.hpL[1]+(aL[1]-hpL[1]), -U*0.05];
+  J.kR=[J.hpR[0]+(kR[0]-hpR[0]), J.hpR[1]+(kR[1]-hpR[1]), U*0.28*Math.sin(Math.abs(D.thR))];  J.aR=[J.hpR[0]+(aR[0]-hpR[0]), J.hpR[1]+(aR[1]-hpR[1]), -U*0.05];
+  const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]], nrm=v=>{const L=Math.hypot(v[0],v[1],v[2])||1; return [v[0]/L,v[1]/L,v[2]/L];}, crs=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+  const cap=(p,q,r1,r2,zs)=>{ const ax=nrm(sub(q,p)); let n1=nrm(crs(ax,[0,0,1])); const n2=crs(ax,n1); return {p,q,r1,r2,ax,n1,n2,zs:zs||1}; };
+  const tx=1.0, torsoTopR=U*1.02, torsoWaistR=U*0.6, torsoHipR=U*0.72;
+  const B = {
+    torso:Object.assign(cap([J.neck[0],J.neck[1]+U*0.05,J.neck[2]],[0,U*0.1,0],torsoTopR,torsoHipR,0.52),{prof:(u)=> u<0.62 ? torsoTopR+(torsoWaistR-torsoTopR)*(u/0.62) : torsoWaistR+(torsoHipR-torsoWaistR)*((u-0.62)/0.38)}),
+    neck:cap([J.neck[0],J.neck[1]-U*0.05,J.neck[2]],[J.head[0],J.head[1]+U*0.3,J.head[2]],U*0.16,U*0.14),
+    uarmL:cap(J.shL,J.eL,U*0.25,U*0.18), farmL:cap(J.eL,J.wL,U*0.18,U*0.11), uarmR:cap(J.shR,J.eR,U*0.25,U*0.18), farmR:cap(J.eR,J.wR,U*0.18,U*0.11),
+    thighL:cap(J.hpL,J.kL,U*0.33,U*0.21), shinL:cap(J.kL,J.aL,U*0.22,U*0.12), thighR:cap(J.hpR,J.kR,U*0.33,U*0.21), shinR:cap(J.kR,J.aR,U*0.22,U*0.12)
+  };
+  const SPH = { head:{c:J.head, r:[U*0.31,U*0.42,U*0.35]}, shL:{c:J.shL,r:[U*0.32,U*0.32,U*0.3]}, shR:{c:J.shR,r:[U*0.32,U*0.32,U*0.3]}, handL:{c:J.wL,r:[U*0.14,U*0.17,U*0.1]}, handR:{c:J.wR,r:[U*0.14,U*0.17,U*0.1]}, hipS:{c:[0,U*0.05,0], r:[U*0.78,U*0.4,U*0.5]} };
+  const proj=(X,Y,Z)=>{ const x2=X*cY+Z*sY, z2=-X*sY+Z*cY, s=FOC/(FOC-z2); return [hipX+x2*s, hipY+Y*s, z2, s]; };
+  const PALE='170,225,255';
+  // projector pad + beam
+  const padY=floor+U*0.08;
+  const beam=c.createLinearGradient(0,padY,0,padY-U*7.4); beam.addColorStop(0,'rgba(90,170,255,0.20)'); beam.addColorStop(1,'rgba(90,170,255,0)');
+  c.fillStyle=beam; c.beginPath(); c.moveTo(hipX-U*1.7,padY); c.lineTo(hipX-U*1.15,padY-U*7.4); c.lineTo(hipX+U*1.15,padY-U*7.4); c.lineTo(hipX+U*1.7,padY); c.closePath(); c.fill();
+  c.lineWidth=1; for(let i=0;i<3;i++){ c.strokeStyle='rgba(150,215,255,'+(0.55-i*0.15)+')'; c.beginPath(); c.ellipse(hipX,padY,U*(1.7+i*0.55),U*(0.34+i*0.1),0,0,6.2832); c.stroke(); }
+  const vg = c.createRadialGradient(hipX,hipY-U*1.9,0,hipX,hipY-U*1.9,U*4.2); vg.addColorStop(0,'rgba(60,150,255,0.16)'); vg.addColorStop(1,'rgba(60,150,255,0)');
+  c.fillStyle=vg; c.fillRect(0,0,w,h);
+  c.globalCompositeOperation='lighter';
+  // holographic cross-section rings + flowing long lines
+  c.lineWidth=0.8;
+  Object.keys(B).forEach(k=>{ const b=B[k], L=Math.hypot(b.q[0]-b.p[0],b.q[1]-b.p[1],b.q[2]-b.p[2]); const rings=(k==='torso')?11:(k==='neck'?1:4);
+    for(let i=0;i<rings;i++){ const u=(i+0.5)/rings + 0.03*Math.sin(t*1.2+i), r=b.prof?b.prof(u):b.r1+(b.r2-b.r1)*u; c.strokeStyle='rgba('+PALE+','+(0.10+0.06*Math.sin(t*2+i)).toFixed(3)+')'; c.beginPath();
+      for(let a2=0;a2<=16;a2++){ const ph=a2/16*6.2832, ca=Math.cos(ph)*r, sa=Math.sin(ph)*r*b.zs;
+        const X=b.p[0]+(b.q[0]-b.p[0])*u+b.n1[0]*ca+b.n2[0]*sa, Y=b.p[1]+(b.q[1]-b.p[1])*u+b.n1[1]*ca+b.n2[1]*sa, Z=b.p[2]+(b.q[2]-b.p[2])*u+b.n1[2]*ca+b.n2[2]*sa;
+        const q=proj(X,Y,Z); a2?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1]); } c.stroke(); }
+    const lines=(k==='torso')?7:3; for(let i=0;i<lines;i++){ const ph0=i/lines*6.2832+t*0.6; c.strokeStyle='rgba('+PALE+','+(0.13+0.07*Math.sin(t*1.5+i)).toFixed(3)+')'; c.beginPath();
+      for(let s2=0;s2<=10;s2++){ const u=s2/10, r=b.prof?b.prof(u):b.r1+(b.r2-b.r1)*u, ph=ph0+0.35*Math.sin(u*4+t*1.3+i), ca=Math.cos(ph)*r, sa=Math.sin(ph)*r*b.zs;
+        const X=b.p[0]+(b.q[0]-b.p[0])*u+b.n1[0]*ca+b.n2[0]*sa, Y=b.p[1]+(b.q[1]-b.p[1])*u+b.n1[1]*ca+b.n2[1]*sa, Z=b.p[2]+(b.q[2]-b.p[2])*u+b.n1[2]*ca+b.n2[2]*sa;
+        const q=proj(X,Y,Z); s2?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1]); } c.stroke(); } });
+  // surface particles
+  const stars=[];
+  for(const p of DNP){
+    let X,Y,Z,nx,ny,nz;
+    if(SPH[p.b]){ const S=SPH[p.b], th=Math.acos(2*p.t-1), dx=Math.sin(th)*Math.cos(p.ph), dy=Math.cos(th), dz=Math.sin(th)*Math.sin(p.ph);
+      X=S.c[0]+dx*S.r[0]; Y=S.c[1]+dy*S.r[1]; Z=S.c[2]+dz*S.r[2]; nx=dx; ny=dy; nz=dz; }
+    else { const b=B[p.b], u=p.t, r=b.prof?b.prof(u):b.r1+(b.r2-b.r1)*u, cp=Math.cos(p.ph), sp=Math.sin(p.ph), ca=cp*r, sa=sp*r*b.zs;
+      X=b.p[0]+(b.q[0]-b.p[0])*u+b.n1[0]*ca+b.n2[0]*sa; Y=b.p[1]+(b.q[1]-b.p[1])*u+b.n1[1]*ca+b.n2[1]*sa; Z=b.p[2]+(b.q[2]-b.p[2])*u+b.n1[2]*ca+b.n2[2]*sa;
+      nx=b.n1[0]*cp+b.n2[0]*sp; ny=b.n1[1]*cp+b.n2[1]*sp; nz=b.n1[2]*cp+b.n2[2]*sp; }
+    const q=proj(X,Y,Z), nzr=-nx*sY+nz*cY, rim=1-Math.abs(nzr), front=nzr>0?1:0, tw2=0.55+0.45*Math.sin(t*3+p.z*60);
+    const depth=Math.max(0,Math.min(1,0.5+q[2]/(U*2.6)));
+    const al=(0.10+0.62*Math.pow(rim,1.6)+0.16*front*p.z)*(0.55+0.45*depth)*(0.6+0.4*tw2);
+    if(p.big){ stars.push([q[0],q[1],p.z,tw2,front]); continue; }
+    c.fillStyle='rgba('+PALE+','+al.toFixed(3)+')';
+    const sz=(0.8+1.1*p.z)*q[3]; c.fillRect(q[0],q[1],sz,sz);
+  }
+  // bright joint nodes
+  const JN=['neck','head','shL','shR','eL','eR','wL','wR','hpL','hpR','kL','kR','aL','aR','hip'];
+  JN.forEach(k=>{ const q=proj(J[k][0],J[k][1],J[k][2]); stars.push([q[0],q[1],0.9,0.8+0.2*Math.sin(t*4+k.length),1]); });
+  c.lineWidth=0.7; const LK=U*0.8;
+  for(let i=0;i<stars.length;i++){ for(let j=i+1;j<stars.length;j++){ const dx=stars[i][0]-stars[j][0], dy=stars[i][1]-stars[j][1], d=Math.hypot(dx,dy);
+    if(d<LK){ c.strokeStyle='rgba(200,235,255,'+((1-d/LK)*0.4).toFixed(3)+')'; c.beginPath(); c.moveTo(stars[i][0],stars[i][1]); c.lineTo(stars[j][0],stars[j][1]); c.stroke(); } } }
+  c.shadowColor='rgba(150,220,255,1)'; c.shadowBlur=10;
+  stars.forEach(st=>{ c.fillStyle='rgba(255,255,255,'+(0.5+0.5*st[3])*(st[4]?1:0.6)+')'; c.beginPath(); c.arc(st[0],st[1],1.2+2.2*st[2]*(0.6+0.4*st[3]),0,6.2832); c.fill(); });
+  c.shadowBlur=0; c.globalCompositeOperation='source-over';
+  const fg = c.createRadialGradient(cx,floor+U*0.1,0,cx,floor+U*0.1,U*3); fg.addColorStop(0,'rgba(120,200,255,0.18)'); fg.addColorStop(1,'rgba(120,200,255,0)');
   c.fillStyle=fg; c.fillRect(0,floor-U,w,U*3);
   requestAnimationFrame(drawDancer);
 }
