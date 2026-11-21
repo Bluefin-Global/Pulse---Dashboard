@@ -258,6 +258,48 @@ body::before{
 .mk-dot{position:absolute;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;background:rgba(255,255,255,0.35);}
 .mk-dot.open{background:#fff;box-shadow:0 0 10px 3px rgba(255,255,255,0.7);animation:mkPulse 2.4s ease-in-out infinite;}
 @keyframes mkPulse{0%,100%{box-shadow:0 0 8px 2px rgba(255,255,255,0.5);}50%{box-shadow:0 0 18px 7px rgba(255,255,255,0.85);}}
+.hud-row{width:calc(100% - 40px);max-width:1900px;margin:0 auto 14px;display:grid;grid-template-columns:minmax(260px,1fr) minmax(300px,1.6fr) minmax(250px,1fr) minmax(220px,0.9fr);gap:12px;}
+.hud-panel{position:relative;border:1px solid rgba(0,229,255,0.35);border-radius:12px;background:linear-gradient(180deg,rgba(10,22,48,0.75),rgba(6,10,26,0.85));padding:12px 14px;overflow:hidden;box-shadow:0 0 18px rgba(0,229,255,0.12),inset 0 0 22px rgba(0,229,255,0.05);min-height:250px;}
+.hud-panel::before,.hud-panel::after{content:'';position:absolute;width:14px;height:14px;border:2px solid #00e5ff;pointer-events:none;}
+.hud-panel::before{top:-1px;left:-1px;border-right:none;border-bottom:none;border-top-left-radius:12px;}
+.hud-panel::after{bottom:-1px;right:-1px;border-left:none;border-top:none;border-bottom-right-radius:12px;}
+.hud-title{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--dim);margin-bottom:10px;position:relative;z-index:2;}
+.hud-title .b{color:#00e5ff;}
+.hud-sub{float:right;color:var(--dim);letter-spacing:1px;}
+.hc-body{display:flex;gap:16px;align-items:center;}
+.hc-cal{width:104px;flex:none;text-align:center;border:1px solid rgba(255,255,255,0.25);border-radius:8px;padding:6px 4px 8px;background:rgba(255,255,255,0.04);box-shadow:0 0 16px rgba(255,255,255,0.1);}
+.hc-mon{font-family:var(--mono);font-size:11px;letter-spacing:3px;color:#ff9f1c;}
+.hc-day{font-size:52px;font-weight:800;line-height:1;color:#fff;text-shadow:0 0 18px rgba(255,255,255,0.6);}
+.hc-wd{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--dim);margin-top:2px;}
+.hc-time{flex:1;min-width:0;}
+.hc-t{font-family:var(--mono);font-size:clamp(18px,1.9vw,27px);font-weight:700;color:#00e5ff;text-shadow:0 0 14px rgba(0,229,255,0.7);white-space:nowrap;}
+.hc-z{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--dim);margin-bottom:8px;}
+.hc-sess{display:flex;flex-direction:column;gap:3px;font-family:var(--mono);font-size:9px;letter-spacing:1px;}
+.hc-sess .o{color:#39ff14;} .hc-sess .c{color:rgba(255,255,255,0.35);}
+.hp-wrap{display:flex;gap:26px;align-items:stretch;height:196px;}
+.hp-vbar{position:relative;width:78px;flex:none;display:flex;flex-direction:column-reverse;gap:3px;padding:5px;border:1px solid rgba(0,229,255,0.4);border-radius:8px;background:rgba(0,0,0,0.35);box-shadow:inset 0 0 14px rgba(0,229,255,0.12);}
+.hp-vbar i{display:block;flex:1;border-radius:2px;background:rgba(255,255,255,0.07);}
+.hp-vbar i.on{background:var(--c);box-shadow:0 0 7px var(--c);}
+.hp-side{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:8px;}
+.hp-pct{font-size:64px;font-weight:800;line-height:1;text-shadow:0 0 18px currentColor;}
+.hp-amt{font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--dim);}
+.hp-leg{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;gap:8px;}
+.hp-leg span:first-child{display:flex;align-items:center;gap:6px;}
+.hp-leg i{display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--c);box-shadow:0 0 6px var(--c);}
+.vo-wrap{display:flex;align-items:center;gap:16px;justify-content:center;padding-top:4px;}
+.vo-orb{position:relative;width:120px;height:120px;border:none;background:none;cursor:pointer;flex:none;padding:0;border-radius:50%;filter:drop-shadow(0 0 14px rgba(40,110,255,0.7));transition:filter .3s,transform .2s;}
+.vo-orb:hover{transform:scale(1.04);}
+.vo-orb canvas{width:100%;height:100%;border-radius:50%;display:block;}
+.vo-orb.listening{filter:drop-shadow(0 0 22px rgba(57,255,20,0.85));}
+.vo-say{font-family:var(--mono);font-size:11px;color:var(--dim);line-height:1.6;}
+.vo-say i{color:#fff;font-style:italic;font-size:12px;}
+.vo-confirm{margin-top:8px;} .vo-confirm.hidden{display:none;}
+.vo-heard{font-family:var(--mono);font-size:10px;color:#00e5ff;margin-bottom:6px;}
+.vo-row{display:flex;gap:6px;margin-bottom:6px;} .vo-row select,.vo-row input{flex:1;min-width:0;background:rgba(0,0,0,0.4);border:1px solid var(--line);color:#fff;border-radius:6px;padding:5px 6px;font-family:var(--mono);font-size:11px;}
+.hud-dancer{padding:0;} .hud-dancer canvas{position:absolute;inset:0;width:100%;height:100%;}
+.dn-title{position:absolute;top:12px;left:14px;right:14px;margin:0;}
+@media(max-width:1200px){.hud-row{grid-template-columns:1fr 1fr;}}
+@media(max-width:700px){.hud-row{grid-template-columns:1fr;}}
 .network-stage{position:relative;width:100%;height:640px;}
 .node-lines{position:absolute;inset:0;width:100%;height:100%;}
 .node-lines line{stroke-dasharray:3 4;animation:dashflow 3s linear infinite;}
@@ -636,6 +678,34 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
     <div class="nf-equity" id="nfEquity">$0</div>
     <div class="nf-stats" id="nfStats"></div>
   </div>
+</div>
+
+<div class="hud-row" id="hudRow">
+  <div class="hud-panel hud-clock" id="hudClock">
+    <div class="hud-title">◆ <span class="b">TRADING CLOCK</span></div>
+    <div class="hc-body">
+      <div class="hc-cal"><div class="hc-mon" id="hcMon">NOV</div><div class="hc-day" id="hcDay">21</div><div class="hc-wd" id="hcWd">SATURDAY</div></div>
+      <div class="hc-time"><div class="hc-t" id="hcTime">--:--:--</div><div class="hc-z">EASTERN TIME</div>
+        <div class="hc-sess" id="hcSess"></div></div>
+    </div>
+  </div>
+  <div class="hud-panel hud-profit">
+    <div class="hud-title">◆ <span class="b">PROFIT STATUS</span> — today vs. daily targets <span class="hud-sub" id="hpSub"></span></div>
+    <div id="hudProfit"></div>
+  </div>
+  <div class="hud-panel hud-voice">
+    <div class="hud-title">◆ <span class="b">VOICE ENTRY</span></div>
+    <div class="vo-wrap">
+      <button class="vo-orb" id="voOrb" title="Tap, then say e.g. “Lucid account 1034 plus 450”"><canvas id="voCanvas" width="240" height="240"></canvas></button>
+      <div class="vo-say" id="voSay">Tap the orb &amp; say<br><i>“Lucid 1034 plus 450”</i></div>
+    </div>
+    <div class="vo-confirm hidden" id="voConfirm">
+      <div class="vo-heard" id="voHeard"></div>
+      <div class="vo-row"><select id="voFirm"></select><select id="voAcct"></select></div>
+      <div class="vo-row"><input type="number" id="voAmt" step="0.01" placeholder="amount (+/-)"><button class="btn primary" id="voSave">CONFIRM</button><button class="btn" id="voCancel">✕</button></div>
+    </div>
+  </div>
+  <div class="hud-panel hud-dancer"><canvas id="dancerCanvas"></canvas><div class="hud-title dn-title">◆ <span class="b">PULSE MOOD</span> <span class="hud-sub" id="dnMood"></span></div></div>
 </div>
 
 <div class="grid">
@@ -1822,6 +1892,7 @@ document.getElementById('scopeAll').addEventListener('click', ()=>{ state.scope=
 
 /* ================= MAIN RENDER ================= */
 function render(){
+  renderHud();
   const s = computeStats();
   document.getElementById('statEquity').textContent = fmt(s.equity);
   const dayPLEl = document.getElementById('statDayPL');
@@ -2829,6 +2900,264 @@ document.getElementById('cmdBar').addEventListener('keydown', (e)=>{
   }
   pushFeed(`Unrecognized command: "${raw}"`);
 });
+
+/* ================= HUD ROW ================= */
+const SESSIONS = [
+  {n:'ASIA · TOKYO', tz:'Asia/Tokyo', o:[9,15]},
+  {n:'LONDON', tz:'Europe/London', o:[8,16.5]},
+  {n:'NEW YORK', tz:'America/New_York', o:[9.5,16]}
+];
+function renderHudClock(){
+  const now = new Date();
+  const et = f=>new Intl.DateTimeFormat('en-US',Object.assign({timeZone:'America/New_York'},f)).format(now);
+  document.getElementById('hcMon').textContent = et({month:'short'}).toUpperCase();
+  document.getElementById('hcDay').textContent = et({day:'numeric'});
+  document.getElementById('hcWd').textContent = et({weekday:'long'}).toUpperCase();
+  document.getElementById('hcTime').textContent = et({hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true});
+  document.getElementById('hcSess').innerHTML = SESSIONS.map(m=>{
+    const o = marketIsOpen({tz:m.tz,open:m.o});
+    return '<div class="'+(o?'o':'c')+'">'+(o?'●':'○')+' '+m.n+' — '+(o?'OPEN':'CLOSED')+'</div>';
+  }).join('');
+}
+function renderHudProfit(){
+  const wrap = document.getElementById('hudProfit'); if(!wrap) return;
+  const SEG = 20;
+  let totPL=0, totT=0;
+  const rows = state.firms.map(f=>{
+    const pl = state.trades.filter(t=>t.firmId===f.id && isToday(t.ts)).reduce((x,t)=>x+Number(t.pl||0),0);
+    const tgt = f.accounts.filter(a=>!a.reserved).reduce((x,a)=>x+(Number(a.dailyTarget)||0),0);
+    totPL+=pl; totT+=tgt;
+    return {f,pl,tgt};
+  });
+  const tp = totT>0 ? totPL/totT*100 : 0;
+  document.getElementById('hpSub').textContent = '';
+  const on = Math.round(Math.max(0,Math.min(100,tp))/100*SEG);
+  const col = totPL<0 ? '#ff2d55' : '#39ff14';
+  let bar = '<div class="hp-vbar" style="--c:'+col+'">';
+  for(let i=0;i<SEG;i++) bar += '<i class="'+(i<on?'on':'')+'"></i>';
+  bar += '</div>';
+  wrap.innerHTML = '<div class="hp-wrap">'+bar+'<div class="hp-side"><div class="hp-pct" style="color:'+col+'">'+Math.round(tp)+'%</div>'
+    + '<div class="hp-amt">'+fmt(totPL)+' of '+fmt(totT)+'<br>daily target · all accounts</div></div></div>';
+}
+function renderHud(){ renderHudClock(); renderHudProfit(); }
+setInterval(renderHudClock, 1000);
+
+/* ---- voice entry ---- */
+const NUMW = {zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20,thirty:30,forty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90};
+function wordsToNumber(str){
+  // converts "four hundred fifty", "1 thousand 2 hundred", "four fifty" -> number
+  const toks = str.toLowerCase().replace(/(\d+(?:\.\d+)?)\s*k\b/g,(m,n)=>String(parseFloat(n)*1000)).replace(/[$,]/g,'').replace(/-/g,' ').split(/\s+/).filter(Boolean);
+  let total=0, cur=0, any=false, last=null;
+  for(const t of toks){
+    if(/^\d+(\.\d+)?$/.test(t)){ cur += parseFloat(t); any=true; last='n'; }
+    else if(t in NUMW){ const v=NUMW[t];
+      if(last==='tens' && v<10 && v>0){ cur+=v; last='n'; }
+      else if(last==='n' && v>=10 && cur<100 && cur>=1 && !(total) && v%10===0 && cur<10){ cur = cur*100+v; last='n'; } // "four fifty" -> 450
+      else { cur+=v; last = (v>=20&&v%10===0)?'tens':'n'; }
+      any=true; }
+    else if(t==='hundred'){ cur = (cur||1)*100; any=true; last='n'; }
+    else if(t==='thousand' || t==='k'){ total += (cur||1)*1000; cur=0; any=true; last='n'; }
+  }
+  return any ? total+cur : null;
+}
+function parseVoice(text){
+  const raw = text.toLowerCase();
+  const neg = /\b(minus|negative|loss|lost|down|red)\b/.test(raw) || /(^|\s)-\s*\d/.test(raw);
+  let firm = state.firms.find(f=>raw.includes(f.name.toLowerCase()));
+  if(!firm) firm = state.firms.find(f=>f.name.toLowerCase().split(/\s+/).some(w=>w.length>3 && raw.includes(w)));
+  let acct = null;
+  const digitsInText = raw.match(/\d+/g)||[];
+  const pool = firm ? firm.accounts : state.firms.flatMap(f=>f.accounts);
+  acct = pool.find(a=>digitsInText.includes(String(a.nickname).replace(/\D/g,'')) && String(a.nickname).replace(/\D/g,'').length>0);
+  if(!firm && acct) firm = state.firms.find(f=>f.accounts.includes(acct));
+  // amount = text after the account number, else after plus/minus/made
+  let tail = raw;
+  if(acct){ const n = String(acct.nickname).replace(/\D/g,''); const i = raw.indexOf(n); if(i>=0) tail = raw.slice(i+n.length); }
+  tail = tail.replace(/\b(plus|positive|minus|negative|made|profit|for|on|account|dollars?|bucks)\b/g,' ');
+  let amt = wordsToNumber(tail);
+  if(amt==null) amt = wordsToNumber(raw);
+  if(amt!=null && neg) amt = -Math.abs(amt);
+  return {firm, acct, amt};
+}
+let voRec = null;
+function voFillSelects(firmId, acctId){
+  const fs = document.getElementById('voFirm'), as = document.getElementById('voAcct');
+  fs.innerHTML = state.firms.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
+  if(firmId) fs.value = firmId;
+  const fillA = ()=>{ const f=getFirm(fs.value); as.innerHTML = f? f.accounts.map(a=>`<option value="${a.id}">${a.nickname}</option>`).join('') : ''; };
+  fillA(); if(acctId) as.value = acctId;
+  fs.onchange = fillA;
+}
+function voShowConfirm(heard, parsed){
+  document.getElementById('voConfirm').classList.remove('hidden');
+  document.getElementById('voHeard').textContent = heard ? 'Heard: “'+heard+'”' : 'Type an entry:';
+  voFillSelects(parsed&&parsed.firm?parsed.firm.id:(state.firms[0]&&state.firms[0].id), parsed&&parsed.acct?parsed.acct.id:null);
+  document.getElementById('voAmt').value = parsed && parsed.amt!=null ? parsed.amt : '';
+}
+document.getElementById('voOrb').addEventListener('click', ()=>{
+  const orb = document.getElementById('voOrb'), say = document.getElementById('voSay');
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ say.innerHTML = 'Voice not supported in this browser —<br>type the entry below'; voShowConfirm('', null); return; }
+  if(voRec){ try{ voRec.stop(); }catch(e){} return; }
+  const r = new SR(); voRec = r; r.lang='en-US'; r.interimResults=false; r.maxAlternatives=1;
+  orb.classList.add('listening'); say.innerHTML = 'Listening…';
+  r.onresult = (e)=>{ const heard = e.results[0][0].transcript; say.innerHTML = '<i>“'+heard+'”</i>'; voShowConfirm(heard, parseVoice(heard)); };
+  r.onerror = (e)=>{ say.innerHTML = 'Couldn’t hear that ('+e.error+') — tap to retry'; };
+  r.onend = ()=>{ orb.classList.remove('listening'); voRec = null; };
+  try{ r.start(); }catch(e){ orb.classList.remove('listening'); voRec=null; }
+});
+document.getElementById('voCancel').addEventListener('click', ()=>{ document.getElementById('voConfirm').classList.add('hidden'); document.getElementById('voSay').innerHTML='Tap the orb &amp; say<br><i>“Lucid 1034 plus 450”</i>'; });
+document.getElementById('voSave').addEventListener('click', ()=>{
+  const firmId = document.getElementById('voFirm').value, acctId = document.getElementById('voAcct').value;
+  const amt = Number(document.getElementById('voAmt').value);
+  if(!firmId || !acctId || !isFinite(amt) || document.getElementById('voAmt').value===''){ pushFeed('⚠ Voice entry needs a firm, account and amount'); return; }
+  state.trades.push({ id: uid(), firmId, accountId: acctId, status:'closed', pl: amt, notes:'via voice', ts: Date.now() });
+  save(); renderAll();
+  pushFeed(`${fmt(amt)} logged by voice`, getFirm(firmId)?.color);
+  document.getElementById('voCancel').click();
+});
+
+/* ---- flowing voice orb ---- */
+const voCv = document.getElementById('voCanvas');
+let voT = 0;
+function drawVoOrb(){
+  const c = voCv.getContext('2d'), W = voCv.width, R = W/2;
+  const listening = document.getElementById('voOrb').classList.contains('listening');
+  voT += listening ? 0.035 : 0.011; const t = voT;
+  const hue = listening ? [20,230,170] : [20,90,255];          // base glow colour
+  c.clearRect(0,0,W,W);
+  c.save(); c.beginPath(); c.arc(R,R,R-2,0,6.2832); c.clip();
+  // deep base
+  let g = c.createRadialGradient(R*0.8,R*0.7,R*0.1,R,R,R);
+  g.addColorStop(0,'rgb('+(hue[0]+10)+','+(hue[1]+40)+','+(hue[2])+')'); g.addColorStop(1,'rgb(4,14,70)');
+  if(listening){ g = c.createRadialGradient(R*0.8,R*0.7,R*0.1,R,R,R); g.addColorStop(0,'rgb(20,200,150)'); g.addColorStop(1,'rgb(2,50,60)'); }
+  c.fillStyle = g; c.fillRect(0,0,W,W);
+  // drifting cloud blobs
+  c.globalCompositeOperation = 'lighter';
+  const blobs = 7;
+  for(let i=0;i<blobs;i++){
+    const ph = i*1.9, x = R + Math.sin(t*0.9+ph)*R*0.55 + Math.sin(t*0.37+ph*2)*R*0.2, y = R + Math.cos(t*0.7+ph*1.3)*R*0.55;
+    const r = R*(0.45+0.2*Math.sin(t*1.3+ph));
+    const bg = c.createRadialGradient(x,y,0,x,y,r);
+    const col = i%3===0 ? (listening?'120,255,230':'200,230,255') : i%3===1 ? (listening?'30,220,150':'30,110,255') : (listening?'20,160,200':'60,60,230');
+    bg.addColorStop(0,'rgba('+col+',0.55)'); bg.addColorStop(1,'rgba('+col+',0)');
+    c.fillStyle = bg; c.fillRect(0,0,W,W);
+  }
+  // bright swirling crescent
+  c.globalCompositeOperation = 'source-over';
+  c.lineCap = 'round';
+  for(let k=0;k<3;k++){
+    c.strokeStyle = 'rgba(210,235,255,'+(0.35-k*0.1)+')'; c.lineWidth = R*(0.34-k*0.09); c.shadowColor='rgba(200,230,255,0.8)'; c.shadowBlur = R*0.25;
+    c.beginPath();
+    for(let a=0;a<=20;a++){ const u=a/20, ang = -0.6 + u*2.4 + Math.sin(t*0.8+k)*0.35;
+      const rr = R*(0.22+0.34*u) + Math.sin(t*1.4+u*5+k)*R*0.05;
+      const x = R + Math.cos(ang+t*0.25)*rr, y = R + Math.sin(ang+t*0.25)*rr*0.9;
+      a?c.lineTo(x,y):c.moveTo(x,y); }
+    c.stroke();
+  }
+  c.shadowBlur = 0;
+  // sparkle dust
+  for(let i=0;i<26;i++){ const a=i*2.399+t*0.08*(1+i%3), rr=R*(0.25+((i*37)%70)/100); c.fillStyle='rgba(255,255,255,'+(0.25+0.4*Math.abs(Math.sin(t*2+i)))+')'; c.fillRect(R+Math.cos(a)*rr, R+Math.sin(a)*rr, 2, 2); }
+  // glassy rim + highlight
+  c.restore();
+  c.strokeStyle='rgba(180,215,255,0.55)'; c.lineWidth=3; c.beginPath(); c.arc(R,R,R-3,0,6.2832); c.stroke();
+  const hl = c.createRadialGradient(R*0.62,R*0.45,0,R*0.62,R*0.45,R*0.5); hl.addColorStop(0,'rgba(255,255,255,0.35)'); hl.addColorStop(1,'rgba(255,255,255,0)');
+  c.fillStyle=hl; c.beginPath(); c.arc(R,R,R-3,0,6.2832); c.fill();
+  requestAnimationFrame(drawVoOrb);
+}
+requestAnimationFrame(drawVoOrb);
+
+/* ---- neon dancer ---- */
+const dnCv = document.getElementById('dancerCanvas');
+let dnT = 0;
+function dancerMood(){
+  const pl = state.trades.filter(t=>isToday(t.ts)).reduce((x,t)=>x+Number(t.pl||0),0);
+  return pl>0 ? {name:'IN THE GROOVE', speed:1.7, amp:1.0} : pl<0 ? {name:'SLOW & STEADY', speed:0.6, amp:0.45} : {name:'WARMING UP', speed:1.0, amp:0.7};
+}
+/* particle-mesh human: points ride on a dancing skeleton and link to near neighbours */
+const DN_BONES = ['torso','head','uarmL','farmL','uarmR','farmR','thighL','shinL','thighR','shinR'];
+const DN_W = {torso:[0.8,0.5], head:[0.4,0.36], uarmL:[0.2,0.16], farmL:[0.16,0.11], uarmR:[0.2,0.16], farmR:[0.16,0.11], thighL:[0.28,0.2], shinL:[0.19,0.12], thighR:[0.28,0.2], shinR:[0.19,0.12]};
+const DN_COUNT = {torso:90, head:26, uarmL:18, farmL:16, uarmR:18, farmR:16, thighL:26, shinL:22, thighR:26, shinR:22};
+const dnPts = [];
+(function(){ let seed=7; const rnd=()=>{ seed=(seed*16807)%2147483647; return seed/2147483647; };
+  DN_BONES.forEach(b=>{ for(let i=0;i<DN_COUNT[b];i++){ const t=rnd(), w=DN_W[b][0]+(DN_W[b][1]-DN_W[b][0])*t; dnPts.push({b, t, off:(rnd()*2-1)*w*(b==='head'?0.9:1), pink:rnd()<0.35, z:rnd()}); } });
+})();
+function drawDancer(){
+  const box = dnCv.parentElement, w = box.clientWidth, h = box.clientHeight; if(!w||!h){ requestAnimationFrame(drawDancer); return; }
+  const dpr = window.devicePixelRatio||1;
+  if(dnCv.width!==Math.round(w*dpr)||dnCv.height!==Math.round(h*dpr)){ dnCv.width=Math.round(w*dpr); dnCv.height=Math.round(h*dpr); }
+  const c = dnCv.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,w,h);
+  const m = dancerMood(); document.getElementById('dnMood').textContent = m.name;
+  dnT += 0.016*m.speed; const t = dnT, A = m.amp;
+  const U = Math.min((h-34)/7.6, w/4.2), floor = h - U*0.25;
+  /* ---- hip-hop: on-beat bounce, grounded wide stance, snapped arm poses, side steps ---- */
+  const beats = t*2.2, bi = Math.floor(beats), bf = beats-bi;
+  const snap = 1-Math.pow(1-Math.min(1,bf*3.2),3);                 // fast hit, then hold
+  const ease = (p)=>p;                                             // (kept simple)
+  const bounce = 0.5+0.5*Math.cos(beats*Math.PI*2);                // 1 on the beat, dips knees
+  // arm poses: [upperOut, foreOut] for L then R, angles from straight-down, measured outward
+  const POSES = [
+    [[2.4,2.9],[2.4,2.9]],   // raise the roof
+    [[2.6,2.7],[0.5,0.3]],   // point up / other hand low
+    [[0.9,-0.9],[0.9,-0.9]], // cross-chest
+    [[1.5,1.5],[1.5,1.5]],   // wide open
+    [[1.2,1.9],[0.4,-0.3]],  // punch / guard
+    [[0.7,0.2],[0.7,0.2]],   // hands low
+    [[2.0,1.2],[0.8,2.2]],   // swing
+    [[0.5,0.3],[2.6,2.7]]    // mirrored point
+  ];
+  const SEQ = [3,0,4,1,2,6,0,5,7,1,4,3];
+  const cur = POSES[SEQ[bi%SEQ.length]], prv = POSES[SEQ[(bi+SEQ.length-1)%SEQ.length]];
+  const mix = (i,j)=> prv[i][j] + (cur[i][j]-prv[i][j])*snap;
+  const shake = Math.sin(t*26)*0.07*A*(1-snap*0.6);                // groove jitter after each hit
+  const side = ((Math.floor(beats/2)%2)?1:-1), stepP = 1-Math.pow(1-Math.min(1,((beats/2)%1)*2.4),3);
+  const prevSide = -side;
+  const cx = w/2 + (prevSide + (side-prevSide)*stepP)*U*0.55*A;
+  const twist = Math.sin(t*1.1)*0.8*A, tw = 0.6+0.4*Math.cos(twist);
+  const legL = U*1.55, legS = U*1.5;
+  const thOut = 0.42 + 0.22*bounce*A, shOut = -0.30*(0.6+0.8*bounce*A);   // deep, wide knees
+  const hipDrop = U*0.22*bounce*A;
+  const hipY = floor - (legL*Math.cos(thOut)+legS*Math.cos(shOut)) , hipX = cx + Math.sin(t*2.2)*U*0.12*A;
+  const lean = ((Math.floor(beats)%2)?0.14:-0.14)*A*snap + (0.04*Math.sin(t*2.2)) , torsoL = U*2.05;
+  const P=(x,y,l,a)=>[x+Math.sin(a)*l, y+Math.cos(a)*l];
+  const neck = P(hipX,hipY+hipDrop*0,-torsoL,lean);
+  const sw = U*1.15*tw, shL=[neck[0]-sw, neck[1]], shR=[neck[0]+sw, neck[1]];
+  const hw = U*0.45*tw, hpL=[hipX-hw,hipY], hpR=[hipX+hw,hipY];
+  const nod = Math.sin(beats*Math.PI*2)*0.18*A;                    // head bob on the beat
+  const head = P(neck[0],neck[1]+Math.max(0,nod)*U*0.2,-U*0.68,lean*1.4+nod*0.5);
+  const eL = P(shL[0],shL[1],U*1.35,-(mix(0,0)+shake)), wL = P(eL[0],eL[1],U*1.3,-(mix(0,1)-shake));
+  const eR = P(shR[0],shR[1],U*1.35, (mix(1,0)+shake)), wR = P(eR[0],eR[1],U*1.3, (mix(1,1)-shake));
+  // feet: alternate which knee pops up
+  const lift = (Math.floor(beats)%2)? [0.35,0]:[0,0.35];
+  const kL = P(hpL[0],hpL[1],legL,-thOut-lift[0]*0.5), aL = P(kL[0],kL[1],legS,-shOut-lift[0]*0.9);
+  const kR = P(hpR[0],hpR[1],legL, thOut+lift[1]*0.5), aR = P(kR[0],kR[1],legS, shOut+lift[1]*0.9);
+  const seg = {
+    torso:[[ (shL[0]+shR[0])/2, shL[1] ], [ hipX, hipY ]],
+    head:[[head[0],head[1]+U*0.45],[head[0],head[1]-U*0.45]],
+    uarmL:[shL,eL], farmL:[eL,wL], uarmR:[shR,eR], farmR:[eR,wR],
+    thighL:[hpL,kL], shinL:[kL,aL], thighR:[hpR,kR], shinR:[kR,aR]
+  };
+  // soft body glow
+  const gl = c.createRadialGradient(hipX,hipY-U*1.6,0,hipX,hipY-U*1.6,U*4.2); gl.addColorStop(0,'rgba(90,100,255,0.22)'); gl.addColorStop(1,'rgba(90,100,255,0)');
+  c.fillStyle=gl; c.fillRect(0,0,w,h);
+  // resolve points
+  const pts = dnPts.map(p=>{ const [a0,b0]=seg[p.b]; const dx=b0[0]-a0[0], dy=b0[1]-a0[1], L=Math.hypot(dx,dy)||1;
+    const nx=-dy/L, ny=dx/L; const jit = Math.sin(t*2.2+p.z*40)*U*0.03;
+    const o = p.off*U*(p.b==='torso'?tw*0.55+0.45:1);
+    return {x:a0[0]+dx*p.t+nx*(o+jit), y:a0[1]+dy*p.t+ny*(o*0.4+jit), pink:p.pink, z:p.z}; });
+  // links
+  const maxD = U*0.55; c.lineWidth = 1;
+  for(let i=0;i<pts.length;i++){ for(let j=i+1;j<pts.length;j++){
+    const dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y, d=Math.hypot(dx,dy);
+    if(d<maxD){ const a=(1-d/maxD); c.strokeStyle='rgba('+(110+Math.round(80*pts[i].z))+','+(120+Math.round(60*pts[j].z))+',255,'+(a*0.75).toFixed(3)+')'; c.beginPath(); c.moveTo(pts[i].x,pts[i].y); c.lineTo(pts[j].x,pts[j].y); c.stroke(); } } }
+  // nodes
+  for(const p of pts){ const r = Math.max(1.2, U*(0.035+0.025*p.z)); c.fillStyle = p.pink ? 'rgba(255,110,230,0.95)' : 'rgba(190,210,255,0.9)'; c.shadowColor = p.pink?'#ff4fd8':'#6f8bff'; c.shadowBlur = 8; c.beginPath(); c.arc(p.x,p.y,r,0,6.2832); c.fill(); }
+  c.shadowBlur = 0;
+  const fg = c.createRadialGradient(cx,floor+U*0.1,0,cx,floor+U*0.1,U*3); fg.addColorStop(0,'rgba(120,110,255,0.3)'); fg.addColorStop(1,'rgba(120,110,255,0)');
+  c.fillStyle=fg; c.fillRect(0,floor-U,w,U*3);
+  requestAnimationFrame(drawDancer);
+}
+requestAnimationFrame(drawDancer);
 
 /* ================= NEURAL MESH (now the Firm Network's central hub visual) ================= */
 const meshCanvas = document.getElementById('meshCanvas');
