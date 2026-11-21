@@ -3266,23 +3266,58 @@ function drawDancer(){
     uarmL:[shL,eL], farmL:[eL,wL], uarmR:[shR,eR], farmR:[eR,wR],
     thighL:[hpL,kL], shinL:[kL,aL], thighR:[hpR,kR], shinR:[kR,aR]
   };
-  // soft body glow
-  const gl = c.createRadialGradient(hipX,hipY-U*1.6,0,hipX,hipY-U*1.6,U*4.2); gl.addColorStop(0,'rgba(255,255,255,0.10)'); gl.addColorStop(1,'rgba(255,255,255,0)');
-  c.fillStyle=gl; c.fillRect(0,0,w,h);
-  // resolve points
-  const pts = dnPts.map(p=>{ const [a0,b0]=seg[p.b]; const dx=b0[0]-a0[0], dy=b0[1]-a0[1], L=Math.hypot(dx,dy)||1;
-    const nx=-dy/L, ny=dx/L; const jit = Math.sin(t*2.2+p.z*40)*U*0.03;
-    const o = p.off*U*(p.b==='torso'?tw*0.55+0.45:1);
-    return {x:a0[0]+dx*p.t+nx*(o+jit), y:a0[1]+dy*p.t+ny*(o*0.4+jit), pink:p.pink, z:p.z}; });
-  // links
-  const maxD = U*0.55; c.lineWidth = 1;
-  for(let i=0;i<pts.length;i++){ for(let j=i+1;j<pts.length;j++){
-    const dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y, d=Math.hypot(dx,dy);
-    if(d<maxD){ const a=(1-d/maxD); c.strokeStyle='rgba(255,255,255,'+(a*0.5).toFixed(3)+')'; c.beginPath(); c.moveTo(pts[i].x,pts[i].y); c.lineTo(pts[j].x,pts[j].y); c.stroke(); } } }
-  // nodes
-  for(const p of pts){ const r = Math.max(1.2, U*(0.035+0.025*p.z)); c.fillStyle = 'rgba(255,255,255,'+(0.45+0.3*p.z).toFixed(2)+')'; c.shadowColor = 'rgba(255,255,255,0.8)'; c.shadowBlur = 8; c.beginPath(); c.arc(p.x,p.y,r,0,6.2832); c.fill(); }
-  c.shadowBlur = 0;
-  const fg = c.createRadialGradient(cx,floor+U*0.1,0,cx,floor+U*0.1,U*3); fg.addColorStop(0,'rgba(255,255,255,0.14)'); fg.addColorStop(1,'rgba(255,255,255,0)');
+  /* ---- holographic body: translucent cyan/blue glass with rim light, inner circuitry and glowing joint orbs ---- */
+  const CY='0,225,255', BL='30,110,255';
+  const cap = (p,q,wd,glow)=>{                                  // one limb segment as a rounded capsule, 3 passes
+    c.lineCap='round'; c.lineJoin='round';
+    c.shadowColor='rgba('+CY+',0.9)'; c.shadowBlur=glow;
+    c.strokeStyle='rgba('+CY+',0.55)'; c.lineWidth=wd+2.5; c.beginPath(); c.moveTo(p[0],p[1]); c.lineTo(q[0],q[1]); c.stroke();      // rim
+    c.shadowBlur=0;
+    const g=c.createLinearGradient(p[0],p[1],q[0],q[1]); g.addColorStop(0,'rgba('+BL+',0.55)'); g.addColorStop(1,'rgba('+CY+',0.45)');
+    c.strokeStyle=g; c.lineWidth=wd; c.beginPath(); c.moveTo(p[0],p[1]); c.lineTo(q[0],q[1]); c.stroke();                             // glass body
+    c.strokeStyle='rgba(190,250,255,0.45)'; c.lineWidth=Math.max(1,wd*0.18); c.beginPath(); c.moveTo(p[0],p[1]); c.lineTo(q[0],q[1]); c.stroke(); // inner highlight
+  };
+  const orb = (x,y,r,a)=>{ const g=c.createRadialGradient(x,y,0,x,y,r); g.addColorStop(0,'rgba(255,255,255,'+a+')'); g.addColorStop(0.35,'rgba('+CY+','+(a*0.8)+')'); g.addColorStop(1,'rgba('+CY+',0)'); c.fillStyle=g; c.beginPath(); c.arc(x,y,r,0,6.2832); c.fill(); };
+  const ring = (x,y,r)=>{ c.strokeStyle='rgba('+CY+',0.8)'; c.lineWidth=1.4; c.beginPath(); c.arc(x,y,r,0,6.2832); c.stroke(); };
+  // soft aura
+  const aura = c.createRadialGradient(hipX,hipY-U*1.8,0,hipX,hipY-U*1.8,U*4.4); aura.addColorStop(0,'rgba('+CY+',0.16)'); aura.addColorStop(1,'rgba('+CY+',0)');
+  c.fillStyle=aura; c.fillRect(0,0,w,h);
+  // legs, then torso, then arms, then head (rear to front)
+  cap(hpL,kL,U*0.58,14); cap(kL,aL,U*0.42,14); cap(hpR,kR,U*0.58,14); cap(kR,aR,U*0.42,14);
+  // feet
+  [aL,aR].forEach(f=>{ cap(f,[f[0]+(f===aL?-1:1)*U*0.1,f[1]+U*0.05],U*0.32,10); });
+  // torso: tapered glass polygon
+  const tg = c.createLinearGradient(neck[0],neck[1],hipX,hipY); tg.addColorStop(0,'rgba('+CY+',0.55)'); tg.addColorStop(1,'rgba('+BL+',0.5)');
+  c.shadowColor='rgba('+CY+',0.9)'; c.shadowBlur=16; c.fillStyle=tg; c.strokeStyle='rgba('+CY+',0.85)'; c.lineWidth=2;
+  c.beginPath(); c.moveTo(shL[0],shL[1]); c.quadraticCurveTo(shL[0]+U*0.1,(shL[1]+hipY)/2,hpL[0]-U*0.05,hpL[1]); c.lineTo(hpR[0]+U*0.05,hpR[1]); c.quadraticCurveTo(shR[0]-U*0.1,(shR[1]+hipY)/2,shR[0],shR[1]); c.closePath(); c.fill(); c.stroke();
+  c.shadowBlur=0;
+  // inner circuitry on the torso (flowing pulses)
+  c.save(); c.clip(); c.lineWidth=1; c.strokeStyle='rgba(200,250,255,0.35)';
+  for(let i=-2;i<=2;i++){ const fx=i/2.6; c.beginPath(); c.moveTo(neck[0]+fx*U*0.9,neck[1]+U*0.2); c.lineTo(hipX+fx*U*0.5,hipY); c.stroke(); }
+  for(let k=0;k<5;k++){ const yy=neck[1]+(hipY-neck[1])*(k+1)/6; c.beginPath(); c.moveTo(neck[0]-U*0.8,yy); c.lineTo(neck[0]+U*0.8,yy); c.stroke(); }
+  c.lineWidth=2; c.strokeStyle='rgba(255,255,255,0.8)';
+  for(let i=-2;i<=2;i+=2){ const fx=i/2.6, ph=((t*0.9+i*0.17)%1+1)%1; const x0=neck[0]+fx*U*0.9, y0=neck[1]+U*0.2, x1=hipX+fx*U*0.5, y1=hipY;
+    c.beginPath(); c.moveTo(x0+(x1-x0)*ph,y0+(y1-y0)*ph); c.lineTo(x0+(x1-x0)*(ph+0.08),y0+(y1-y0)*(ph+0.08)); c.stroke(); }
+  c.restore();
+  // arms
+  cap(shL,eL,U*0.4,12); cap(eL,wL,U*0.3,12); cap(shR,eR,U*0.4,12); cap(eR,wR,U*0.3,12);
+  [wL,wR].forEach(x=>orb(x[0],x[1],U*0.34,0.8));                // glowing hands
+  // glowing joint orbs: shoulders, elbows, knees
+  [shL,shR].forEach(x=>{ orb(x[0],x[1],U*0.5,0.9); ring(x[0],x[1],U*0.2); });
+  [eL,eR,kL,kR].forEach(x=>orb(x[0],x[1],U*0.28,0.6));
+  // chest core
+  const chX=(neck[0]*0.6+hipX*0.4), chY=(neck[1]*0.6+hipY*0.4), pulse=1+0.12*Math.sin(t*4);
+  orb(chX,chY,U*0.8*pulse,1); ring(chX,chY,U*0.34); ring(chX,chY,U*0.5);
+  // neck + head (glass ellipse with a bright forehead orb)
+  cap([neck[0],neck[1]],[head[0],head[1]+U*0.3],U*0.34,10);
+  const hg = c.createRadialGradient(head[0]-U*0.1,head[1]-U*0.15,0,head[0],head[1],U*0.55); hg.addColorStop(0,'rgba(200,250,255,0.75)'); hg.addColorStop(1,'rgba('+BL+',0.45)');
+  c.shadowColor='rgba('+CY+',0.9)'; c.shadowBlur=16; c.fillStyle=hg; c.strokeStyle='rgba('+CY+',0.9)'; c.lineWidth=2;
+  c.beginPath(); c.ellipse(head[0],head[1],U*0.4,U*0.52,lean*1.2,0,6.2832); c.fill(); c.stroke(); c.shadowBlur=0;
+  orb(head[0]+U*0.05,head[1]-U*0.1,U*0.3,0.9);                  // glowing eye / forehead orb
+  // floating hex "data" tiles orbiting the figure
+  for(let i=0;i<4;i++){ const ang=t*0.5+i*1.57, hx=hipX+Math.cos(ang)*U*2.2, hy=hipY-U*2.1+Math.sin(ang*1.3)*U*1.7, r=U*(0.22+0.05*i%2);
+    c.strokeStyle='rgba('+CY+','+(0.35+0.25*Math.sin(t*2+i))+')'; c.lineWidth=1.3; c.beginPath(); for(let k=0;k<6;k++){ const a2=k*1.047+ang; k?c.lineTo(hx+Math.cos(a2)*r,hy+Math.sin(a2)*r):c.moveTo(hx+Math.cos(a2)*r,hy+Math.sin(a2)*r);} c.closePath(); c.stroke(); }
+  const fg = c.createRadialGradient(cx,floor+U*0.1,0,cx,floor+U*0.1,U*3); fg.addColorStop(0,'rgba(0,225,255,0.22)'); fg.addColorStop(1,'rgba(0,225,255,0)');
   c.fillStyle=fg; c.fillRect(0,floor-U,w,U*3);
   requestAnimationFrame(drawDancer);
 }
