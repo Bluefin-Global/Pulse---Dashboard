@@ -3232,7 +3232,7 @@ const DANCES = [
 let dnForce = -1;
 function pickDance(t,mood){
   if(dnForce>=0) return dnForce;
-  const list = [0,1,4,5,6,2,1,6];
+  const list = [1]; // C-walk only for now
   return list[Math.floor(t/9)%list.length];
 }
 function drawDancer(){
