@@ -310,9 +310,10 @@ body::before{
 .hud-row .hud-dancer{width:min(440px,100%);}
 .float-w{position:absolute;z-index:2;pointer-events:none;padding:10px 12px;border:1px solid rgba(0,229,255,0.28);border-radius:12px;background:rgba(8,12,32,0.5);backdrop-filter:blur(2px);box-shadow:0 0 16px rgba(0,229,255,0.1);}
 .float-w.hidden{display:none;}
-.float-w .hb-lab{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--dim);}
-.float-w .hb-pct{font-size:36px;font-weight:800;line-height:1.1;color:var(--c);text-shadow:0 0 16px var(--c);}
-.hb-led{display:grid;grid-template-columns:repeat(26,1fr);gap:2px;height:14px;margin:6px 0 6px;}
+.float-w .hb-lab{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;color:var(--dim);white-space:nowrap;}
+.float-w .hb-top{display:flex;justify-content:space-between;align-items:baseline;}
+.float-w .hb-pct{font-size:26px;font-weight:800;line-height:1.1;color:var(--c);text-shadow:0 0 14px var(--c);}
+.hb-led{display:grid;grid-template-columns:repeat(34,1fr);gap:2px;height:12px;margin:6px 0 6px;}
 .hb-led i{display:block;border-radius:2px;background:rgba(255,255,255,0.08);}
 .hb-led i.on{background:var(--c);box-shadow:0 0 6px var(--c);}
 .float-w .hb-sub{font-family:var(--mono);font-size:9px;color:var(--dim);letter-spacing:.5px;}
@@ -1746,16 +1747,16 @@ function placeAffirmation(){
     else el.classList.add('hidden');
   }
   const tx = best ? best.x : 12, ty = best ? best.y + card.offsetHeight + 14 : 12;
-  placeFloat(document.getElementById('stageEval'), [250,230,210], (x,y)=> Math.abs(x-tx) + Math.abs(y-ty)*1.5);
+  placeFloat(document.getElementById('stageEval'), [300,270,240,210], (x,y)=> Math.abs(x-tx) + Math.abs(y-ty)*1.5);
   const nPlaced = placed.length;
   placeFloat(document.getElementById('stageClock'), [200,180,160], (x,y,ew)=> y*3 + (W-ew-x));
   const clk = placed.length>nPlaced ? placed[placed.length-1] : null;
   const fx = clk ? clk.x : W-262, fy = clk ? clk.y + clk.h + 14 : 12;
-  placeFloat(document.getElementById('stageFunded'), [250,230,210,190], (x,y)=> Math.abs(x-fx) + Math.abs(y-fy)*1.5);
+  placeFloat(document.getElementById('stageFunded'), [300,270,240,215], (x,y)=> Math.abs(x-fx) + Math.abs(y-fy)*1.5);
   const dEl = document.getElementById('stageDancer');
-  placeFloat(dEl, [260,230,200,170,145], (x,y,ew)=> y*2 + (W-ew-x));
+  placeFloat(dEl, [340,300,260,220,180], (x,y,ew,eh)=> (H-eh-y)*2.2 + x);     // prefers the bottom-left corner
   if(dEl.classList.contains('hidden')){                 // no clear gap: stand him in the bottom-left corner, behind the nodes
-    dEl.classList.remove('hidden'); dEl.classList.add('behind'); dEl.style.width='200px';
+    dEl.classList.remove('hidden'); dEl.classList.add('behind'); dEl.style.width='300px';
     dEl.style.left='12px'; dEl.style.top=Math.max(12, H-dEl.offsetHeight-12)+'px';
   } else dEl.classList.remove('behind');
 }
@@ -2986,7 +2987,7 @@ function renderHudClock(){
   }).join('');
 }
 function renderHudBars(){
-  const SEG = 26;
+  const SEG = 34;
   const calc = (type)=>{ let sum=0, n=0;
     state.firms.forEach(f=>f.accounts.forEach(a=>{
       if(accountType(a)!==type) return;
@@ -2999,7 +3000,7 @@ function renderHudBars(){
     const on = Math.round(r.pct/100*SEG);
     let led = '<div class="hb-led" style="--c:'+col+'">'; for(let i=0;i<SEG;i++) led += '<i class="'+(i<on?'on':'')+'"></i>'; led += '</div>';
     el.style.setProperty('--c', col);
-    el.innerHTML = '<div class="hb-lab">'+label+'</div><div class="hb-pct">'+Math.round(r.pct)+'%</div>'+led
+    el.innerHTML = '<div class="hb-top"><span class="hb-lab">'+label+'</span><span class="hb-pct">'+Math.round(r.pct)+'%</span></div>'+led
       + '<div class="hb-sub">'+r.n+' active · avg '+unit+'</div>';
   };
   draw('stageEval','EVAL PROGRESS','#2d7bff',calc('eval'),'to pass');
@@ -3234,7 +3235,7 @@ function drawDancer(){
   if(dnCv.width!==Math.round(w*dpr)||dnCv.height!==Math.round(h*dpr)){ dnCv.width=Math.round(w*dpr); dnCv.height=Math.round(h*dpr); }
   const c = dnCv.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,w,h);
   const m = dancerMood();
-  dnT += 0.016*m.speed; const t = dnT, A = m.amp;
+  dnT += 0.016*m.speed*1.7; const t = dnT, A = m.amp;
   const U = Math.min((h-20)/7.6, w/4.2), floor = h - U*0.2;
   const di = pickDance(t, m), D = DANCES[di](t, A);
   const cx = w/2 + D.cx*U;
@@ -3259,7 +3260,7 @@ function drawDancer(){
     thighL:[hpL,kL], shinL:[kL,aL], thighR:[hpR,kR], shinR:[kR,aR]
   };
   // soft body glow
-  const gl = c.createRadialGradient(hipX,hipY-U*1.6,0,hipX,hipY-U*1.6,U*4.2); gl.addColorStop(0,'rgba(90,100,255,0.22)'); gl.addColorStop(1,'rgba(90,100,255,0)');
+  const gl = c.createRadialGradient(hipX,hipY-U*1.6,0,hipX,hipY-U*1.6,U*4.2); gl.addColorStop(0,'rgba(255,255,255,0.10)'); gl.addColorStop(1,'rgba(255,255,255,0)');
   c.fillStyle=gl; c.fillRect(0,0,w,h);
   // resolve points
   const pts = dnPts.map(p=>{ const [a0,b0]=seg[p.b]; const dx=b0[0]-a0[0], dy=b0[1]-a0[1], L=Math.hypot(dx,dy)||1;
@@ -3270,11 +3271,11 @@ function drawDancer(){
   const maxD = U*0.55; c.lineWidth = 1;
   for(let i=0;i<pts.length;i++){ for(let j=i+1;j<pts.length;j++){
     const dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y, d=Math.hypot(dx,dy);
-    if(d<maxD){ const a=(1-d/maxD); c.strokeStyle='rgba('+(110+Math.round(80*pts[i].z))+','+(120+Math.round(60*pts[j].z))+',255,'+(a*0.75).toFixed(3)+')'; c.beginPath(); c.moveTo(pts[i].x,pts[i].y); c.lineTo(pts[j].x,pts[j].y); c.stroke(); } } }
+    if(d<maxD){ const a=(1-d/maxD); c.strokeStyle='rgba(255,255,255,'+(a*0.5).toFixed(3)+')'; c.beginPath(); c.moveTo(pts[i].x,pts[i].y); c.lineTo(pts[j].x,pts[j].y); c.stroke(); } } }
   // nodes
-  for(const p of pts){ const r = Math.max(1.2, U*(0.035+0.025*p.z)); c.fillStyle = p.pink ? 'rgba(255,110,230,0.95)' : 'rgba(190,210,255,0.9)'; c.shadowColor = p.pink?'#ff4fd8':'#6f8bff'; c.shadowBlur = 8; c.beginPath(); c.arc(p.x,p.y,r,0,6.2832); c.fill(); }
+  for(const p of pts){ const r = Math.max(1.2, U*(0.035+0.025*p.z)); c.fillStyle = 'rgba(255,255,255,'+(0.45+0.3*p.z).toFixed(2)+')'; c.shadowColor = 'rgba(255,255,255,0.8)'; c.shadowBlur = 8; c.beginPath(); c.arc(p.x,p.y,r,0,6.2832); c.fill(); }
   c.shadowBlur = 0;
-  const fg = c.createRadialGradient(cx,floor+U*0.1,0,cx,floor+U*0.1,U*3); fg.addColorStop(0,'rgba(120,110,255,0.3)'); fg.addColorStop(1,'rgba(120,110,255,0)');
+  const fg = c.createRadialGradient(cx,floor+U*0.1,0,cx,floor+U*0.1,U*3); fg.addColorStop(0,'rgba(255,255,255,0.14)'); fg.addColorStop(1,'rgba(255,255,255,0)');
   c.fillStyle=fg; c.fillRect(0,floor-U,w,U*3);
   requestAnimationFrame(drawDancer);
 }
