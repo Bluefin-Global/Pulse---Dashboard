@@ -311,13 +311,15 @@ body::before{
 .float-w{position:absolute;z-index:2;pointer-events:none;padding:10px 12px;border:1px solid rgba(0,229,255,0.28);border-radius:12px;background:rgba(8,12,32,0.5);backdrop-filter:blur(2px);box-shadow:0 0 16px rgba(0,229,255,0.1);}
 .float-w.hidden{display:none;}
 .float-w .hb-lab{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;color:var(--dim);white-space:nowrap;}
-.float-w .hb-top{display:flex;justify-content:space-between;align-items:baseline;}
-.float-w .hb-pct{font-size:26px;font-weight:800;line-height:1.1;color:var(--c);text-shadow:0 0 14px var(--c);}
-.hb-led{display:grid;grid-template-columns:repeat(34,1fr);gap:2px;height:12px;margin:6px 0 6px;}
-.hb-led i{display:block;border-radius:2px;background:rgba(255,255,255,0.08);}
-.hb-led i.on{background:var(--c);box-shadow:0 0 6px var(--c);}
+.hb-wrap{display:flex;gap:14px;align-items:stretch;height:150px;}
+.hb-vbar{width:40px;flex:none;display:flex;flex-direction:column-reverse;gap:2px;padding:4px;border:1px solid rgba(255,255,255,0.22);border-radius:8px;background:rgba(0,0,0,0.35);}
+.hb-vbar i{display:block;flex:1;border-radius:2px;background:rgba(255,255,255,0.08);}
+.hb-vbar i.on{background:var(--c);box-shadow:0 0 6px var(--c);}
+.hb-side{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:4px;}
+.float-w .hb-pct{font-size:34px;font-weight:800;line-height:1.05;color:var(--c);text-shadow:0 0 14px var(--c);}
 .float-w .hb-sub{font-family:var(--mono);font-size:9px;color:var(--dim);letter-spacing:.5px;}
 .dancer-float{padding:0 !important;border:none !important;background:none !important;box-shadow:none !important;backdrop-filter:none !important;aspect-ratio:240/290;pointer-events:auto !important;cursor:pointer;}
+.float-w.behind{z-index:0;}
 .dancer-float.behind{z-index:0;opacity:.6;}
 .dancer-float canvas{position:absolute;inset:0;width:100%;height:100%;}
 .float-w .hp-wrap{height:140px;gap:14px;}
@@ -1747,12 +1749,18 @@ function placeAffirmation(){
     else el.classList.add('hidden');
   }
   const tx = best ? best.x : 12, ty = best ? best.y + card.offsetHeight + 14 : 12;
-  placeFloat(document.getElementById('stageEval'), [300,270,240,210], (x,y)=> Math.abs(x-tx) + Math.abs(y-ty)*1.5);
+  placeFloat(document.getElementById('stageEval'), [180,165,150], (x,y)=> Math.abs(x-tx) + Math.abs(y-ty)*1.5);
   const nPlaced = placed.length;
   placeFloat(document.getElementById('stageClock'), [200,180,160], (x,y,ew)=> y*3 + (W-ew-x));
   const clk = placed.length>nPlaced ? placed[placed.length-1] : null;
   const fx = clk ? clk.x : W-262, fy = clk ? clk.y + clk.h + 14 : 12;
-  placeFloat(document.getElementById('stageFunded'), [300,270,240,215], (x,y)=> Math.abs(x-fx) + Math.abs(y-fy)*1.5);
+  placeFloat(document.getElementById('stageFunded'), [180,165,150], (x,y)=> Math.abs(x-fx) + Math.abs(y-fy)*1.5);
+  // if the funded bar found no clear gap, tuck it under the clock (behind the nodes) so it is never missing
+  const fEl = document.getElementById('stageFunded');
+  if(fEl && fEl.classList.contains('hidden')){
+    fEl.classList.remove('hidden'); fEl.classList.add('behind'); fEl.style.width='165px';
+    fEl.style.left=Math.max(12, Math.min(W-fEl.offsetWidth-12, fx))+'px'; fEl.style.top=fy+'px';
+  } else if(fEl) fEl.classList.remove('behind');
   const dEl = document.getElementById('stageDancer');
   placeFloat(dEl, [340,300,260,220,180], (x,y,ew,eh)=> (H-eh-y)*2.2 + x);     // prefers the bottom-left corner
   if(dEl.classList.contains('hidden')){                 // no clear gap: stand him in the bottom-left corner, behind the nodes
@@ -2987,7 +2995,7 @@ function renderHudClock(){
   }).join('');
 }
 function renderHudBars(){
-  const SEG = 34;
+  const SEG = 20;
   const calc = (type)=>{ let sum=0, n=0;
     state.firms.forEach(f=>f.accounts.forEach(a=>{
       if(accountType(a)!==type) return;
@@ -2998,13 +3006,12 @@ function renderHudBars(){
   const draw = (id,label,col,r,unit)=>{
     const el = document.getElementById(id); if(!el) return;
     const on = Math.round(r.pct/100*SEG);
-    let led = '<div class="hb-led" style="--c:'+col+'">'; for(let i=0;i<SEG;i++) led += '<i class="'+(i<on?'on':'')+'"></i>'; led += '</div>';
+    let bar = '<div class="hb-vbar">'; for(let i=0;i<SEG;i++) bar += '<i class="'+(i<on?'on':'')+'"></i>'; bar += '</div>';
     el.style.setProperty('--c', col);
-    el.innerHTML = '<div class="hb-top"><span class="hb-lab">'+label+'</span><span class="hb-pct">'+Math.round(r.pct)+'%</span></div>'+led
-      + '<div class="hb-sub">'+r.n+' active · avg '+unit+'</div>';
+    el.innerHTML = '<div class="hb-wrap">'+bar+'<div class="hb-side"><div class="hb-lab">'+label+'</div><div class="hb-pct">'+Math.round(r.pct)+'%</div><div class="hb-sub">'+r.n+' active<br>avg '+unit+'</div></div></div>';
   };
-  draw('stageEval','EVAL PROGRESS','#2d7bff',calc('eval'),'to pass');
-  draw('stageFunded','FUNDED PROGRESS','#ffffff',calc('funded'),'to payout');
+  draw('stageEval','EVAL','#2d7bff',calc('eval'),'to pass');
+  draw('stageFunded','FUNDED','#ffffff',calc('funded'),'to payout');
 }
 function renderHud(){ renderHudClock(); renderHudBars(); }
 setInterval(renderHudClock, 1000);
