@@ -170,7 +170,13 @@ body::before{
 .network-body{display:grid;grid-template-columns:250px 1fr 250px;}
 .network-sidebar{position:relative;border-right:1px solid var(--line);min-width:0;}
 .sb-inner{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;}
-.mini-widget.gauge-widget{flex:1 1 0;overflow-y:auto;min-height:120px;}
+.mini-widget.gauge-widget{flex:0 1 auto;overflow-y:auto;min-height:120px;max-height:calc(50% - 215px);}
+.sb-center{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;}
+.voice-box{margin:0 12px 10px;padding:10px;border:1px solid var(--line);border-radius:12px;background:rgba(8,12,32,0.45);display:flex;flex-direction:column;align-items:center;gap:6px;}
+.voice-box .vo-orb{width:88px;height:88px;}
+.voice-box .vo-say{font-size:10px;text-align:center;}
+.voice-box .vo-say:empty{display:none;}
+.voice-box .vo-confirm{width:100%;}
 .mini-widget.traded-widget{flex:0 0 auto;border-top:1px solid var(--line);border-bottom:none;justify-content:flex-start;}
 .gauge-widget::-webkit-scrollbar{width:4px;} .gauge-widget::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px;}
 .tg-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;}
@@ -245,7 +251,7 @@ body::before{
 .nf-stat .v{font-family:var(--mono);font-weight:700;font-size:16px;}
 .nf-stat .l{font-family:var(--mono);font-size:8px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-top:2px;}
 @media(max-width:1200px){.network-body{grid-template-columns:1fr;} .network-sidebar{flex-direction:row;flex-wrap:wrap;border-right:none;border-bottom:1px solid var(--line);} .network-sidebar.right{border-left:none;} .mini-widget{flex:1 1 280px;border-bottom:none;border-right:1px solid var(--line);}}
-@media(max-width:1200px){.sb-inner{position:static;flex-direction:row;flex-wrap:wrap;} .network-sidebar{display:block;} .gauge-widget{overflow:visible;flex:1 1 auto;}}
+@media(max-width:1200px){.sb-center{position:static;transform:none;} .mini-widget.gauge-widget{max-height:none;} .sb-inner{position:static;flex-direction:row;flex-wrap:wrap;} .network-sidebar{display:block;} .gauge-widget{overflow:visible;flex:1 1 auto;}}
 .network-head{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line);}
 .network-head .title{font-family:var(--mono);font-size:10px;letter-spacing:2.5px;color:var(--dim);text-transform:uppercase;display:flex;align-items:center;gap:8px;}
 .network-head .title span.b{color:var(--bright);}
@@ -657,9 +663,8 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
         <div class="mini-widget-title">Payout Gauges — Funded Accounts</div>
         <div id="payoutGauges"></div>
       </div>
-      <div class="mini-widget traded-widget">
-        <div class="mini-widget-title">Traded Today — All Firms</div>
-        <div class="voice-widget">
+      <div class="sb-center">
+        <div class="voice-box">
         <button class="vo-orb" id="voOrb" title="Tap, then say e.g. “Lucid account 1034 plus 450”"><canvas id="voCanvas" width="240" height="240"></canvas></button>
         <div class="vo-say" id="voSay"></div>
         <div class="vo-confirm hidden" id="voConfirm">
@@ -668,7 +673,10 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
           <div class="vo-row"><input type="number" id="voAmt" step="0.01" placeholder="amount (+/-)"><button class="btn primary" id="voSave">OK</button><button class="btn" id="voCancel">✕</button></div>
         </div>
       </div>
+      <div class="mini-widget traded-widget">
+        <div class="mini-widget-title">Traded Today — All Firms</div>
         <div id="tradedGauge"></div>
+      </div>
       </div>
     </div></div>
     <div class="network-stage" id="networkStage">
