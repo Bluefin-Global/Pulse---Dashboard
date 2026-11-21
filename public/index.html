@@ -300,6 +300,27 @@ body::before{
 .dn-title{position:absolute;top:12px;left:14px;right:14px;margin:0;}
 @media(max-width:1200px){.hud-row{grid-template-columns:1fr 1fr;}}
 @media(max-width:700px){.hud-row{grid-template-columns:1fr;}}
+.hud-row{display:flex;justify-content:center;}
+.hud-row .hud-dancer{width:min(440px,100%);}
+.float-w{position:absolute;z-index:2;pointer-events:none;padding:10px 12px;border:1px solid rgba(0,229,255,0.28);border-radius:12px;background:rgba(8,12,32,0.5);backdrop-filter:blur(2px);box-shadow:0 0 16px rgba(0,229,255,0.1);}
+.float-w.hidden{display:none;}
+.float-w .hp-wrap{height:140px;gap:14px;}
+.float-w .hp-vbar{width:44px;padding:4px;gap:2px;}
+.float-w .hp-pct{font-size:34px;}
+.float-w .hp-amt{font-size:10px;line-height:1.6;}
+.float-w .hc-body{flex-direction:column;align-items:stretch;gap:10px;}
+.float-w .hc-cal{width:auto;}
+.float-w .hc-t{font-size:22px;}
+.float-w .hc-sess,.float-w .hc-z{display:none;}
+.float-w .hc-day{font-size:42px;}
+.float-w .hc-cal{padding:4px 4px 6px;}
+.float-w .hc-body{gap:8px;}
+.float-w{padding:8px 10px;}
+.voice-widget{flex:0 0 auto !important;display:flex;flex-direction:column;align-items:center;padding:12px 10px !important;gap:6px;}
+.voice-widget .vo-orb{width:104px;height:104px;}
+.voice-widget .vo-say{font-size:10px;text-align:center;min-height:0;}
+.voice-widget .vo-say:empty{display:none;}
+.voice-widget .vo-confirm{width:100%;}
 .network-stage{position:relative;width:100%;height:640px;}
 .node-lines{position:absolute;inset:0;width:100%;height:100%;}
 .node-lines line{stroke-dasharray:3 4;animation:dashflow 3s linear infinite;}
@@ -636,6 +657,15 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
         <div class="mini-widget-title">Payout Gauges — Funded Accounts</div>
         <div id="payoutGauges"></div>
       </div>
+      <div class="mini-widget voice-widget">
+        <button class="vo-orb" id="voOrb" title="Tap, then say e.g. “Lucid account 1034 plus 450”"><canvas id="voCanvas" width="240" height="240"></canvas></button>
+        <div class="vo-say" id="voSay"></div>
+        <div class="vo-confirm hidden" id="voConfirm">
+          <div class="vo-heard" id="voHeard"></div>
+          <div class="vo-row"><select id="voFirm"></select><select id="voAcct"></select></div>
+          <div class="vo-row"><input type="number" id="voAmt" step="0.01" placeholder="amount (+/-)"><button class="btn primary" id="voSave">OK</button><button class="btn" id="voCancel">✕</button></div>
+        </div>
+      </div>
       <div class="mini-widget traded-widget">
         <div class="mini-widget-title">Traded Today — All Firms</div>
         <div id="tradedGauge"></div>
@@ -645,6 +675,13 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
       <div class="world-map" id="worldMap"><canvas id="worldCanvas"></canvas></div>
       <svg class="node-lines" id="nodeLines"></svg>
       <div class="affirm affirm-stage hidden" id="affirmStage" title="Click for another"><div class="affirm-t" id="affirmTextStage"></div></div>
+      <div class="float-w hidden" id="stageProfit"><div id="hudProfit"></div></div>
+      <div class="float-w hidden" id="stageClock">
+        <div class="hc-body">
+          <div class="hc-cal"><div class="hc-mon" id="hcMon">NOV</div><div class="hc-day" id="hcDay">21</div><div class="hc-wd" id="hcWd">SATURDAY</div></div>
+          <div class="hc-time"><div class="hc-t" id="hcTime">--:--:--</div><div class="hc-z">EASTERN TIME</div><div class="hc-sess" id="hcSess"></div></div>
+        </div>
+      </div>
       <div class="hub-ring"></div>
       <div class="hub-ring r2"></div>
       <div class="hub-mesh-wrap" id="hubMeshWrap">
@@ -681,30 +718,6 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
 </div>
 
 <div class="hud-row" id="hudRow">
-  <div class="hud-panel hud-clock" id="hudClock">
-    <div class="hud-title">◆ <span class="b">TRADING CLOCK</span></div>
-    <div class="hc-body">
-      <div class="hc-cal"><div class="hc-mon" id="hcMon">NOV</div><div class="hc-day" id="hcDay">21</div><div class="hc-wd" id="hcWd">SATURDAY</div></div>
-      <div class="hc-time"><div class="hc-t" id="hcTime">--:--:--</div><div class="hc-z">EASTERN TIME</div>
-        <div class="hc-sess" id="hcSess"></div></div>
-    </div>
-  </div>
-  <div class="hud-panel hud-profit">
-    <div class="hud-title">◆ <span class="b">PROFIT STATUS</span> — today vs. daily targets <span class="hud-sub" id="hpSub"></span></div>
-    <div id="hudProfit"></div>
-  </div>
-  <div class="hud-panel hud-voice">
-    <div class="hud-title">◆ <span class="b">VOICE ENTRY</span></div>
-    <div class="vo-wrap">
-      <button class="vo-orb" id="voOrb" title="Tap, then say e.g. “Lucid account 1034 plus 450”"><canvas id="voCanvas" width="240" height="240"></canvas></button>
-      <div class="vo-say" id="voSay">Tap the orb &amp; say<br><i>“Lucid 1034 plus 450”</i></div>
-    </div>
-    <div class="vo-confirm hidden" id="voConfirm">
-      <div class="vo-heard" id="voHeard"></div>
-      <div class="vo-row"><select id="voFirm"></select><select id="voAcct"></select></div>
-      <div class="vo-row"><input type="number" id="voAmt" step="0.01" placeholder="amount (+/-)"><button class="btn primary" id="voSave">CONFIRM</button><button class="btn" id="voCancel">✕</button></div>
-    </div>
-  </div>
   <div class="hud-panel hud-dancer"><canvas id="dancerCanvas"></canvas><div class="hud-title dn-title">◆ <span class="b">PULSE MOOD</span> <span class="hud-sub" id="dnMood"></span></div></div>
 </div>
 
@@ -1692,6 +1705,34 @@ function placeAffirmation(){
   }
   if(best){ card.style.width=best.cw+'px'; card.style.left=best.x+'px'; card.style.top=best.y+'px'; bar.classList.add('hidden'); }
   else { card.classList.add('hidden'); bar.classList.remove('hidden'); }
+
+  /* ---- other floating widgets: profit bar (under the quote) and clock (top-right) ---- */
+  const placed = [];
+  if(best) placed.push({x:best.x-10, y:best.y-6, w:best.cw+20, h:card.offsetHeight+12});
+  const PADW = 12;
+  function placeFloat(el, widths, scoreFn){
+    if(!el) return;
+    el.classList.remove('hidden'); el.style.left='0px'; el.style.top='0px';
+    let bst=null, bs=Infinity;
+    for(const fw of widths){
+      el.style.width = fw+'px';
+      const ew = el.offsetWidth, eh = el.offsetHeight;
+      const hitsCore = (x,y)=>{ const nx=Math.max(x,Math.min(cx,x+ew)), ny=Math.max(y,Math.min(cy,y+eh)); return Math.hypot(nx-cx, ny-cy) < coreR; };
+      const hit = (x,y)=> rects.some(r=> x<r.x+r.w && x+ew>r.x && y<r.y+r.h && y+eh>r.y) || placed.some(r=> x<r.x+r.w+PADW && x+ew>r.x-PADW && y<r.y+r.h+PADW && y+eh>r.y-PADW);
+      for(let y=12; y<=H-eh-12; y+=10){
+        for(let x=12; x<=W-ew-12; x+=10){
+          if(hit(x,y) || hitsCore(x,y)) continue;
+          const sc = scoreFn(x,y,ew,eh) + (widths[0]-fw)*0.5;
+          if(sc<bs){ bs=sc; bst={x,y,w:ew,h:eh,fw}; }
+        }
+      }
+    }
+    if(bst){ el.style.width=bst.fw+'px'; el.style.left=bst.x+'px'; el.style.top=bst.y+'px'; placed.push({x:bst.x,y:bst.y,w:bst.w,h:bst.h}); }
+    else el.classList.add('hidden');
+  }
+  const tx = best ? best.x : 12, ty = best ? best.y + card.offsetHeight + 14 : 12;
+  placeFloat(document.getElementById('stageProfit'), [200,180,160], (x,y)=> Math.abs(x-tx) + Math.abs(y-ty)*1.5);
+  placeFloat(document.getElementById('stageClock'),  [200,180,160], (x,y,ew)=> y*3 + (W-ew-x));
 }
 function renderNetworkCore(){
   const stage = document.getElementById('networkStage');
@@ -2930,7 +2971,6 @@ function renderHudProfit(){
     return {f,pl,tgt};
   });
   const tp = totT>0 ? totPL/totT*100 : 0;
-  document.getElementById('hpSub').textContent = '';
   const on = Math.round(Math.max(0,Math.min(100,tp))/100*SEG);
   const col = totPL<0 ? '#ff2d55' : '#39ff14';
   let bar = '<div class="hp-vbar" style="--c:'+col+'">';
@@ -2997,16 +3037,16 @@ function voShowConfirm(heard, parsed){
 document.getElementById('voOrb').addEventListener('click', ()=>{
   const orb = document.getElementById('voOrb'), say = document.getElementById('voSay');
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!SR){ say.innerHTML = 'Voice not supported in this browser —<br>type the entry below'; voShowConfirm('', null); return; }
+  if(!SR){ say.innerHTML = 'Voice not supported here — type below'; voShowConfirm('', null); return; }
   if(voRec){ try{ voRec.stop(); }catch(e){} return; }
   const r = new SR(); voRec = r; r.lang='en-US'; r.interimResults=false; r.maxAlternatives=1;
   orb.classList.add('listening'); say.innerHTML = 'Listening…';
-  r.onresult = (e)=>{ const heard = e.results[0][0].transcript; say.innerHTML = '<i>“'+heard+'”</i>'; voShowConfirm(heard, parseVoice(heard)); };
+  r.onresult = (e)=>{ const heard = e.results[0][0].transcript; say.innerHTML = ''; voShowConfirm(heard, parseVoice(heard)); };
   r.onerror = (e)=>{ say.innerHTML = 'Couldn’t hear that ('+e.error+') — tap to retry'; };
   r.onend = ()=>{ orb.classList.remove('listening'); voRec = null; };
   try{ r.start(); }catch(e){ orb.classList.remove('listening'); voRec=null; }
 });
-document.getElementById('voCancel').addEventListener('click', ()=>{ document.getElementById('voConfirm').classList.add('hidden'); document.getElementById('voSay').innerHTML='Tap the orb &amp; say<br><i>“Lucid 1034 plus 450”</i>'; });
+document.getElementById('voCancel').addEventListener('click', ()=>{ document.getElementById('voConfirm').classList.add('hidden'); document.getElementById('voSay').innerHTML=''; });
 document.getElementById('voSave').addEventListener('click', ()=>{
   const firmId = document.getElementById('voFirm').value, acctId = document.getElementById('voAcct').value;
   const amt = Number(document.getElementById('voAmt').value);
