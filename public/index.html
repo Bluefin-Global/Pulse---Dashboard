@@ -146,14 +146,11 @@ body::before{
 
 /* ---------- scope bar ---------- */
 .scope-bar{display:flex;align-items:center;gap:10px;padding:10px 24px;flex-wrap:wrap;border-bottom:1px solid var(--line);background:rgba(6,2,16,0.5);}
-.affirm{margin-left:auto;flex:1 1 360px;max-width:640px;min-width:260px;padding:7px 16px;border:1px solid rgba(57,255,20,0.35);border-radius:10px;background:linear-gradient(90deg,rgba(57,255,20,0.08),rgba(0,240,255,0.05));box-shadow:0 0 14px rgba(57,255,20,0.15);cursor:pointer;transition:box-shadow .2s;}
+.affirm{margin-left:auto;flex:1 1 420px;max-width:760px;min-width:260px;padding:4px 8px;cursor:pointer;text-align:right;}
 .affirm.hidden{display:none;}
-.affirm.affirm-stage{position:absolute;margin:0;min-width:0;max-width:none;flex:none;z-index:2;padding:12px 16px;backdrop-filter:blur(2px);background:linear-gradient(135deg,rgba(57,255,20,0.10),rgba(0,240,255,0.06));}
-.affirm.affirm-stage .affirm-t{font-size:14px;}
-.affirm.affirm-stage .affirm-l{font-size:9px;margin-bottom:6px;}
-.affirm:hover{box-shadow:0 0 22px rgba(57,255,20,0.4);}
-.affirm-l{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:#39ff14;opacity:0.9;margin-bottom:3px;}
-.affirm-t{font-family:var(--sans);font-size:13px;font-style:italic;color:var(--bright);line-height:1.35;text-shadow:0 0 10px rgba(57,255,20,0.35);}
+.affirm.affirm-stage{position:absolute;margin:0;min-width:0;max-width:none;flex:none;z-index:2;padding:6px 10px;text-align:left;}
+.affirm-t{font-family:var(--sans);font-size:26px;font-style:italic;font-weight:500;color:#ffffff;line-height:1.25;text-shadow:0 0 14px rgba(255,255,255,0.45),0 0 28px rgba(255,255,255,0.2);transition:text-shadow .2s;}
+.affirm:hover .affirm-t{text-shadow:0 0 18px rgba(255,255,255,0.8),0 0 36px rgba(255,255,255,0.35);}
 .affirm-t.swap{animation:affSwap .5s ease;}
 @keyframes affSwap{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
 .scope-toggle{font-family:var(--mono);font-size:13px;width:24px;height:24px;border-radius:50%;border:1px solid var(--line);color:var(--cyan);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0;user-select:none;}
@@ -574,7 +571,7 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
   <div class="scope-pill active" data-scope="ALL" id="scopeAll">◆ All Accounts</div>
   <span class="scope-count" id="scopeSelected"></span>
   <div id="scopePills" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
-  <div class="affirm" id="affirm" title="Click for another"><div class="affirm-l">◆ DAILY AFFIRMATION</div><div class="affirm-t" id="affirmText"></div></div>
+  <div class="affirm" id="affirm" title="Click for another"><div class="affirm-t" id="affirmText"></div></div>
 </div>
 
 <div class="network-panel">
@@ -595,7 +592,7 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
     </div></div>
     <div class="network-stage" id="networkStage">
       <svg class="node-lines" id="nodeLines"></svg>
-      <div class="affirm affirm-stage hidden" id="affirmStage" title="Click for another"><div class="affirm-l">◆ DAILY AFFIRMATION</div><div class="affirm-t" id="affirmTextStage"></div></div>
+      <div class="affirm affirm-stage hidden" id="affirmStage" title="Click for another"><div class="affirm-t" id="affirmTextStage"></div></div>
       <div class="hub-ring"></div>
       <div class="hub-ring r2"></div>
       <div class="hub-mesh-wrap" id="hubMeshWrap">
@@ -1138,8 +1135,9 @@ function renderAffirmation(animate){
   const ymd = new Date(Date.now()-8*3600*1000).toLocaleDateString('en-CA',{timeZone:'America/New_York'});
   const dayNum = Math.floor(Date.parse(ymd+'T12:00:00Z')/86400000);
   const idx = (((dayNum + affirmOffset) % AFFIRMATIONS.length) + AFFIRMATIONS.length) % AFFIRMATIONS.length;
-  el.textContent = AFFIRMATIONS[idx];
-  if(el2) el2.textContent = AFFIRMATIONS[idx];
+  const q = '\u201C' + AFFIRMATIONS[idx] + '\u201D';
+  el.textContent = q;
+  if(el2) el2.textContent = q;
   if(animate){ [el,el2].forEach(e=>{ if(!e) return; e.classList.remove('swap'); void e.offsetWidth; e.classList.add('swap'); }); }
   if(typeof placeAffirmation==='function' && document.getElementById('networkStage')) placeAffirmation();
 }
@@ -1530,24 +1528,26 @@ function placeAffirmation(){
   const card = document.getElementById('affirmStage'), bar = document.getElementById('affirm');
   if(!stage || !card || !bar) return;
   const W = stage.clientWidth, H = stage.clientHeight;
-  const cw = Math.max(200, Math.min(300, Math.round(W*0.34)));
-  card.classList.remove('hidden'); card.style.width = cw+'px'; card.style.left='0px'; card.style.top='0px';
-  const ch = card.offsetHeight;
   const PAD = 16;
   const rects = [...stage.querySelectorAll('.firm-node, .add-node, .acct-node, .node-icon')].map(n=>({x:n.offsetLeft-PAD, y:n.offsetTop-PAD, w:n.offsetWidth+PAD*2, h:n.offsetHeight+PAD*2}));
   const cx = W/2, cy = H/2, coreR = 165;
-  const hitsCore = (x,y)=>{ const nx=Math.max(x,Math.min(cx,x+cw)), ny=Math.max(y,Math.min(cy,y+ch)); return Math.hypot(nx-cx, ny-cy) < coreR; };
-  const hitsRect = (x,y)=>rects.some(r=> x < r.x+r.w && x+cw > r.x && y < r.y+r.h && y+ch > r.y);
+  card.classList.remove('hidden'); card.style.left='0px'; card.style.top='0px';
   let best = null, bestScore = Infinity;
-  for(let y=12; y<=H-ch-12; y+=14){
-    for(let x=12; x<=W-cw-12; x+=14){
-      if(hitsRect(x,y) || hitsCore(x,y)) continue;
-      const dx = Math.min(x, W-cw-x), dy = Math.min(y, H-ch-y);
-      const score = dx+dy;           // prefer the stage corners
-      if(score<bestScore){ bestScore=score; best={x,y}; }
+  const maxW = Math.min(430, Math.round(W*0.42));
+  for(let cw = maxW; cw >= 220; cw -= 30){
+    card.style.width = cw+'px';
+    const ch = card.offsetHeight;
+    const hitsCore = (x,y)=>{ const nx=Math.max(x,Math.min(cx,x+cw)), ny=Math.max(y,Math.min(cy,y+ch)); return Math.hypot(nx-cx, ny-cy) < coreR; };
+    const hitsRect = (x,y)=>rects.some(r=> x < r.x+r.w && x+cw > r.x && y < r.y+r.h && y+ch > r.y);
+    for(let y=12; y<=H-ch-12; y+=14){
+      for(let x=12; x<=W-cw-12; x+=14){
+        if(hitsRect(x,y) || hitsCore(x,y)) continue;
+        const score = y*3 + Math.min(x, W-cw-x) + (maxW-cw)*0.8;   // strongly prefer the top corners
+        if(score<bestScore){ bestScore=score; best={x,y,cw}; }
+      }
     }
   }
-  if(best){ card.style.left=best.x+'px'; card.style.top=best.y+'px'; bar.classList.add('hidden'); }
+  if(best){ card.style.width=best.cw+'px'; card.style.left=best.x+'px'; card.style.top=best.y+'px'; bar.classList.add('hidden'); }
   else { card.classList.add('hidden'); bar.classList.remove('hidden'); }
 }
 function renderNetworkCore(){
