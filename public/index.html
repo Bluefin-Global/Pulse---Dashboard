@@ -146,6 +146,16 @@ body::before{
 
 /* ---------- scope bar ---------- */
 .scope-bar{display:flex;align-items:center;gap:10px;padding:10px 24px;flex-wrap:wrap;border-bottom:1px solid var(--line);background:rgba(6,2,16,0.5);}
+.affirm{margin-left:auto;flex:1 1 360px;max-width:640px;min-width:260px;padding:7px 16px;border:1px solid rgba(57,255,20,0.35);border-radius:10px;background:linear-gradient(90deg,rgba(57,255,20,0.08),rgba(0,240,255,0.05));box-shadow:0 0 14px rgba(57,255,20,0.15);cursor:pointer;transition:box-shadow .2s;}
+.affirm.hidden{display:none;}
+.affirm.affirm-stage{position:absolute;margin:0;min-width:0;max-width:none;flex:none;z-index:2;padding:12px 16px;backdrop-filter:blur(2px);background:linear-gradient(135deg,rgba(57,255,20,0.10),rgba(0,240,255,0.06));}
+.affirm.affirm-stage .affirm-t{font-size:14px;}
+.affirm.affirm-stage .affirm-l{font-size:9px;margin-bottom:6px;}
+.affirm:hover{box-shadow:0 0 22px rgba(57,255,20,0.4);}
+.affirm-l{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:#39ff14;opacity:0.9;margin-bottom:3px;}
+.affirm-t{font-family:var(--sans);font-size:13px;font-style:italic;color:var(--bright);line-height:1.35;text-shadow:0 0 10px rgba(57,255,20,0.35);}
+.affirm-t.swap{animation:affSwap .5s ease;}
+@keyframes affSwap{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
 .scope-toggle{font-family:var(--mono);font-size:13px;width:24px;height:24px;border-radius:50%;border:1px solid var(--line);color:var(--cyan);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0;user-select:none;}
 .scope-toggle:hover{border-color:var(--cyan);box-shadow:0 0 10px rgba(0,234,255,0.4);}
 .scope-toggle .arr{display:inline-block;transition:transform .2s;}
@@ -564,6 +574,7 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
   <div class="scope-pill active" data-scope="ALL" id="scopeAll">◆ All Accounts</div>
   <span class="scope-count" id="scopeSelected"></span>
   <div id="scopePills" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+  <div class="affirm" id="affirm" title="Click for another"><div class="affirm-l">◆ DAILY AFFIRMATION</div><div class="affirm-t" id="affirmText"></div></div>
 </div>
 
 <div class="network-panel">
@@ -584,6 +595,7 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
     </div></div>
     <div class="network-stage" id="networkStage">
       <svg class="node-lines" id="nodeLines"></svg>
+      <div class="affirm affirm-stage hidden" id="affirmStage" title="Click for another"><div class="affirm-l">◆ DAILY AFFIRMATION</div><div class="affirm-t" id="affirmTextStage"></div></div>
       <div class="hub-ring"></div>
       <div class="hub-ring r2"></div>
       <div class="hub-mesh-wrap" id="hubMeshWrap">
@@ -1118,6 +1130,22 @@ function tickClock(){
   if(etEl) etEl.textContent = 'ET ' + etTime;
 }
 setInterval(tickClock,1000); tickClock();
+const AFFIRMATIONS = ["I show up for my work, my family, and myself — especially on the days I don't feel like it.", "Discipline is how I keep promises to myself.", "I am steady. Pressure sharpens me; it does not shake me.", "I take full responsibility for my choices and I own the results.", "Strength is staying calm when it would be easier to react.", "I do the hard thing first and the day gets lighter.", "I protect my peace, my time, and my attention.", "A bad day does not define me. How I respond does.", "I am building something that outlasts my mood.", "I lead by example, in the work and at home.", "My word means something. I keep it.", "I do not chase; I prepare, and then I act.", "I can feel fear and still do what is right.", "Patience is a strength. I let good setups come to me.", "I am allowed to rest. Rest keeps me sharp.", "I choose the long game over the quick fix.", "Losses are tuition. I learn the lesson and move on.", "I am more than my results, and I keep working on them anyway.", "I stay humble enough to learn and confident enough to act.", "My family gets the best of me, not what's left over.", "I build habits that serve the man I'm becoming.", "Courage is quiet. It looks like showing up again tomorrow.", "I control my process; the outcome follows.", "I speak honestly, listen well, and act with integrity.", "I take care of my body, because it carries everything else.", "Small consistent actions beat occasional heroic efforts.", "I am not behind. I am on my own path, and I'm moving.", "I handle what is in front of me, one task at a time.", "I let go of what I can't control and master what I can.", "I am a provider, a protector, and a student for life.", "Asking for help is strength, not weakness.", "I forgive my mistakes and keep my standards high.", "I bring calm into every room I walk into.", "I do not need to prove anything; I need to keep improving.", "Every disciplined day is a deposit in my future.", "I treat my capital, my time, and my relationships with respect.", "I stop when my plan says stop. Protecting capital is winning.", "I celebrate progress without getting complacent.", "I choose focus over noise.", "I am grateful for what I have and hungry for what I can build.", "I do what I said I would do, even when no one is watching.", "I can be gentle and strong at the same time.", "The man I want to be is built by what I do today.", "I face problems early; they only get heavier when ignored.", "My value is not measured by one trade, one month, or one outcome.", "I make decisions from principle, not from emotion.", "I stay in my lane, run my plan, and trust my preparation.", "I am patient with the process and urgent with the work.", "I earn trust by being consistent, in big things and small.", "I leave every day better organized than I found it.", "Real confidence is built from kept commitments.", "I take the lesson, drop the weight, and keep walking.", "I invest in my mind, my health, and my relationships every day.", "I am resilient. I have gotten through every hard day so far.", "I choose gratitude over comparison.", "I think clearly, act decisively, and accept the outcome.", "I make my home a place of calm and strength.", "I am the same man in good markets and bad ones.", "Today I do the work, honor my rules, and let compounding do the rest.", "I measure success by who I am becoming, not just what I earn."];
+let affirmOffset = 0;
+function renderAffirmation(animate){
+  const el = document.getElementById('affirmText'); const el2 = document.getElementById('affirmTextStage'); if(!el) return;
+  // New affirmation each day at 8:00am Eastern: shift the clock back 8 hours before taking the ET date
+  const ymd = new Date(Date.now()-8*3600*1000).toLocaleDateString('en-CA',{timeZone:'America/New_York'});
+  const dayNum = Math.floor(Date.parse(ymd+'T12:00:00Z')/86400000);
+  const idx = (((dayNum + affirmOffset) % AFFIRMATIONS.length) + AFFIRMATIONS.length) % AFFIRMATIONS.length;
+  el.textContent = AFFIRMATIONS[idx];
+  if(el2) el2.textContent = AFFIRMATIONS[idx];
+  if(animate){ [el,el2].forEach(e=>{ if(!e) return; e.classList.remove('swap'); void e.offsetWidth; e.classList.add('swap'); }); }
+  if(typeof placeAffirmation==='function' && document.getElementById('networkStage')) placeAffirmation();
+}
+['affirm','affirmStage'].forEach(id=>document.getElementById(id).addEventListener('click', ()=>{ affirmOffset++; renderAffirmation(true); }));
+renderAffirmation(false);
+setInterval(()=>renderAffirmation(false), 60000);
 let lastTradingDayKey = null;
 setInterval(()=>{ const k=dayKey(Date.now()); if(lastTradingDayKey && k!==lastTradingDayKey && typeof renderAll==='function' && state && state.firms){ renderAll(); } lastTradingDayKey=k; }, 30000);
 
@@ -1496,7 +1524,33 @@ function computeNetworkLayout(W){
   return { firms, accts: map, add: addPos, H };
 }
 
-function renderNetwork(){
+function renderNetwork(){ renderNetworkCore(); placeAffirmation(); }
+function placeAffirmation(){
+  const stage = document.getElementById('networkStage');
+  const card = document.getElementById('affirmStage'), bar = document.getElementById('affirm');
+  if(!stage || !card || !bar) return;
+  const W = stage.clientWidth, H = stage.clientHeight;
+  const cw = Math.max(200, Math.min(300, Math.round(W*0.34)));
+  card.classList.remove('hidden'); card.style.width = cw+'px'; card.style.left='0px'; card.style.top='0px';
+  const ch = card.offsetHeight;
+  const PAD = 16;
+  const rects = [...stage.querySelectorAll('.firm-node, .add-node, .acct-node, .node-icon')].map(n=>({x:n.offsetLeft-PAD, y:n.offsetTop-PAD, w:n.offsetWidth+PAD*2, h:n.offsetHeight+PAD*2}));
+  const cx = W/2, cy = H/2, coreR = 165;
+  const hitsCore = (x,y)=>{ const nx=Math.max(x,Math.min(cx,x+cw)), ny=Math.max(y,Math.min(cy,y+ch)); return Math.hypot(nx-cx, ny-cy) < coreR; };
+  const hitsRect = (x,y)=>rects.some(r=> x < r.x+r.w && x+cw > r.x && y < r.y+r.h && y+ch > r.y);
+  let best = null, bestScore = Infinity;
+  for(let y=12; y<=H-ch-12; y+=14){
+    for(let x=12; x<=W-cw-12; x+=14){
+      if(hitsRect(x,y) || hitsCore(x,y)) continue;
+      const dx = Math.min(x, W-cw-x), dy = Math.min(y, H-ch-y);
+      const score = dx+dy;           // prefer the stage corners
+      if(score<bestScore){ bestScore=score; best={x,y}; }
+    }
+  }
+  if(best){ card.style.left=best.x+'px'; card.style.top=best.y+'px'; bar.classList.add('hidden'); }
+  else { card.classList.add('hidden'); bar.classList.remove('hidden'); }
+}
+function renderNetworkCore(){
   const stage = document.getElementById('networkStage');
   const lines = document.getElementById('nodeLines');
   stage.querySelectorAll('.firm-node, .add-node, .acct-node, .node-icon').forEach(n=>n.remove());
