@@ -1,0 +1,24 @@
+name: Winston Command frontend checks
+on:
+  push:
+    branches:
+      - winston-command-integration
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run frontend smoke tests
+        run: node --test tests/frontend-smoke.test.cjs
+      - name: Validate Firebase Hosting config
+        run: node -e "const c=require('./firebase.json');if(c.hosting.public!=='public')process.exit(1);"
