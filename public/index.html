@@ -662,6 +662,26 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
 @media(max-width:900px){.network-stage{min-height:520px;}.network-stage::after{left:5%;right:5%;}}
 @media(prefers-reduced-motion:reduce){.network-panel::before,.network-stage::after{animation:none!important;}}
 
+
+/* Winston holographic command-room centerpiece: decorative only; the interactive
+   firm/account network remains fully accessible above it. */
+.network-stage{isolation:isolate;overflow:hidden;}
+.winston-hologram{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden;}
+.winston-hologram-aura{position:absolute;left:50%;top:51%;width:min(82%,670px);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(0,225,255,.14) 0%,rgba(0,160,255,.08) 28%,rgba(209,40,255,.05) 46%,transparent 70%);filter:blur(8px);}
+.winston-hologram-globe{position:absolute;left:50%;top:47%;width:260px;height:260px;transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(66,242,255,.6);background:radial-gradient(circle at 33% 25%,rgba(170,249,255,.25),transparent 29%),radial-gradient(circle at 70% 75%,rgba(212,52,255,.23),transparent 35%),radial-gradient(circle at center,rgba(0,36,87,.36),rgba(0,6,30,.04) 72%);box-shadow:inset -18px -12px 40px rgba(0,0,38,.65),inset 0 0 30px rgba(0,233,255,.27),0 0 24px rgba(0,234,255,.24),0 0 80px rgba(0,130,255,.14);animation:winstonGlobeFloat 7s ease-in-out infinite;}
+.winston-hologram-latitudes,.winston-hologram-longitudes,.winston-hologram-equator,.winston-hologram-core{position:absolute;inset:0;border-radius:50%;}
+.winston-hologram-latitudes{background:repeating-linear-gradient(0deg,transparent 0 32px,rgba(0,239,255,.15) 33px,transparent 34px);clip-path:circle(49%);}
+.winston-hologram-longitudes{border-left:1px solid rgba(67,239,255,.4);border-right:1px solid rgba(67,239,255,.4);width:42%;left:29%;box-shadow:0 0 20px rgba(0,229,255,.2);animation:winstonLongitude 12s ease-in-out infinite alternate;}
+.winston-hologram-equator{height:35%;top:32.5%;border-top:1px solid rgba(91,243,255,.5);border-bottom:1px solid rgba(91,243,255,.5);transform:rotate(-14deg);}
+.winston-hologram-core{inset:30%;background:radial-gradient(circle,rgba(0,230,255,.18),transparent 75%);}
+.winston-hologram-platform{position:absolute;left:50%;top:72%;width:390px;height:125px;transform:translate(-50%,-50%) perspective(420px) rotateX(62deg);border:2px solid rgba(43,235,255,.75);border-radius:50%;box-shadow:0 0 18px rgba(0,226,255,.65),inset 0 0 30px rgba(0,226,255,.23),0 0 75px rgba(220,50,255,.2);background:repeating-radial-gradient(ellipse,transparent 0 32px,rgba(0,232,255,.25) 33px,transparent 35px);}
+.winston-hologram-platform::after{content:'';position:absolute;inset:16%;border:2px dashed rgba(241,63,255,.6);border-radius:50%;animation:hubSpin 22s linear infinite;}
+@keyframes winstonGlobeFloat{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-50%,-53%)}}
+@keyframes winstonLongitude{from{transform:scaleX(.4)}to{transform:scaleX(1)}}
+@media(max-width:1200px){.winston-hologram-globe{width:200px;height:200px}.winston-hologram-platform{width:300px;height:95px}}
+@media(max-width:650px){.winston-hologram-globe{width:150px;height:150px}.winston-hologram-platform{width:220px;height:70px}}
+@media(prefers-reduced-motion:reduce){.winston-hologram *{animation:none!important}}
+
 </style>
 </head>
 <body>
@@ -768,6 +788,16 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
           <div class="hc-cal"><div class="hc-mon" id="hcMon">NOV</div><div class="hc-day" id="hcDay">21</div><div class="hc-wd" id="hcWd">SATURDAY</div></div>
           <div class="hc-time"><div class="hc-t" id="hcTime">--:--:--</div><div class="hc-z">EASTERN TIME</div><div class="hc-sess" id="hcSess"></div></div>
         </div>
+      </div>
+      <div class="winston-hologram" aria-hidden="true">
+        <div class="winston-hologram-aura"></div>
+        <div class="winston-hologram-globe">
+          <div class="winston-hologram-latitudes"></div>
+          <div class="winston-hologram-longitudes"></div>
+          <div class="winston-hologram-equator"></div>
+          <div class="winston-hologram-core"></div>
+        </div>
+        <div class="winston-hologram-platform"></div>
       </div>
       <div class="hub-ring"></div>
       <div class="hub-ring r2"></div>
