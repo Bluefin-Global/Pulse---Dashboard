@@ -702,6 +702,14 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
 .hm-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}.hm-title{font:800 15px var(--disp);letter-spacing:1.4px;color:#9cfaff}.hm-sub{font-size:11px;color:#a5b9d2;margin-top:6px}.hm-state{font:700 10px var(--mono);color:#f5c777;border:1px solid rgba(245,199,119,.35);border-radius:20px;padding:7px 11px}
 .hm-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px}.hm-tile{min-width:0;min-height:82px;border:1px solid rgba(122,155,200,.25);border-radius:9px;background:linear-gradient(135deg,rgba(33,48,75,.75),rgba(16,24,44,.9));display:flex;flex-direction:column;justify-content:space-between;padding:12px;position:relative}.hm-tile:before{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(0,234,255,.06),transparent);pointer-events:none}.hm-symbol{font:800 16px var(--mono);color:#e4faff}.hm-sector{font-size:10px;color:#8eabc5}.hm-unavailable{font:700 11px var(--mono);color:#e3bd79}.hm-foot{font-size:11px;color:#91a9c5;margin-top:12px;line-height:1.5}
 @media(max-width:1000px){.hm-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:520px){.hm-panel{margin:0 10px 14px;padding:12px}.hm-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hm-tile{min-height:76px;padding:9px}}
+
+/* Prioritize the command center over market-data modules. */
+.winston-market-section{scroll-margin-top:20px;padding-top:4px}
+.winston-market-section .hm-panel{margin-top:14px}
+.winston-nav-jumps{display:flex;align-items:center;gap:8px;margin:8px 20px 0;flex-wrap:wrap}
+.winston-nav-jumps a{font:700 11px var(--mono);letter-spacing:1px;text-decoration:none;color:#a9eaff;border:1px solid rgba(0,234,255,.28);background:rgba(0,20,43,.75);border-radius:18px;padding:8px 13px}
+.winston-nav-jumps a:hover,.winston-nav-jumps a:focus-visible{color:#fff;border-color:#00eaff;box-shadow:0 0 12px rgba(0,234,255,.25)}
+#commandNetwork{scroll-margin-top:20px}
 </style>
 </head>
 <body>
@@ -738,40 +746,10 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
     <button class="btn primary" id="btnAddTrade">+ LOG P&L</button>
     <button class="btn" id="btnLogout">⎋ LOG OUT</button>
   </div>
+<nav class="winston-nav-jumps" aria-label="Command center sections"><a href="#commandNetwork">◈ COMMAND CENTER</a><a href="#marketsSection">▦ MARKETS &amp; HEAT MAP</a></nav>
 </div>
 
 
-
-<section class="hm-panel" id="stockHeatMap" aria-label="Stock market heat map preview">
-  <div class="hm-head"><div><div class="hm-title">▦ STOCK MARKET HEAT MAP <span style="color:var(--pink)">/ SCHWAB</span></div><div class="hm-sub">Market breadth · sector overview · watchlist universe</div></div><span class="hm-state" role="status">DATA INTEGRATION PENDING</span></div>
-  <div class="hm-grid" aria-label="Watchlist tiles awaiting authorized quote data">
-    <div class="hm-tile"><span class="hm-symbol">NVDA</span><span class="hm-sector">Technology</span><span class="hm-unavailable">— NO QUOTE</span></div>
-    <div class="hm-tile"><span class="hm-symbol">MSFT</span><span class="hm-sector">Technology</span><span class="hm-unavailable">— NO QUOTE</span></div>
-    <div class="hm-tile"><span class="hm-symbol">AAPL</span><span class="hm-sector">Technology</span><span class="hm-unavailable">— NO QUOTE</span></div>
-    <div class="hm-tile"><span class="hm-symbol">AMZN</span><span class="hm-sector">Consumer</span><span class="hm-unavailable">— NO QUOTE</span></div>
-    <div class="hm-tile"><span class="hm-symbol">GOOGL</span><span class="hm-sector">Communication</span><span class="hm-unavailable">— NO QUOTE</span></div>
-    <div class="hm-tile"><span class="hm-symbol">JPM</span><span class="hm-sector">Financials</span><span class="hm-unavailable">— NO QUOTE</span></div>
-  </div>
-  <div class="hm-foot">Visual foundation only. No simulated market returns or prices. Live color-coded performance requires Schwab quote authorization, permitted display rights and server-side aggregation.</div>
-</section>
-<section class="mi-panel" aria-label="WINSTON Market Intelligence">
-  <div class="mi-head">
-    <div><div class="mi-title">◈ WINSTON MARKET INTELLIGENCE <span style="color:var(--pink)">/ SPY</span></div>
-      <div class="mi-caption">One command center · Same market intelligence layout for every user</div></div>
-    <div class="mi-status" id="miStatus" role="status">CONNECTING…</div>
-  </div>
-  <div class="mi-grid">
-    <div class="mi-stat"><div class="mi-label">LAST PRICE</div><div class="mi-value" id="miLast">—</div></div>
-    <div class="mi-stat"><div class="mi-label">DAY CHANGE</div><div class="mi-value" id="miChange">—</div></div>
-    <div class="mi-stat"><div class="mi-label">BID / ASK</div><div class="mi-value" id="miSpread">—</div></div>
-    <div class="mi-stat"><div class="mi-label">VOLUME</div><div class="mi-value" id="miVolume">—</div></div>
-    <div class="mi-stat"><div class="mi-label">QUOTE TIME</div><div class="mi-value" id="miTime">—</div></div>
-  </div>
-  <div class="mi-foot"><span id="miSource">Source: Schwab (administrator only until redistribution is authorized)</span><span id="miRealtime">Data status: awaiting verification</span></div>
-</section>
-<div class="overview-strip" id="overviewStrip"></div>
-
-<div class="alert-banner" id="alertBanner"><span class="alert-dot"></span><span id="alertText">RISK RULE BREACHED</span></div>
 
 <div class="scope-bar" id="scopeBar">
   <div class="scope-toggle" id="scopeToggle" title="Show / hide account list"><span class="arr">▾</span></div>
@@ -782,7 +760,7 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
   <div class="affirm" id="affirm" title="Click for another"><div class="affirm-t" id="affirmText"></div></div>
 </div>
 
-<div class="network-panel">
+<div class="network-panel" id="commandNetwork">
   <div class="network-head">
     <div class="title">◆ <span class="b">FIRM NETWORK</span> — click a node to select · ✎ to manage · glow brightens near payout</div>
     <span class="tag" id="firmCountTag">0 FIRMS</span>
@@ -867,6 +845,39 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
   </div>
 </div>
 
+<!-- Market data is secondary to the interactive firm network. -->
+<div id="marketsSection" class="winston-market-section"><section class="hm-panel" id="stockHeatMap" aria-label="Stock market heat map preview">
+  <div class="hm-head"><div><div class="hm-title">▦ STOCK MARKET HEAT MAP <span style="color:var(--pink)">/ SCHWAB</span></div><div class="hm-sub">Market breadth · sector overview · watchlist universe</div></div><span class="hm-state" role="status">DATA INTEGRATION PENDING</span></div>
+  <div class="hm-grid" aria-label="Watchlist tiles awaiting authorized quote data">
+    <div class="hm-tile"><span class="hm-symbol">NVDA</span><span class="hm-sector">Technology</span><span class="hm-unavailable">— NO QUOTE</span></div>
+    <div class="hm-tile"><span class="hm-symbol">MSFT</span><span class="hm-sector">Technology</span><span class="hm-unavailable">— NO QUOTE</span></div>
+    <div class="hm-tile"><span class="hm-symbol">AAPL</span><span class="hm-sector">Technology</span><span class="hm-unavailable">— NO QUOTE</span></div>
+    <div class="hm-tile"><span class="hm-symbol">AMZN</span><span class="hm-sector">Consumer</span><span class="hm-unavailable">— NO QUOTE</span></div>
+    <div class="hm-tile"><span class="hm-symbol">GOOGL</span><span class="hm-sector">Communication</span><span class="hm-unavailable">— NO QUOTE</span></div>
+    <div class="hm-tile"><span class="hm-symbol">JPM</span><span class="hm-sector">Financials</span><span class="hm-unavailable">— NO QUOTE</span></div>
+  </div>
+  <div class="hm-foot">Visual foundation only. No simulated market returns or prices. Live color-coded performance requires Schwab quote authorization, permitted display rights and server-side aggregation.</div>
+</section>
+<section class="mi-panel" aria-label="WINSTON Market Intelligence">
+  <div class="mi-head">
+    <div><div class="mi-title">◈ WINSTON MARKET INTELLIGENCE <span style="color:var(--pink)">/ SPY</span></div>
+      <div class="mi-caption">One command center · Same market intelligence layout for every user</div></div>
+    <div class="mi-status" id="miStatus" role="status">CONNECTING…</div>
+  </div>
+  <div class="mi-grid">
+    <div class="mi-stat"><div class="mi-label">LAST PRICE</div><div class="mi-value" id="miLast">—</div></div>
+    <div class="mi-stat"><div class="mi-label">DAY CHANGE</div><div class="mi-value" id="miChange">—</div></div>
+    <div class="mi-stat"><div class="mi-label">BID / ASK</div><div class="mi-value" id="miSpread">—</div></div>
+    <div class="mi-stat"><div class="mi-label">VOLUME</div><div class="mi-value" id="miVolume">—</div></div>
+    <div class="mi-stat"><div class="mi-label">QUOTE TIME</div><div class="mi-value" id="miTime">—</div></div>
+  </div>
+  <div class="mi-foot"><span id="miSource">Source: Schwab (administrator only until redistribution is authorized)</span><span id="miRealtime">Data status: awaiting verification</span></div>
+</section>
+<div class="overview-strip" id="overviewStrip"></div>
+
+<div class="alert-banner" id="alertBanner"><span class="alert-dot"></span><span id="alertText">RISK RULE BREACHED</span></div>
+
+</div>
 <div class="grid">
   <div class="col">
     <div class="panel">
