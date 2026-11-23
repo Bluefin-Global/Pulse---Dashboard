@@ -720,6 +720,19 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
 #commandNetwork .network-sidebar{background:linear-gradient(180deg,rgba(0,45,75,.18),rgba(6,5,28,.54));backdrop-filter:blur(4px)}
 #commandNetwork .network-sidebar:last-child{border-left:1px solid rgba(224,74,255,.2)}
 @media(prefers-reduced-motion:reduce){#commandNetwork .network-stage::before,#commandNetwork .network-stage::after{animation:none}}
+
+/* Architectural monitor wall. These are decorative graphics, not market quotes. */
+.command-display-wall{position:absolute;inset:18px 24px auto;height:182px;display:grid;grid-template-columns:1fr 1.28fr 1fr;gap:12px;z-index:0;pointer-events:none;perspective:700px;opacity:.83}
+.command-display{position:relative;min-width:0;overflow:hidden;border:1px solid rgba(25,218,255,.35);border-top:2px solid rgba(60,238,255,.56);border-radius:8px;background:linear-gradient(180deg,rgba(1,34,71,.54),rgba(0,9,33,.14));box-shadow:inset 0 0 28px rgba(0,169,255,.11),0 0 22px rgba(0,175,255,.10);padding:14px 16px;font-family:var(--mono);text-align:center}
+.command-display::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 17px,rgba(0,215,255,.07) 18px,transparent 19px),repeating-linear-gradient(90deg,transparent 0 32px,rgba(0,215,255,.055) 33px,transparent 34px);pointer-events:none}
+.command-display-left{transform:rotateY(20deg);transform-origin:right center;border-color:rgba(0,226,255,.4)}
+.command-display-right{transform:rotateY(-20deg);transform-origin:left center;border-color:rgba(238,67,255,.4);border-top-color:rgba(238,67,255,.65)}
+.command-display span{position:relative;display:block;color:#75cfe5;font-size:8px;letter-spacing:2px;white-space:nowrap}
+.command-display b{position:relative;display:block;margin-top:24px;color:rgba(169,247,255,.8);font-size:clamp(10px,1vw,15px);letter-spacing:2px;text-shadow:0 0 14px rgba(0,225,255,.45)}
+.command-display em{position:relative;display:block;margin-top:8px;font-style:normal;font-size:7px;letter-spacing:1.5px;color:rgba(130,193,227,.6)}
+.command-display i{position:absolute;left:14%;right:14%;top:46%;height:38%;opacity:.46;background:linear-gradient(140deg,transparent 0 12%,rgba(0,234,255,.45) 13%,transparent 14% 28%,rgba(0,234,255,.65) 29%,transparent 30% 49%,rgba(255,63,219,.55) 50%,transparent 51% 67%,rgba(0,234,255,.55) 68%,transparent 69%);clip-path:polygon(0 72%,14% 49%,28% 62%,45% 21%,58% 40%,72% 10%,85% 29%,100% 0,100% 100%,0 100%)}
+@media(max-width:1000px){.command-display-wall{height:150px;inset:14px 12px auto;gap:6px}.command-display{padding:10px 6px}.command-display span{font-size:6px;letter-spacing:1px}.command-display em{display:none}}
+@media(max-width:650px){.command-display-wall{grid-template-columns:1fr;height:95px;opacity:.5}.command-display-left,.command-display-right{display:none}.command-display b{margin-top:10px}}
 </style>
 </head>
 <body>
@@ -809,6 +822,11 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
           <div class="hc-cal"><div class="hc-mon" id="hcMon">NOV</div><div class="hc-day" id="hcDay">21</div><div class="hc-wd" id="hcWd">SATURDAY</div></div>
           <div class="hc-time"><div class="hc-t" id="hcTime">--:--:--</div><div class="hc-z">EASTERN TIME</div><div class="hc-sess" id="hcSess"></div></div>
         </div>
+      </div>
+      <div class="command-display-wall" aria-hidden="true">
+        <div class="command-display command-display-left"><span>COMMAND / SYSTEMS</span><i></i><b>WINSTON</b><em>NETWORK VISUALIZATION</em></div>
+        <div class="command-display command-display-center"><span>COMMAND / OVERVIEW</span><i></i><b>AI TRADING COMMAND CENTER</b><em>VISUAL SYSTEMS ONLINE</em></div>
+        <div class="command-display command-display-right"><span>COMMAND / RISK</span><i></i><b>MONITOR</b><em>ACCOUNT TELEMETRY</em></div>
       </div>
       <div class="winston-hologram" aria-hidden="true">
         <div class="winston-hologram-aura"></div>
