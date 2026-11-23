@@ -54,3 +54,20 @@ test('market-data requests are bounded and session-safe', () => {
   assert.match(html, /signal:controller\.signal/);
   assert.match(html, /currentUser = null;\s*miStop\(\)/);
 });
+
+test('missing quote fields never masquerade as a zero price', () => {
+  const vm = require('node:vm');
+  const from = html.indexOf('function miFinite(n){');
+  const to = html.indexOf('function miFeedUnavailable(', from);
+  assert.ok(from >= 0 && to > from, 'market formatting helpers exist');
+  const context = vm.createContext({});
+  vm.runInContext(html.slice(from, to), context);
+  for (const missing of [null, undefined, '', false]) {
+    assert.equal(vm.runInContext('miPrice('+JSON.stringify(missing)+')', context), '—');
+  }
+  assert.equal(vm.runInContext('miPrice(0)', context), '$0.00');
+  assert.equal(vm.runInContext('miNum(null)', context), '—');
+  assert.equal(vm.runInContext('miNum(0)', context), '0');
+  assert.equal(vm.runInContext('miQuoteTime(null)', context), '—');
+  assert.equal(vm.runInContext('miQuoteTime(0)', context), '—');
+});
