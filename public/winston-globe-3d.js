@@ -37,15 +37,28 @@
   const mesh=new THREE.Mesh(new THREE.TorusGeometry(1.99,.013,8,160),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.9,depthWrite:false}));
   mesh.rotation.x=1.1;mesh.rotation.y=tilt;scene.add(mesh);return mesh;
  });
+ // Layered 3D pedestal beneath the Earth, aligned with the existing room stage.
+ const pedestal=new THREE.Group();pedestal.position.y=-1.93;scene.add(pedestal);
+ const baseMaterial=new THREE.MeshPhongMaterial({color:0x06152e,emissive:0x06385a,emissiveIntensity:.5,shininess:95,transparent:true,opacity:.94});
+ const base=new THREE.Mesh(new THREE.CylinderGeometry(1.56,1.74,.19,96),baseMaterial);pedestal.add(base);
+ const inner=new THREE.Mesh(new THREE.CylinderGeometry(1.35,1.48,.08,96),new THREE.MeshBasicMaterial({color:0x093b61,transparent:true,opacity:.78}));inner.position.y=.12;pedestal.add(inner);
+ const pedestalRings=[];
+ for(const [radius,y,color] of [[1.58,.13,0x00eaff],[1.36,.18,0xff2dd4],[1.72,-.1,0x00eaff]]){
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(radius,.018,10,128),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.92,depthWrite:false}));
+  ring.rotation.x=Math.PI/2;ring.position.y=y;pedestal.add(ring);pedestalRings.push(ring);
+ }
+ const beam=new THREE.Mesh(new THREE.CylinderGeometry(.85,1.2,1.5,64,1,true),new THREE.MeshBasicMaterial({color:0x00cfff,transparent:true,opacity:.075,depthWrite:false,side:THREE.DoubleSide}));
+ beam.position.y=.85;pedestal.add(beam);
  const resize=()=>{const width=host.clientWidth||300,height=host.clientHeight||300;renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();};
  resize();
  const observer=new ResizeObserver(resize);observer.observe(host);
  const fallback=host.parentElement.querySelector('.winston-globe__sphere');
  const oldRings=host.parentElement.querySelectorAll('.winston-globe__orbit');
+ renderer.render(scene,camera); // Only hide the fallback after a successful WebGL frame.
  if(fallback)fallback.style.visibility='hidden';oldRings.forEach(el=>el.style.visibility='hidden');
  let visible=true,frame=0,last=0;
  const visibility=new IntersectionObserver(entries=>{visible=!!entries[0]?.isIntersecting;});visibility.observe(host);
- const animate=t=>{frame=requestAnimationFrame(animate);if(!visible||document.hidden||t-last<32)return;last=t;earth.rotation.y+=.003;rings[0].rotation.z+=.001;rings[1].rotation.z-=.001;renderer.render(scene,camera);};
+ const animate=t=>{frame=requestAnimationFrame(animate);if(!visible||document.hidden||t-last<32)return;last=t;earth.rotation.y+=.003;rings[0].rotation.z+=.001;rings[1].rotation.z-=.001;pedestalRings[1].rotation.z+=.002;renderer.render(scene,camera);};
  frame=requestAnimationFrame(animate);
  addEventListener('pagehide',()=>{cancelAnimationFrame(frame);observer.disconnect();visibility.disconnect();texture.dispose();renderer.dispose();},{once:true});
 })();
