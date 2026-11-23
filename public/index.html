@@ -627,6 +627,41 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
 .mi-positive{color:var(--green)}.mi-negative{color:var(--red)}
 .mi-foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;font:10px var(--mono);color:var(--dim);}
 @media(max-width:900px){.mi-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.mi-panel{margin:12px;}}
+
+/* Winston cinematic command room — progressive enhancement, preserves existing controls */
+.network-panel{
+  isolation:isolate;
+  border:1px solid rgba(0,234,255,.38);
+  background:radial-gradient(ellipse at 50% 80%,rgba(0,234,255,.13),transparent 45%),
+    radial-gradient(ellipse at 85% 18%,rgba(255,45,212,.14),transparent 48%),
+    linear-gradient(165deg,#030a1c 0%,#09051b 54%,#030714 100%);
+  box-shadow:0 0 50px rgba(0,234,255,.12),inset 0 0 65px rgba(0,234,255,.06);
+}
+.network-panel::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:repeating-linear-gradient(90deg,transparent 0,transparent 89px,rgba(0,234,255,.035) 90px),
+    linear-gradient(0deg,rgba(0,234,255,.10),transparent 33%);
+  mask-image:linear-gradient(transparent,black 20%,black 85%,transparent);
+}
+.network-body{position:relative;z-index:1;}
+.network-stage{
+  min-height:640px;
+  perspective:1100px;
+  background:radial-gradient(ellipse 55% 24% at 50% 86%,rgba(0,234,255,.23),transparent 80%),
+    radial-gradient(ellipse 42% 40% at 50% 48%,rgba(44,27,115,.24),transparent 80%);
+}
+.network-stage::after{
+  content:"";position:absolute;left:12%;right:12%;bottom:2%;height:18%;pointer-events:none;
+  border:1px solid rgba(0,234,255,.15);border-radius:50%;
+  transform:rotateX(68deg);
+  box-shadow:0 0 30px rgba(0,234,255,.22),0 0 80px rgba(255,45,212,.08),inset 0 0 30px rgba(0,234,255,.12);
+}
+.network-stage .hub-ring{filter:drop-shadow(0 0 13px rgba(0,234,255,.38));}
+.network-stage .hub-mesh-wrap{filter:drop-shadow(0 0 24px rgba(0,234,255,.5));}
+.network-sidebar{background:linear-gradient(180deg,rgba(3,13,34,.68),rgba(15,5,34,.68));backdrop-filter:blur(14px);}
+@media(max-width:900px){.network-stage{min-height:520px;}.network-stage::after{left:5%;right:5%;}}
+@media(prefers-reduced-motion:reduce){.network-panel::before,.network-stage::after{animation:none!important;}}
+
 </style>
 </head>
 <body>
