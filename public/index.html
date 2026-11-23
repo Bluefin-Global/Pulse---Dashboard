@@ -691,6 +691,7 @@ button:hover,.btn:hover{box-shadow:0 0 17px #00eaff55}
 .network-stage .world-map{opacity:.20}
 @media(max-width:1100px){.winston-room-platform{width:235px;height:65px;top:calc(50% + 96px)}}
 @media(prefers-reduced-motion:reduce){.winston-room-shell *{animation:none!important}}
+.winston-globe__webgl{position:absolute;inset:-15%;z-index:3;pointer-events:none}.winston-globe__webgl canvas{width:100%;height:100%;display:block}.winston-globe__sphere{z-index:1}.winston-globe__orbit{z-index:2}
 </style>
 </head>
 <body>
@@ -799,7 +800,7 @@ button:hover,.btn:hover{box-shadow:0 0 17px #00eaff55}
           <div class="hc-time"><div class="hc-t" id="hcTime">--:--:--</div><div class="hc-z">EASTERN TIME</div><div class="hc-sess" id="hcSess"></div></div>
         </div>
       </div>
-      <div class="winston-globe" aria-hidden="true"><div class="winston-globe__sphere"><svg class="winston-globe__continents" viewBox="0 0 240 240" aria-hidden="true"><path d="M27 51 42 33 61 28 80 35 91 46 85 59 73 61 70 78 58 87 55 108 42 100 38 83 26 76 19 63Z"/><path d="M65 111 80 114 92 128 87 148 78 163 74 187 65 206 54 195 57 172 47 156 49 133Z"/><path d="M111 49 123 37 142 38 153 28 173 33 188 43 214 47 225 60 211 70 195 68 183 82 165 82 155 100 140 90 127 72 115 72Z"/><path d="M123 104 143 100 159 111 168 130 158 152 147 173 134 191 120 173 112 146 115 124Z"/><path d="M185 162 205 159 223 173 216 192 196 198 183 187Z"/><path d="M105 22 114 16 123 22 118 34 107 34Z"/></svg></div><div class="winston-globe__orbit"></div><div class="winston-globe__orbit winston-globe__orbit--pink"></div><div class="winston-globe__plinth"></div></div>
+      <div class="winston-globe" aria-hidden="true"><div id="winston3dGlobe" class="winston-globe__webgl"></div><div class="winston-globe__sphere"><svg class="winston-globe__continents" viewBox="0 0 240 240" aria-hidden="true"><path d="M27 51 42 33 61 28 80 35 91 46 85 59 73 61 70 78 58 87 55 108 42 100 38 83 26 76 19 63Z"/><path d="M65 111 80 114 92 128 87 148 78 163 74 187 65 206 54 195 57 172 47 156 49 133Z"/><path d="M111 49 123 37 142 38 153 28 173 33 188 43 214 47 225 60 211 70 195 68 183 82 165 82 155 100 140 90 127 72 115 72Z"/><path d="M123 104 143 100 159 111 168 130 158 152 147 173 134 191 120 173 112 146 115 124Z"/><path d="M185 162 205 159 223 173 216 192 196 198 183 187Z"/><path d="M105 22 114 16 123 22 118 34 107 34Z"/></svg></div><div class="winston-globe__orbit"></div><div class="winston-globe__orbit winston-globe__orbit--pink"></div><div class="winston-globe__plinth"></div></div>
       <div class="hub-ring"></div>
       <div class="hub-ring r2"></div>
       <div class="hub-mesh-wrap" id="hubMeshWrap">
@@ -3562,6 +3563,7 @@ drawMesh();
 window.addEventListener('resize', ()=>renderNetwork());
 setInterval(()=>{ if(currentUser) render(); }, 5000);
 </script>
+<script type="module" src="winston-globe-3d.js"></script>
 </body>
 </html>
 ) + Number(n).toFixed(2) : '—';}
