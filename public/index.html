@@ -710,6 +710,16 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
 .winston-nav-jumps a{font:700 11px var(--mono);letter-spacing:1px;text-decoration:none;color:#a9eaff;border:1px solid rgba(0,234,255,.28);background:rgba(0,20,43,.75);border-radius:18px;padding:8px 13px}
 .winston-nav-jumps a:hover,.winston-nav-jumps a:focus-visible{color:#fff;border-color:#00eaff;box-shadow:0 0 12px rgba(0,234,255,.25)}
 #commandNetwork{scroll-margin-top:20px}
+
+/* Panoramic command-room shell: light and display architecture behind real account nodes. */
+#commandNetwork{border-color:rgba(0,224,255,.38);background:linear-gradient(180deg,rgba(8,21,46,.95),rgba(9,4,25,.96));box-shadow:0 0 35px rgba(0,200,255,.10),inset 0 1px rgba(118,240,255,.17)}
+#commandNetwork .network-head{background:linear-gradient(90deg,rgba(0,234,255,.10),rgba(15,8,42,.55) 58%,rgba(230,55,255,.09));border-bottom-color:rgba(0,234,255,.22)}
+#commandNetwork .network-stage{background:radial-gradient(ellipse at 50% 38%,rgba(0,146,230,.17),transparent 46%),linear-gradient(180deg,rgba(3,14,36,.12) 0%,rgba(2,9,23,.12) 66%,rgba(0,17,38,.7) 100%)}
+#commandNetwork .network-stage::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;background:linear-gradient(100deg,rgba(0,219,255,.16),transparent 17%,transparent 83%,rgba(243,47,255,.15)),repeating-linear-gradient(90deg,transparent 0 78px,rgba(0,209,255,.035) 79px,transparent 80px);mask-image:linear-gradient(to bottom,black,transparent 80%)}
+#commandNetwork .network-stage::after{content:'';position:absolute;left:-10%;right:-10%;bottom:-25%;height:55%;pointer-events:none;z-index:0;transform:perspective(400px) rotateX(62deg);transform-origin:bottom;background:repeating-linear-gradient(90deg,rgba(0,226,255,.16) 0 1px,transparent 1px 68px),repeating-linear-gradient(0deg,rgba(0,226,255,.13) 0 1px,transparent 1px 48px);mask-image:linear-gradient(to top,rgba(0,0,0,.8),transparent 95%)}
+#commandNetwork .network-sidebar{background:linear-gradient(180deg,rgba(0,45,75,.18),rgba(6,5,28,.54));backdrop-filter:blur(4px)}
+#commandNetwork .network-sidebar:last-child{border-left:1px solid rgba(224,74,255,.2)}
+@media(prefers-reduced-motion:reduce){#commandNetwork .network-stage::before,#commandNetwork .network-stage::after{animation:none}}
 </style>
 </head>
 <body>
