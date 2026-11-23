@@ -32,3 +32,17 @@ test('Firebase hosting entrypoint exists', () => {
   assert.equal(config.hosting.public, 'public');
   assert.ok(fs.existsSync(path.join(__dirname, '../public/index.html')));
 });
+
+test('Winston Command identity is consistent across app surfaces', () => {
+  assert.match(html, /<title>Winston Command — AI Trading Command Center<\/title>/);
+  assert.match(html, /class="auth-title">WINSTON COMMAND<\/div>/);
+  assert.match(html, /class="t1">WINSTON COMMAND<\/div>/);
+  assert.doesNotMatch(html, /<title>PULSE\b/i);
+});
+test('cinematic network enhancements remain attached to interactive stage', () => {
+  assert.match(html, /network-stage::after/);
+  assert.match(html, /network-panel::before/);
+  assert.match(html, /id="networkStage"/);
+  assert.match(html, /id="nodeLines"/);
+  assert.match(html, /id="worldCanvas"/);
+});
