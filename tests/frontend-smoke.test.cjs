@@ -71,3 +71,10 @@ test('missing quote fields never masquerade as a zero price', () => {
   assert.equal(vm.runInContext('miQuoteTime(null)', context), '—');
   assert.equal(vm.runInContext('miQuoteTime(0)', context), '—');
 });
+
+test('market feed refuses missing and stale last-traded prices', () => {
+  assert.match(html, /last===null \|\| last<=0/);
+  assert.match(html, /age>15\*60\*1000/);
+  assert.match(html, /QUOTE STALE/);
+  assert.match(html, /Schwab returned no valid last-traded price/);
+});
