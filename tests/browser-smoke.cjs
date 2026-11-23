@@ -38,6 +38,18 @@ const server = http.createServer((req,res)=>{
       if(root)root.style.display='block';
     });
     await page.screenshot({path:path.join(output,'02-command-room-unauthenticated-layout.png'),animations:'disabled',timeout:20000});
+    // The viewport image above cuts off most of the 640px network stage.
+    // Capture the complete actual component, then a narrow-screen layout.
+    await page.locator('.network-panel').screenshot({
+      path:path.join(output,'03-network-panel-full.png'),
+      animations:'disabled',timeout:20000
+    });
+    await page.setViewportSize({width:390,height:844});
+    await page.screenshot({
+      path:path.join(output,'04-mobile-layout.png'),
+      animations:'disabled',timeout:20000
+    });
+    await page.setViewportSize({width:1600,height:1000});
     const layers=await page.evaluate(()=>{
       const stage=document.querySelector('#networkStage');
       const holo=stage?.querySelector('.winston-hologram');
