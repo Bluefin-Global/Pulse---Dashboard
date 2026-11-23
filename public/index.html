@@ -661,6 +661,22 @@ button:hover,.btn:hover{box-shadow:0 0 17px #00eaff55}
 .network-stage .hub-mesh-wrap{z-index:6}.network-stage .hub-mesh-label{font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 9px #001a32,0 0 16px #00eaff;background:rgba(0,5,25,.76);padding:7px 12px;border:1px solid rgba(0,234,255,.32);border-radius:6px;letter-spacing:1.5px}
 @media(max-width:1100px){.winston-globe{width:195px;height:195px}}
 @media(prefers-reduced-motion:reduce){.winston-globe *{animation:none!important}}
+
+/* CINEMATIC ROOM V2 — panoramic display and geographic hologram. */
+.network-stage{background:radial-gradient(ellipse 65% 54% at 50% 44%,rgba(0,160,255,.12),transparent 74%),linear-gradient(90deg,rgba(0,6,35,.4),transparent 20% 80%,rgba(0,6,35,.4))}
+.network-stage .world-map{opacity:.32;filter:drop-shadow(0 0 14px rgba(0,234,255,.12))}
+.network-stage::before{inset:3% 1.5% 12%;border:2px solid rgba(0,234,255,.32);border-bottom:2px solid rgba(255,45,212,.7);border-radius:43% 43% 13% 13% / 11% 11% 5% 5%;background:repeating-linear-gradient(90deg,transparent 0 12%,rgba(0,234,255,.10) 12.04% 12.12%,transparent 12.18% 24%),linear-gradient(180deg,rgba(0,42,95,.15),transparent 60%);box-shadow:inset 0 0 38px rgba(0,234,255,.17),0 0 19px rgba(0,234,255,.14);opacity:.9}
+.network-stage::after{height:29%;left:4%;right:4%;background:repeating-linear-gradient(90deg,rgba(0,234,255,.21) 0 2px,transparent 2px 7%),repeating-linear-gradient(0deg,rgba(255,45,212,.21) 0 2px,transparent 2px 20%);opacity:.46}
+.winston-globe{width:300px;height:300px;filter:drop-shadow(0 0 28px rgba(0,234,255,.62))}
+.winston-globe__sphere{background:radial-gradient(circle at 29% 24%,rgba(155,250,255,.5),transparent 35%),radial-gradient(circle at 43% 45%,rgba(0,194,255,.28),rgba(0,30,108,.75) 60%,#010920 94%);box-shadow:inset -27px -13px 45px rgba(0,0,22,.9),inset 12px 7px 25px rgba(0,234,255,.38),0 0 45px rgba(0,234,255,.5)}
+.winston-globe__sphere::before{opacity:.5}
+.winston-globe__continents{position:absolute;inset:6%;width:88%;height:88%;z-index:1;opacity:.85;filter:drop-shadow(0 0 3px #00eaff);animation:winstonEarthDrift 28s ease-in-out infinite alternate}
+.winston-globe__continents path{fill:rgba(0,235,255,.34);stroke:rgba(101,250,255,.86);stroke-width:1.2;stroke-linejoin:round}
+.winston-globe__sphere::after{z-index:2;pointer-events:none}
+.winston-globe__plinth{bottom:-11%;height:18%;border-width:3px;box-shadow:0 0 28px rgba(0,234,255,.8),0 0 54px rgba(255,45,212,.32),inset 0 0 22px rgba(0,234,255,.35)}
+@keyframes winstonEarthDrift{0%{transform:translateX(-5%) scale(1.03)}100%{transform:translateX(5%) scale(1.03)}}
+@media(max-width:1100px){.winston-globe{width:205px;height:205px}}
+@media(prefers-reduced-motion:reduce){.winston-globe__continents{animation:none!important}}
 </style>
 </head>
 <body>
@@ -768,7 +784,7 @@ button:hover,.btn:hover{box-shadow:0 0 17px #00eaff55}
           <div class="hc-time"><div class="hc-t" id="hcTime">--:--:--</div><div class="hc-z">EASTERN TIME</div><div class="hc-sess" id="hcSess"></div></div>
         </div>
       </div>
-      <div class="winston-globe" aria-hidden="true"><div class="winston-globe__sphere"></div><div class="winston-globe__orbit"></div><div class="winston-globe__orbit winston-globe__orbit--pink"></div><div class="winston-globe__plinth"></div></div>
+      <div class="winston-globe" aria-hidden="true"><div class="winston-globe__sphere"><svg class="winston-globe__continents" viewBox="0 0 240 240" aria-hidden="true"><path d="M27 51 42 33 61 28 80 35 91 46 85 59 73 61 70 78 58 87 55 108 42 100 38 83 26 76 19 63Z"/><path d="M65 111 80 114 92 128 87 148 78 163 74 187 65 206 54 195 57 172 47 156 49 133Z"/><path d="M111 49 123 37 142 38 153 28 173 33 188 43 214 47 225 60 211 70 195 68 183 82 165 82 155 100 140 90 127 72 115 72Z"/><path d="M123 104 143 100 159 111 168 130 158 152 147 173 134 191 120 173 112 146 115 124Z"/><path d="M185 162 205 159 223 173 216 192 196 198 183 187Z"/><path d="M105 22 114 16 123 22 118 34 107 34Z"/></svg></div><div class="winston-globe__orbit"></div><div class="winston-globe__orbit winston-globe__orbit--pink"></div><div class="winston-globe__plinth"></div></div>
       <div class="hub-ring"></div>
       <div class="hub-ring r2"></div>
       <div class="hub-mesh-wrap" id="hubMeshWrap">
