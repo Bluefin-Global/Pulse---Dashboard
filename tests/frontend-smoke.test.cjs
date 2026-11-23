@@ -46,3 +46,11 @@ test('cinematic network enhancements remain attached to interactive stage', () =
   assert.match(html, /id="nodeLines"/);
   assert.match(html, /id="worldCanvas"/);
 });
+
+test('market-data requests are bounded and session-safe', () => {
+  assert.match(html, /function miStop\(\)/);
+  assert.match(html, /miGeneration\+\+/);
+  assert.match(html, /controller\.abort\(\),12000/);
+  assert.match(html, /signal:controller\.signal/);
+  assert.match(html, /currentUser = null;\s*miStop\(\)/);
+});
