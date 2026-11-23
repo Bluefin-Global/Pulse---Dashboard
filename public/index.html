@@ -680,7 +680,7 @@ button:hover,.btn:hover{box-shadow:0 0 17px #00eaff55}
 
 <section class="mi-panel" aria-label="WINSTON Market Intelligence">
   <div class="mi-head">
-    <div><div class="mi-title">◈ WINSTON MARKET INTELLIGENCE <span style="color:var(--pink)">/ SPY</span></div>
+    <div><div class="mi-title">◈ WINSTON MARKET INTELLIGENCE <span style="color:var(--pink)">/ SCHWAB</span><label style="margin-left:12px;font:600 11px var(--mono);color:var(--cyan)">SYMBOL <select id="miSymbol" aria-label="Schwab quote symbol" style="background:#061a2c;color:#e9fbff;border:1px solid #00eaff88;padding:5px;border-radius:5px"><option value="SPY">SPY · verified</option><option value="/ES">/ES · test</option><option value="/NQ">/NQ · test</option><option value="/MES">/MES · test</option><option value="/MNQ">/MNQ · test</option><option value="$VIX">$VIX · test</option></select></label></div>
       <div class="mi-caption">One command center · Same market intelligence layout for every user</div></div>
     <div class="mi-status" id="miStatus" role="status">CONNECTING…</div>
   </div>
@@ -1067,7 +1067,7 @@ async function miRefresh(){
   if(!currentUser)return;
   try{
     const token=await currentUser.getIdToken();
-    const response=await fetch('https://winston-command-api.onrender.com/marketdata/quote?symbol=SPY',{
+    const response=await fetch('https://winston-command-api.onrender.com/marketdata/quote?symbol='+encodeURIComponent(document.getElementById('miSymbol').value),{
       headers:{Authorization:'Bearer '+token},cache:'no-store'
     });
     if(response.status===403){
@@ -1076,7 +1076,7 @@ async function miRefresh(){
       miSet('miRealtime','No personal Schwab information shared');
       return;
     }
-    if(!response.ok){miSet('miStatus','MARKET FEED UNAVAILABLE');return;}
+    if(!response.ok){miSet('miStatus','QUOTE UNAVAILABLE ('+response.status+')');miSet('miRealtime','Symbol or exchange entitlement not confirmed');return;}
     const data=await response.json();
     const q=data?.quote;
     if(!q){miSet('miStatus','QUOTE UNAVAILABLE');return;}
@@ -1096,6 +1096,7 @@ async function miRefresh(){
   }catch(_err){miSet('miStatus','MARKET FEED UNAVAILABLE');}
 }
 function miStart(){clearInterval(miTimer);miRefresh();miTimer=setInterval(miRefresh,60000);}
+document.getElementById('miSymbol').addEventListener('change',()=>{for(const id of ['miLast','miChange','miSpread','miVolume','miTime'])miSet(id,'—');miSet('miStatus','CHECKING SYMBOL…');miRefresh();});
 
 const sfCanvas = document.getElementById('starfield');
 const sfCtx = sfCanvas.getContext('2d');
