@@ -1129,12 +1129,18 @@ onAuthStateChanged(auth, async (user)=>{
 let miTimer = null;
 function miSet(id,value){ const el=document.getElementById(id);if(el)el.textContent=value; }
 function miFinite(n){
-  // Missing/null/blank market fields are unknown, never zero.
   if(n===null || n===undefined || n==='' || typeof n==='boolean')return null;
   const value=Number(n);
   return Number.isFinite(value)?value:null;
 }
-function miPrice(n){const v=miFinite(n);return v===null?'—':'
+function miPrice(n){const v=miFinite(n);return v===null?'—':'$'+v.toFixed(2);}
+function miNum(n){const v=miFinite(n);return v===null?'—':v.toLocaleString('en-US');}
+function miQuoteTime(n){
+  const v=miFinite(n);
+  if(v===null || v<=0)return '—';
+  const d=new Date(v);
+  return Number.isFinite(d.getTime())?d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZone:'America/New_York'}):'—';
+}
 function miFeedUnavailable(status, detail){
   // Never leave a stale quote on screen looking like a live market price.
   for(const id of ['miLast','miChange','miSpread','miVolume','miTime']) miSet(id,'—');
