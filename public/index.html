@@ -1049,7 +1049,7 @@ onAuthStateChanged(auth, async (user)=>{
 /* Phase 7 — never proxy the owner's Schwab credentials or quote payload to other users. */
 let miTimer = null;
 function miSet(id,value){ const el=document.getElementById(id);if(el)el.textContent=value; }
-function miPrice(n){return Number.isFinite(Number(n))?'
+function miPrice(n){return Number.isFinite(Number(n)) ? '$' + Number(n).toFixed(2) : '—';}
 function miNum(n){return Number.isFinite(Number(n))?Number(n).toLocaleString('en-US'):'—';}
 async function miRefresh(){
   if(!currentUser)return;
