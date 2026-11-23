@@ -20,12 +20,12 @@ const server = http.createServer((req,res)=>{
 (async()=>{
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const browser=await chromium.launch({headless:true});
-  const page=await browser.newPage({viewport:{width:1600,height:1000},deviceScaleFactor:1});
+  const page=await browser.newPage({viewport:{width:1600,height:1000},deviceScaleFactor:1,reducedMotion:'reduce'});
   const issues=[];
   page.on('pageerror',err=>issues.push(err.message));
   try{
     await page.goto('http://127.0.0.1:'+server.address().port+'/',{waitUntil:'domcontentloaded'});
-    await page.screenshot({path:path.join(output,'01-login.png'),fullPage:true});
+    await page.screenshot({path:path.join(output,'01-login.png'),animations:'disabled',timeout:20000});
     assert.match(await page.title(),/Winston Command/);
     assert.equal(await page.locator('#authOverlay').count(),1);
     assert.equal(await page.locator('#networkStage').count(),1);
@@ -37,7 +37,7 @@ const server = http.createServer((req,res)=>{
       const root=document.getElementById('appRoot');
       if(root)root.style.display='block';
     });
-    await page.screenshot({path:path.join(output,'02-command-room-unauthenticated-layout.png'),fullPage:true});
+    await page.screenshot({path:path.join(output,'02-command-room-unauthenticated-layout.png'),animations:'disabled',timeout:20000});
     const layers=await page.evaluate(()=>{
       const stage=document.querySelector('#networkStage');
       const holo=stage?.querySelector('.winston-hologram');
