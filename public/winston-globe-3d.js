@@ -56,6 +56,8 @@
  const oldRings=host.parentElement.querySelectorAll('.winston-globe__orbit');
  renderer.render(scene,camera); // Only hide the fallback after a successful WebGL frame.
  if(fallback)fallback.style.visibility='hidden';oldRings.forEach(el=>el.style.visibility='hidden');
+ const cssPlatform=document.querySelector('#networkStage .winston-room-platform');
+ if(cssPlatform)cssPlatform.style.opacity='0'; // WebGL pedestal replaces duplicate CSS ring.
  let visible=true,frame=0,last=0;
  const visibility=new IntersectionObserver(entries=>{visible=!!entries[0]?.isIntersecting;});visibility.observe(host);
  const animate=t=>{frame=requestAnimationFrame(animate);if(!visible||document.hidden||t-last<32)return;last=t;earth.rotation.y+=.003;rings[0].rotation.z+=.001;rings[1].rotation.z-=.001;pedestalRings[1].rotation.z+=.002;renderer.render(scene,camera);};
