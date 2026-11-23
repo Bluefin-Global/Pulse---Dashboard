@@ -78,3 +78,14 @@ test('market feed refuses missing and stale last-traded prices', () => {
   assert.match(html, /QUOTE STALE/);
   assert.match(html, /Schwab returned no valid last-traded price/);
 });
+
+test('holographic globe is decorative and network remains interactive', () => {
+  assert.match(html, /class="winston-hologram" aria-hidden="true"/);
+  assert.match(html, /\.winston-hologram\{[^}]*pointer-events:none/);
+  assert.match(html, /class="winston-hologram-globe"/);
+  assert.match(html, /class="winston-hologram-platform"/);
+  assert.match(html, /id="networkStage"/);
+  assert.match(html, /id="nodeLines"/);
+  assert.match(html, /id="meshCanvas"/);
+  assert.match(html, /prefers-reduced-motion:reduce/);
+});
