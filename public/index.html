@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PULSE — Trading Command Bridge</title>
+<title>WINSTON COMMAND — Cinematic Development Preview</title>
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -627,7 +627,19 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
 .mi-positive{color:var(--green)}.mi-negative{color:var(--red)}
 .mi-foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;font:10px var(--mono);color:var(--dim);}
 @media(max-width:900px){.mi-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.mi-panel{margin:12px;}}
-</style>
+\n
+/* WINSTON COMMAND — cinematic preview theme. UI only; all existing data logic retained. */
+:root{--void:#020712;--panel:#061a2c;--panel-b:#102744;--line:#155a80;--purple:#44baff;--cyan:#00eaff;--pink:#ff39c8;--dim:#8baac9;--bright:#e9fbff}
+html,body{background:radial-gradient(ellipse 65% 42% at 50% -8%,#124d79 0%,transparent 78%),radial-gradient(ellipse 35% 70% at 105% 48%,#671d67 0%,transparent 70%),#020712}
+.app{background:linear-gradient(180deg,#02152377,#02061266)}
+.topbar{border-bottom:1px solid #00eaff66;box-shadow:0 0 35px #00eaff20,inset 0 -1px 0 #ff39c844;background:linear-gradient(100deg,#041327f5,#0b1437ee 52%,#200c30ed)}
+.panel,.card,.stat-card,.network-sidebar{box-shadow:0 8px 32px #0008,inset 0 1px 0 #00eaff12}
+button,.btn{transition:box-shadow .2s ease,transform .2s ease}
+button:hover,.btn:hover{box-shadow:0 0 17px #00eaff55}
+#winstonPreviewRibbon{position:relative;z-index:5;padding:11px 22px;border-bottom:1px solid #00eaff55;background:linear-gradient(90deg,#05152d,#11102d 65%,#291027);font:700 11px 'JetBrains Mono',monospace;letter-spacing:2px;color:#00eaff;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#winstonPreviewRibbon small{font-size:10px;color:#a3c5d8;letter-spacing:1px}
+@media(max-width:700px){#winstonPreviewRibbon{font-size:10px;padding:10px}}
+\n</style>
 </head>
 <body>
 <div class="loading-overlay" id="loadingOverlay"><div class="lo-orb"></div><div class="lo-text">Loading Pulse...</div></div>
@@ -649,7 +661,7 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
 <canvas id="starfield"></canvas>
 <canvas id="marketBg" class="market-bg"></canvas>
 <div class="et-clock" id="etClock">ET --:--:--</div>
-<div class="app" id="appRoot" style="display:none;">
+<div id="winstonPreviewRibbon"><span>◈ WINSTON COMMAND // CINEMATIC DEVELOPMENT PREVIEW</span><small>EXISTING FIREBASE DATA · OWNER-ONLY SCHWAB FEED · NOT PRODUCTION</small></div>\n<div class="app" id="appRoot" style="display:none;">
 
 <div class="topbar">
   <div class="brand"><div class="brand-mark"></div><div class="brand-text"><div class="t1">PULSE</div><div class="t2">TRADING COMMAND BRIDGE</div></div>
