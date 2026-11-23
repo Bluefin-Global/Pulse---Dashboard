@@ -681,7 +681,7 @@ button:hover,.btn:hover{box-shadow:0 0 17px #00eaff55}
 <section class="mi-panel" aria-label="WINSTON Market Intelligence">
   <div class="mi-head">
     <div><div class="mi-title">◈ WINSTON MARKET INTELLIGENCE <span style="color:var(--pink)">/ SCHWAB</span><label style="margin-left:12px;font:600 11px var(--mono);color:var(--cyan)">SYMBOL <select id="miSymbol" aria-label="Schwab quote symbol" style="background:#061a2c;color:#e9fbff;border:1px solid #00eaff88;padding:5px;border-radius:5px"><option value="SPY">SPY · verified</option><option value="AUTO:ES">ES · automatic rollover</option><option value="AUTO:NQ">NQ · automatic rollover</option><option value="AUTO:MES">MES · automatic rollover</option><option value="AUTO:MNQ">MNQ · automatic rollover</option><option value="/ESZ26">/ESZ26 · manual contract</option><option value="/NQZ26">/NQZ26 · manual contract</option><option value="/MESZ26">/MESZ26 · manual contract</option><option value="/MNQZ26">/MNQZ26 · manual contract</option></select></label></div>
-      <div class="mi-caption">One command center · Same market intelligence layout for every user</div></div>
+      <div class="mi-caption">One command center · Same market intelligence layout for every user · AUTO uses calendar-based rollover (volume confirmation pending)</div></div>
     <div class="mi-status" id="miStatus" role="status">CONNECTING…</div>
   </div>
   <div class="mi-grid">
@@ -1103,11 +1103,11 @@ async function miRefresh(){
       miSet('miSource','Market-data redistribution approval required before shared quotes can be displayed');
       miSet('miRealtime','No personal Schwab information shared');return;
     }
-    if(!response.ok){miSet('miStatus','QUOTE UNAVAILABLE ('+response.status+') · '+symbol);miSet('miRealtime','Symbol or exchange entitlement not confirmed');return;}
+    if(!response.ok){for(const id of ['miLast','miChange','miSpread','miVolume','miTime'])miSet(id,'—');miSet('miStatus','QUOTE UNAVAILABLE ('+response.status+') · '+symbol);miSet('miRealtime','Symbol or exchange entitlement not confirmed');return;}
     const data=await response.json();
     if(!stillCurrent())return;
     const q=data?.quote;
-    if(!q){miSet('miStatus','QUOTE UNAVAILABLE · '+symbol);miSet('miRealtime','No Schwab quote for '+symbol+'; no contract switch confirmed');return;}
+    if(!q){for(const id of ['miLast','miChange','miSpread','miVolume','miTime'])miSet(id,'—');miSet('miStatus','QUOTE UNAVAILABLE · '+symbol);miSet('miRealtime','No Schwab quote for '+symbol+'; no contract switch confirmed');return;}
     miResolvedSymbol=symbol;
     const v=q.quote||{};
     const fmt=n=>n!=null&&Number.isFinite(Number(n))?(symbol.startsWith('/')?'':'$')+Number(n).toFixed(2):'—';
@@ -1122,7 +1122,7 @@ async function miRefresh(){
     const time=v.quoteTime||v.tradeTime;
     miSet('miTime',Number.isFinite(Number(time))?new Date(Number(time)).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZone:'America/New_York'}):'—');
     miSet('miStatus','SCHWAB FEED CONNECTED · '+symbol+(selection.startsWith('AUTO:')?' · AUTO':''));
-    miSet('miRealtime',q.realtime===true?'Real-time flag: true':'Real-time status not confirmed');
+    miSet('miRealtime',(q.realtime===true?'Real-time flag: true':'Real-time status not confirmed')+(selection.startsWith('AUTO:')?' · Calendar rollover; volume not yet checked':''));
   }catch(_err){if(stillCurrent())miSet('miStatus','MARKET FEED UNAVAILABLE · '+symbol);}
 }
 function miStart(){clearInterval(miTimer);miRefresh();miTimer=setInterval(miRefresh,60000);}
