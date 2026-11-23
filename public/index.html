@@ -1073,7 +1073,7 @@ onAuthStateChanged(auth, async (user)=>{
     pushFeed('Command bridge online — synced to your account');
   } else {
     currentUser = null;
-    clearInterval(miTimer);miTimer=null;
+    miStop();
     appRoot.style.display = 'none';
     loadingOverlay.classList.add('hide');
     authOverlay.classList.add('show');
@@ -1096,19 +1096,39 @@ function miFeedUnavailable(status, detail){
   miSet('miRealtime','No current market quote');
 }
 
+let miGeneration=0;
+let miController=null;
+function miStop(){
+  clearInterval(miTimer);
+  miTimer=null;
+  miGeneration++;
+  if(miController){miController.abort();miController=null;}
+  miFeedUnavailable('MARKET FEED DISCONNECTED','Sign in to retrieve authorized market data');
+}
 async function miRefresh(){
-  if(!currentUser)return;
+  const user=currentUser;
+  if(!user)return;
+  // A slow previous request must never overwrite a newer response.
+  const generation=++miGeneration;
+  if(miController)miController.abort();
+  const controller=new AbortController();
+  miController=controller;
+  const timeout=setTimeout(()=>controller.abort(),12000);
+  const valid=()=>currentUser===user && generation===miGeneration && !controller.signal.aborted;
   try{
-    const token=await currentUser.getIdToken();
+    const token=await user.getIdToken();
+    if(!valid())return;
     const response=await fetch('https://winston-command-api.onrender.com/marketdata/quote?symbol=SPY',{
-      headers:{Authorization:'Bearer '+token},cache:'no-store'
+      headers:{Authorization:'Bearer '+token},cache:'no-store',signal:controller.signal
     });
+    if(!valid())return;
     if(response.status===403){
       miFeedUnavailable('SHARED FEED PENDING LICENSING','Market-data redistribution approval required; no personal Schwab information shared');
       return;
     }
     if(!response.ok){miFeedUnavailable('MARKET FEED UNAVAILABLE','Quote service returned HTTP '+response.status);return;}
     const data=await response.json();
+    if(!valid())return;
     const q=data?.quote;
     if(!q){miFeedUnavailable('QUOTE UNAVAILABLE','No quote payload returned');return;}
     const v=q.quote || {};
@@ -1116,17 +1136,30 @@ async function miRefresh(){
     const change=Number(v.netChange);
     const changeEl=document.getElementById('miChange');
     miSet('miChange',Number.isFinite(change)?(change>=0?'+':'')+change.toFixed(2):'—');
-    changeEl.classList.toggle('mi-positive',Number.isFinite(change)&&change>0);
-    changeEl.classList.toggle('mi-negative',Number.isFinite(change)&&change<0);
+    if(changeEl){
+      changeEl.classList.toggle('mi-positive',Number.isFinite(change)&&change>0);
+      changeEl.classList.toggle('mi-negative',Number.isFinite(change)&&change<0);
+    }
     miSet('miSpread',miPrice(v.bidPrice)+' / '+miPrice(v.askPrice));
     miSet('miVolume',miNum(v.totalVolume));
     const time=v.quoteTime||v.tradeTime;
     miSet('miTime',Number.isFinite(Number(time))?new Date(Number(time)).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZone:'America/New_York'}):'—');
     miSet('miStatus','SCHWAB FEED CONNECTED');
     miSet('miRealtime',q.realtime===true?'Real-time flag: true':'Real-time status not confirmed');
-  }catch(_err){miFeedUnavailable('MARKET FEED UNAVAILABLE','Unable to retrieve a current quote');}
+  }catch(_err){
+    if(generation===miGeneration && currentUser===user){
+      miFeedUnavailable('MARKET FEED UNAVAILABLE',controller.signal.aborted?'Market quote request timed out':'Unable to retrieve a current quote');
+    }
+  }finally{
+    clearTimeout(timeout);
+    if(miController===controller)miController=null;
+  }
 }
-function miStart(){clearInterval(miTimer);miRefresh();miTimer=setInterval(miRefresh,60000);}
+function miStart(){
+  clearInterval(miTimer);
+  miRefresh();
+  miTimer=setInterval(miRefresh,60000);
+}
 
 const sfCanvas = document.getElementById('starfield');
 const sfCtx = sfCanvas.getContext('2d');
