@@ -1137,7 +1137,21 @@ async function miRefresh(){
     const q=data?.quote;
     if(!q){miFeedUnavailable('QUOTE UNAVAILABLE','No quote payload returned');return;}
     const v=q.quote || {};
-    miSet('miLast',miPrice(v.lastPrice));
+    // A successful HTTP response is not proof of a usable or fresh quote.
+    const last=miFinite(v.lastPrice);
+    if(last===null || last<=0){
+      miFeedUnavailable('QUOTE UNAVAILABLE','Schwab returned no valid last-traded price');
+      return;
+    }
+    const quoteEpoch=miFinite(v.quoteTime ?? v.tradeTime);
+    if(quoteEpoch!==null && quoteEpoch>0){
+      const age=Date.now()-quoteEpoch;
+      if(age>15*60*1000 || age< -5*60*1000){
+        miFeedUnavailable('QUOTE STALE','Latest quote timestamp is outside the 15-minute freshness window');
+        return;
+      }
+    }
+    miSet('miLast',miPrice(last));
     const change=miFinite(v.netChange);
     const changeEl=document.getElementById('miChange');
     miSet('miChange',change!==null?(change>=0?'+':'')+change.toFixed(2):'—');
