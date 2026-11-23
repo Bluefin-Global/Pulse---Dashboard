@@ -1086,6 +1086,16 @@ let miTimer = null;
 function miSet(id,value){ const el=document.getElementById(id);if(el)el.textContent=value; }
 function miPrice(n){return Number.isFinite(Number(n)) ? '$' + Number(n).toFixed(2) : '—';}
 function miNum(n){return Number.isFinite(Number(n))?Number(n).toLocaleString('en-US'):'—';}
+function miFeedUnavailable(status, detail){
+  // Never leave a stale quote on screen looking like a live market price.
+  for(const id of ['miLast','miChange','miSpread','miVolume','miTime']) miSet(id,'—');
+  const changeEl=document.getElementById('miChange');
+  if(changeEl) changeEl.classList.remove('mi-positive','mi-negative');
+  miSet('miStatus',status);
+  miSet('miSource',detail);
+  miSet('miRealtime','No current market quote');
+}
+
 async function miRefresh(){
   if(!currentUser)return;
   try{
@@ -1094,15 +1104,13 @@ async function miRefresh(){
       headers:{Authorization:'Bearer '+token},cache:'no-store'
     });
     if(response.status===403){
-      miSet('miStatus','SHARED FEED PENDING LICENSING');
-      miSet('miSource','Market-data redistribution approval required before shared quotes can be displayed');
-      miSet('miRealtime','No personal Schwab information shared');
+      miFeedUnavailable('SHARED FEED PENDING LICENSING','Market-data redistribution approval required; no personal Schwab information shared');
       return;
     }
-    if(!response.ok){miSet('miStatus','MARKET FEED UNAVAILABLE');return;}
+    if(!response.ok){miFeedUnavailable('MARKET FEED UNAVAILABLE','Quote service returned HTTP '+response.status);return;}
     const data=await response.json();
     const q=data?.quote;
-    if(!q){miSet('miStatus','QUOTE UNAVAILABLE');return;}
+    if(!q){miFeedUnavailable('QUOTE UNAVAILABLE','No quote payload returned');return;}
     const v=q.quote || {};
     miSet('miLast',miPrice(v.lastPrice));
     const change=Number(v.netChange);
@@ -1116,7 +1124,7 @@ async function miRefresh(){
     miSet('miTime',Number.isFinite(Number(time))?new Date(Number(time)).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZone:'America/New_York'}):'—');
     miSet('miStatus','SCHWAB FEED CONNECTED');
     miSet('miRealtime',q.realtime===true?'Real-time flag: true':'Real-time status not confirmed');
-  }catch(_err){miSet('miStatus','MARKET FEED UNAVAILABLE');}
+  }catch(_err){miFeedUnavailable('MARKET FEED UNAVAILABLE','Unable to retrieve a current quote');}
 }
 function miStart(){clearInterval(miTimer);miRefresh();miTimer=setInterval(miRefresh,60000);}
 
