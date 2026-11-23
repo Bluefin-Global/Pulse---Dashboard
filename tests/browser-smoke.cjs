@@ -50,6 +50,26 @@ const server = http.createServer((req,res)=>{
       animations:'disabled',timeout:20000
     });
     await page.setViewportSize({width:1600,height:1000});
+    // Guard the intended hierarchy against future accidental reordering.
+    const layout=await page.evaluate(()=>{
+      const ids=['commandNetwork','overviewStrip','alertBanner','marketsSection','stockHeatMap'];
+      const elements=ids.map(id=>document.getElementById(id));
+      return {ids,present:elements.map(Boolean),
+        positions:elements.map(el=>el?.getBoundingClientRect().top+window.scrollY),
+        marketTiles:document.querySelectorAll('#stockHeatMap .hm-tile').length,
+        marketStatuses:[...document.querySelectorAll('#stockHeatMap .hm-unavailable')].map(el=>el.textContent.trim()),
+        navigation:[...document.querySelectorAll('.winston-nav-jumps a')].map(el=>el.getAttribute('href'))};
+    });
+    assert.ok(layout.present.every(Boolean),'all command and market sections exist');
+    assert.ok(layout.positions[0]<layout.positions[1],'firm network precedes account overview');
+    assert.ok(layout.positions[1]<layout.positions[3],'account overview precedes market section');
+    assert.ok(layout.positions[3]<=layout.positions[4],'heat map belongs to markets section');
+    assert.equal(layout.marketTiles,6,'six heat-map placeholder tiles');
+    assert.ok(layout.marketStatuses.every(status=>status.includes('NO QUOTE')),'no invented market quotes');
+    assert.deepEqual(layout.navigation,['#commandNetwork','#marketsSection']);
+    await page.locator('#stockHeatMap').screenshot({
+      path:path.join(output,'05-stock-heat-map.png'),animations:'disabled',timeout:20000
+    });
     const layers=await page.evaluate(()=>{
       const stage=document.querySelector('#networkStage');
       const holo=stage?.querySelector('.winston-hologram');
@@ -64,7 +84,7 @@ const server = http.createServer((req,res)=>{
     assert.equal(layers.pointerEvents,'none');
     assert.ok(layers.globeSize>100,'hologram has a visible size');
     fs.writeFileSync(path.join(output,'report.json'),JSON.stringify({
-      title:await page.title(),layers,pageErrors:issues,
+      title:await page.title(),layers,layout,pageErrors:issues,
       note:'Unauthenticated layout screenshot is not a live trading/account test.'
     },null,2));
     console.log('Browser layout validation passed:',layers);
