@@ -1908,6 +1908,7 @@ function placeAffirmation(){
 }
 function renderNetworkCore(){
   const stage = document.getElementById('networkStage');
+  if(!stage || stage.clientWidth===0)return; // defer geometry until the trading room is visible
   const lines = document.getElementById('nodeLines');
   stage.querySelectorAll('.firm-node, .add-node, .acct-node, .node-icon').forEach(n=>n.remove());
   lines.innerHTML = '';
