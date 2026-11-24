@@ -801,7 +801,7 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
         <div class="mini-widget-title" id="miniCalTitle">This Month</div>
         <div class="mini-cal-grid" id="miniCalGrid"></div>
       </div>
-      <section class="mini-widget wc-trade-market"><div class="mini-widget-title">FUTURES MARKET WATCH · SCHWAB</div><div id="wcFuturesQuotes" aria-live="off"></div><div class="wc-data-note" id="wcFuturesStatus">Awaiting quotes</div></section><section class="mini-widget wc-trade-market"><div class="mini-widget-title">ORDER FLOW / TAPE SPEED</div><div class="wc-data-note">Tradovate streaming connection pending. No live trade events received.</div><div class="wc-flow-grid"><span>Trades / sec <strong>—</strong></span><span>Buy volume <strong>—</strong></span><span>Sell volume <strong>—</strong></span><span>Delta <strong>—</strong></span></div></section><div class="mini-widget rb-widget">
+      <section class="mini-widget wc-trade-market"><div class="mini-widget-title">FUTURES MARKET WATCH · SCHWAB</div><div id="wcFuturesQuotes" aria-live="off"></div><div class="wc-data-note" id="wcFuturesStatus">Awaiting quotes</div></section><section class="mini-widget wc-trade-market"><div class="mini-widget-title">ORDER FLOW / TAPE SPEED</div><label>Contract <select id="wcTapeSymbol"><option>/ES</option><option>/NQ</option><option>/YM</option><option>/RTY</option></select></label><div class="wc-data-note" id="wcTapeStatus" role="status">Tradovate streaming connection pending.</div><div class="wc-flow-grid"><span>Trades / sec <strong id="wcTapeRate">—</strong></span><span>Buy volume <strong id="wcTapeBuy">—</strong></span><span>Sell volume <strong id="wcTapeSell">—</strong></span><span>Delta <strong id="wcTapeDelta">—</strong></span></div></section><div class="mini-widget rb-widget">
         <div class="mini-widget-title">Firm Leaderboard</div>
         <div id="firmLeaderboard" style="flex:1;display:flex;flex-direction:column;justify-content:space-evenly;gap:10px;"></div>
       </div>
@@ -1095,6 +1095,8 @@ onAuthStateChanged(auth, async (user)=>{
     currentUser = null;
     miStop();
     wcClear();
+    wcTapeStop();
+    wcNavigate(false);
     appRoot.style.display = 'none';
     loadingOverlay.classList.add('hide');
     authOverlay.classList.add('show');
@@ -3244,7 +3246,13 @@ document.getElementById('wcChatMic').addEventListener('click',()=>{if(wcRequest|
 const wcHomeScreen=document.getElementById('wcHomeScreen'),wcTradeScreen=document.getElementById('wcTradeScreen');
 const wcTradeStart=document.getElementById('overviewStrip');
 for(let el=wcTradeStart;el;){const next=el.nextElementSibling;if(el.tagName==='SCRIPT'||el.classList.contains('modal')||el.classList.contains('modal-overlay')||el.classList.contains('toast'))break;wcTradeScreen.appendChild(el);el=next;}
-function wcNavigate(trade){wcHomeScreen.hidden=trade;wcTradeScreen.hidden=!trade;document.getElementById('wcHomeTab').setAttribute('aria-pressed',String(!trade));document.getElementById('wcTradeTab').setAttribute('aria-pressed',String(trade));if(trade)requestAnimationFrame(()=>{renderAll();window.dispatchEvent(new Event('resize'));});}
+let wcTapeTimer=null,wcTapeAbort=null,wcTapeEpoch=0;
+function wcTapeReset(status){for(const id of ['wcTapeRate','wcTapeBuy','wcTapeSell','wcTapeDelta'])miSet(id,'—');miSet('wcTapeStatus',status);}
+function wcTapeStop(){clearInterval(wcTapeTimer);wcTapeTimer=null;wcTapeEpoch++;if(wcTapeAbort)wcTapeAbort.abort();wcTapeAbort=null;wcTapeReset('No active market stream');}
+async function wcTapeRefresh(){const user=currentUser;if(!user||wcTradeScreen.hidden||document.hidden||wcTapeAbort)return;const epoch=wcTapeEpoch,symbol=document.getElementById('wcTapeSymbol').value,controller=new AbortController();wcTapeAbort=controller;const timer=setTimeout(()=>controller.abort(),8000);const valid=()=>epoch===wcTapeEpoch&&currentUser===user&&!wcTradeScreen.hidden;try{const token=await user.getIdToken();const res=await fetch('https://winston-command-api.onrender.com/marketdata/tape?symbol='+encodeURIComponent(symbol),{headers:{Authorization:'Bearer '+token},cache:'no-store',signal:controller.signal});if(!valid())return;if(!res.ok){wcTapeReset(res.status===404?'Tape service not deployed':'Tape service unavailable');return;}const data=await res.json();if(!valid())return;if(data.connection!=='connected'||data.status!=='events_received'||data.symbol!==symbol||!Number.isFinite(data.asOf)||Math.abs(Date.now()-data.asOf)>15000){wcTapeReset('No verified live market stream');return;}for(const [id,key] of [['wcTapeRate','tradesPerSecond'],['wcTapeBuy','buyVolume'],['wcTapeSell','sellVolume'],['wcTapeDelta','delta']])miSet(id,Number.isFinite(data[key])?data[key].toLocaleString('en-US',{maximumFractionDigits:2}):'—');miSet('wcTapeStatus','Rolling '+data.windowMs/1000+'s · snapshot');}catch(e){if(valid())wcTapeReset('Tape service unavailable');}finally{clearTimeout(timer);if(wcTapeAbort===controller)wcTapeAbort=null;}}
+function wcTapeStart(){wcTapeStop();wcTapeRefresh();wcTapeTimer=setInterval(wcTapeRefresh,3000);}
+document.getElementById('wcTapeSymbol').addEventListener('change',()=>{if(!wcTradeScreen.hidden)wcTapeStart();});
+function wcNavigate(trade){wcHomeScreen.hidden=trade;wcTradeScreen.hidden=!trade;if(trade)wcTapeStart();else wcTapeStop();document.getElementById('wcHomeTab').setAttribute('aria-pressed',String(!trade));document.getElementById('wcTradeTab').setAttribute('aria-pressed',String(trade));if(trade)requestAnimationFrame(()=>{renderAll();window.dispatchEvent(new Event('resize'));});}
 document.getElementById('wcHomeTab').onclick=()=>wcNavigate(false);
 document.getElementById('wcTradeTab').onclick=()=>wcNavigate(true);
 
