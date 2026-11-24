@@ -683,11 +683,11 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
 .wc-trade-market{background:linear-gradient(150deg,#102c49,#050c1c);border-bottom:1px solid #3181ad}.wc-futures-row{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:4px;padding:8px 0;border-bottom:1px solid #234360;font:11px var(--mono);color:#b7eaff}.wc-futures-row span:not(:first-child){text-align:right}.wc-futures-row [data-direction=up]{color:#56f5b3}.wc-futures-row [data-direction=down]{color:#ff6485}.wc-data-note{font-size:10px;color:#a2b8ce;margin:8px 0}.wc-flow-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.wc-flow-grid span{font-size:10px;color:#9cb8d0;border:1px solid #284765;padding:8px}.wc-flow-grid strong{display:block;font-size:18px;color:#d2eaff;margin-top:4px}</style>
 </head>
 <body>
-<div class="loading-overlay" id="loadingOverlay"><div class="lo-orb"></div><div class="lo-text">Loading Pulse...</div></div>
+<div class="loading-overlay" id="loadingOverlay"><div class="lo-orb"></div><div class="lo-text">Loading Winston Command...</div></div>
 
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card">
-    <div class="auth-brand"><div class="auth-orb"></div><div class="auth-title">PULSE</div><div class="auth-sub">Trading Command Bridge</div></div>
+    <div class="auth-brand"><div class="auth-orb"></div><div class="auth-title">WINSTON COMMAND</div><div class="auth-sub">Trading Command Bridge</div></div>
     <div class="auth-tabs">
       <div class="auth-tab active" id="tabLogin">Log In</div>
       <div class="auth-tab" id="tabSignup">Sign Up</div>
@@ -735,7 +735,7 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
     <div class="mi-stat"><div class="mi-label">QUOTE TIME</div><div class="mi-value" id="miTime">—</div></div>
   </div>
   <div class="mi-foot"><span id="miSource">Source: Schwab (administrator only until redistribution is authorized)</span><span id="miRealtime">Data status: awaiting verification</span></div>
-</section></div><div class="wc-floor" aria-hidden="true"></div><details class="wc-chat" id="wcChat"><summary>◈ WINSTON <span id="wcChatStatus" role="status">READY</span></summary><div id="wcChatLog" role="log" aria-live="polite"></div><form id="wcChatForm"><input id="wcChatInput" maxlength="2000" placeholder="Ask Winston anything…" aria-label="Message Winston" required><button type="submit" class="btn primary" id="wcChatSend">SEND</button><button type="button" class="btn" id="wcChatMic">MIC</button></form><div class="wc-chat-options"><label><input type="checkbox" id="wcChatSpeak" checked> Voice</label><label><input type="checkbox" id="wcChatSearch"> Web research</label><button class="btn" id="wcChatClear" type="button">CLEAR</button></div></details><div class="wc-room-ticker"><div class="wc-ticker-window" tabindex="0" aria-label="Scrolling market quotes"><div id="wcTicker" class="wc-ticker"></div></div></div></div></section><section id="wcTradeScreen" hidden aria-label="Trading Dashboard"></section><div class="overview-strip" id="overviewStrip"></div>
+</section></div><div class="wc-floor" aria-hidden="true"></div><details class="wc-chat" id="wcChat"><summary>◈ WINSTON <span id="wcChatStatus" role="status">READY</span></summary><div id="wcChatLog" role="log" aria-live="polite"></div><form id="wcChatForm"><input id="wcChatInput" maxlength="2000" placeholder="Ask Winston anything…" aria-label="Message Winston" required><button type="submit" class="btn primary" id="wcChatSend">SEND</button><button type="button" class="btn" id="wcChatMic">MIC</button></form><div class="wc-chat-options"><label><input type="checkbox" id="wcChatSpeak" checked> Voice</label><label><input type="checkbox" id="wcChatSearch"> Web research</label><button class="btn" id="wcChatClear" type="button">CLEAR</button></div></details><div class="wc-room-ticker"><div class="wc-ticker-window" tabindex="0" aria-label="Scrolling market quotes"><div id="wcTicker" class="wc-ticker"></div></div></div></div></section><section id="wcTradeScreen" hidden aria-label="Trading Dashboard"><div class="overview-strip" id="overviewStrip"></div>
 
 <div class="alert-banner" id="alertBanner"><span class="alert-dot"></span><span id="alertText">RISK RULE BREACHED</span></div>
 
@@ -906,6 +906,7 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
   </div>
 </div>
 
+</section>
 </div><!-- /app -->
 
 <!-- DRAWER: firm detail -->
@@ -3244,15 +3245,13 @@ document.getElementById('wcChatMic').addEventListener('click',()=>{if(wcRequest|
 
 // Separate navigable screens; retain original account DOM and handlers.
 const wcHomeScreen=document.getElementById('wcHomeScreen'),wcTradeScreen=document.getElementById('wcTradeScreen');
-const wcTradeStart=document.getElementById('overviewStrip');
-for(let el=wcTradeStart;el;){const next=el.nextElementSibling;if(el.tagName==='SCRIPT'||el.classList.contains('modal')||el.classList.contains('modal-overlay')||el.classList.contains('toast'))break;wcTradeScreen.appendChild(el);el=next;}
 let wcTapeTimer=null,wcTapeAbort=null,wcTapeEpoch=0;
 function wcTapeReset(status){for(const id of ['wcTapeRate','wcTapeBuy','wcTapeSell','wcTapeDelta'])miSet(id,'—');miSet('wcTapeStatus',status);}
 function wcTapeStop(){clearInterval(wcTapeTimer);wcTapeTimer=null;wcTapeEpoch++;if(wcTapeAbort)wcTapeAbort.abort();wcTapeAbort=null;wcTapeReset('No active market stream');}
 async function wcTapeRefresh(){const user=currentUser;if(!user||wcTradeScreen.hidden||document.hidden||wcTapeAbort)return;const epoch=wcTapeEpoch,symbol=document.getElementById('wcTapeSymbol').value,controller=new AbortController();wcTapeAbort=controller;const timer=setTimeout(()=>controller.abort(),8000);const valid=()=>epoch===wcTapeEpoch&&currentUser===user&&!wcTradeScreen.hidden;try{const token=await user.getIdToken();const res=await fetch('https://winston-command-api.onrender.com/marketdata/tape?symbol='+encodeURIComponent(symbol),{headers:{Authorization:'Bearer '+token},cache:'no-store',signal:controller.signal});if(!valid())return;if(!res.ok){wcTapeReset(res.status===404?'Tape service not deployed':'Tape service unavailable');return;}const data=await res.json();if(!valid())return;if(data.connection!=='connected'||data.status!=='events_received'||data.symbol!==symbol||!Number.isFinite(data.asOf)||Math.abs(Date.now()-data.asOf)>15000){wcTapeReset('No verified live market stream');return;}for(const [id,key] of [['wcTapeRate','tradesPerSecond'],['wcTapeBuy','buyVolume'],['wcTapeSell','sellVolume'],['wcTapeDelta','delta']])miSet(id,Number.isFinite(data[key])?data[key].toLocaleString('en-US',{maximumFractionDigits:2}):'—');miSet('wcTapeStatus','Rolling '+data.windowMs/1000+'s · snapshot');}catch(e){if(valid())wcTapeReset('Tape service unavailable');}finally{clearTimeout(timer);if(wcTapeAbort===controller)wcTapeAbort=null;}}
 function wcTapeStart(){wcTapeStop();wcTapeRefresh();wcTapeTimer=setInterval(wcTapeRefresh,3000);}
 document.getElementById('wcTapeSymbol').addEventListener('change',()=>{if(!wcTradeScreen.hidden)wcTapeStart();});
-function wcNavigate(trade){wcHomeScreen.hidden=trade;wcTradeScreen.hidden=!trade;if(trade)wcTapeStart();else wcTapeStop();document.getElementById('wcHomeTab').setAttribute('aria-pressed',String(!trade));document.getElementById('wcTradeTab').setAttribute('aria-pressed',String(trade));if(trade)requestAnimationFrame(()=>{renderAll();window.dispatchEvent(new Event('resize'));});}
+function wcNavigate(trade){wcHomeScreen.hidden=trade;wcTradeScreen.hidden=!trade;if(trade)wcTapeStart();else wcTapeStop();document.getElementById('wcHomeTab').setAttribute('aria-pressed',String(!trade));document.getElementById('wcTradeTab').setAttribute('aria-pressed',String(trade));if(trade&&currentUser)requestAnimationFrame(()=>{renderAll();window.dispatchEvent(new Event('resize'));});}
 document.getElementById('wcHomeTab').onclick=()=>wcNavigate(false);
 document.getElementById('wcTradeTab').onclick=()=>wcNavigate(true);
 
