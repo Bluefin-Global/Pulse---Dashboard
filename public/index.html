@@ -1068,7 +1068,24 @@ async function miRefresh(){
  miSet('miStatus','SCHWAB QUOTE · 60s POLLING');miSet('miRealtime',q.realtime===true?'Provider real-time flag: true':q.realtime===false?'Provider real-time flag: false':'Real-time status not confirmed');
  }catch(e){if(valid()){miClear();miSet('miStatus','MARKET FEED UNAVAILABLE');}}finally{clearTimeout(timeout);}
 }
-function miStart(){clearInterval(miTimer);miRefresh();miTimer=setInterval(miRefresh,60000);}
+async function miStream(){
+ const user=currentUser;if(!user)return;const epoch=++miEpoch,symbol=miSymbol;miAbort?.abort();const controller=new AbortController();miAbort=controller;
+ const valid=()=>epoch===miEpoch&&currentUser===user;let watchdog;const arm=()=>{clearTimeout(watchdog);watchdog=setTimeout(()=>controller.abort(),35000);};arm();
+ try{const token=await user.getIdToken();if(!valid())return;
+ const response=await fetch('https://winston-command-api.onrender.com/marketdata/stream?symbol='+encodeURIComponent(symbol),{headers:{Authorization:'Bearer '+token},cache:'no-store',signal:controller.signal});
+ if(!valid())return;
+ if(!response.ok||!response.headers.get('content-type')?.includes('text/event-stream'))throw new Error('stream_unavailable');
+ const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='';
+ miSet('miStatus','STREAM CONNECTING');
+ while(valid()){const {done,value}=await reader.read();if(done)break;arm();buffer+=decoder.decode(value,{stream:true});if(buffer.length>65536)throw new Error('stream_frame_too_large');let end;
+ while((end=buffer.indexOf('\n\n'))>=0){const frame=buffer.slice(0,end);buffer=buffer.slice(end+2);const event=frame.match(/^event: (.+)$/m)?.[1],payload=frame.match(/^data: (.+)$/m)?.[1];if(!payload||!valid())continue;const data=JSON.parse(payload);
+ if(event==='status'){miSet('miStatus',String(data.status).replaceAll('_',' ').toUpperCase());continue;}
+ if(event!=='quote'||data.symbol!==symbol||!data.quote)continue;
+ const v=data.quote;miSet('miLast',miPrice(v.lastPrice));miSet('miChange',miValid(v.netChange)?(v.netChange>=0?'+':'')+v.netChange.toFixed(2):'—');const el=document.getElementById('miChange');el.classList.toggle('mi-positive',miValid(v.netChange)&&v.netChange>0);el.classList.toggle('mi-negative',miValid(v.netChange)&&v.netChange<0);miSet('miSpread',miPrice(v.bidPrice)+' / '+miPrice(v.askPrice));miSet('miVolume',miValid(v.totalVolume)?v.totalVolume.toLocaleString('en-US'):'—');const t=v.quoteTime||v.tradeTime;miSet('miTime',miValid(t)&&t>0?new Date(t).toLocaleString('en-US',{timeZone:'America/New_York'})+' ET':'—');miSet('miStatus','SCHWAB STREAM · CONNECTED');miSet('miRealtime','Real-time entitlement not confirmed');
+ }}
+ }catch(e){}finally{clearTimeout(watchdog);controller.abort();if(valid()){miClear();miSet('miStatus','STREAM UNAVAILABLE · RETRYING');miTimer=setTimeout(miStream,15000);}}
+}
+function miStart(){clearInterval(miTimer);miClear();miStream();}
 document.getElementById('miSymbolForm').addEventListener('submit',e=>{e.preventDefault();const input=document.getElementById('miSymbol');const symbol=input.value.trim().toUpperCase();if(!/^(?:[A-Z$][A-Z0-9.^_$-]{0,24}|\/[A-Z][A-Z0-9.^_-]{0,24})$/.test(symbol)){miSet('miStatus','INVALID TICKER');return;}miSymbol=symbol;input.value=symbol;miSet('miSymbolLabel','/ '+symbol);miClear();miSet('miStatus','CONNECTING…');miStart();});
 
 const sfCanvas = document.getElementById('starfield');
