@@ -680,7 +680,7 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
 .wc-network-orbit{position:absolute;z-index:-1;pointer-events:none;left:12%;right:12%;top:30%;height:40%;border-radius:50%;border:1px solid #4bdfff88;box-shadow:0 0 12px #00bfff66,inset 0 0 12px #00bfff33;transform:rotate(-12deg)}
 @media(max-width:1200px){#wcTradeScreen .network-body{grid-template-columns:1fr}#wcTradeScreen .network-sidebar.left,#wcTradeScreen .network-sidebar.right{transform:none}}
 @media(prefers-reduced-motion:reduce){#wcTradeScreen .node-lines line{animation:none}}
-</style>
+.wc-trade-market{background:linear-gradient(150deg,#102c49,#050c1c);border-bottom:1px solid #3181ad}.wc-futures-row{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:4px;padding:8px 0;border-bottom:1px solid #234360;font:11px var(--mono);color:#b7eaff}.wc-futures-row span:not(:first-child){text-align:right}.wc-futures-row [data-direction=up]{color:#56f5b3}.wc-futures-row [data-direction=down]{color:#ff6485}.wc-data-note{font-size:10px;color:#a2b8ce;margin:8px 0}.wc-flow-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.wc-flow-grid span{font-size:10px;color:#9cb8d0;border:1px solid #284765;padding:8px}.wc-flow-grid strong{display:block;font-size:18px;color:#d2eaff;margin-top:4px}</style>
 </head>
 <body>
 <div class="loading-overlay" id="loadingOverlay"><div class="lo-orb"></div><div class="lo-text">Loading Pulse...</div></div>
@@ -801,7 +801,7 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
         <div class="mini-widget-title" id="miniCalTitle">This Month</div>
         <div class="mini-cal-grid" id="miniCalGrid"></div>
       </div>
-      <div class="mini-widget rb-widget">
+      <section class="mini-widget wc-trade-market"><div class="mini-widget-title">FUTURES MARKET WATCH · SCHWAB</div><div id="wcFuturesQuotes" aria-live="off"></div><div class="wc-data-note" id="wcFuturesStatus">Awaiting quotes</div></section><section class="mini-widget wc-trade-market"><div class="mini-widget-title">ORDER FLOW / TAPE SPEED</div><div class="wc-data-note">Tradovate streaming connection pending. No live trade events received.</div><div class="wc-flow-grid"><span>Trades / sec <strong>—</strong></span><span>Buy volume <strong>—</strong></span><span>Sell volume <strong>—</strong></span><span>Delta <strong>—</strong></span></div></section><div class="mini-widget rb-widget">
         <div class="mini-widget-title">Firm Leaderboard</div>
         <div id="firmLeaderboard" style="flex:1;display:flex;flex-direction:column;justify-content:space-evenly;gap:10px;"></div>
       </div>
@@ -1104,6 +1104,7 @@ onAuthStateChanged(auth, async (user)=>{
 
 /* Phase 7 — never proxy the owner's Schwab credentials or quote payload to other users. */
 let miTimer=null, miGeneration=0, miAbort=null;
+const wcFuturesSymbols=['/ES','/NQ','/YM','/RTY'];
 const miSymbols=['SPY','QQQ','DIA','IWM','NVDA','MSFT','AAPL','AMZN','GOOGL','META','TSLA','AMD','JPM','XOM','XLK','XLF','XLE','XLV'];
 function miSet(id,value){const el=document.getElementById(id);if(el)el.textContent=value;}
 function miFinite(n){return n===null||n===undefined||n===''?null:Number.isFinite(Number(n))?Number(n):null;}
@@ -1111,10 +1112,12 @@ function miPrice(n){const v=miFinite(n);return v===null?'—':'$'+v.toFixed(2);}
 function miNum(n){const v=miFinite(n);return v===null?'—':v.toLocaleString('en-US');}
 function miClear(){for(const id of ['miLast','miChange','miSpread','miVolume','miTime'])miSet(id,'—');document.getElementById('miChange').classList.remove('mi-positive','mi-negative');}
 function miStop(){clearInterval(miTimer);miTimer=null;miGeneration++;if(miAbort)miAbort.abort();miClear();miDraw({});miSet('miStatus','DISCONNECTED');miSet('miRealtime','No current quote');}
+function wcDrawFutures(quotes){const panel=document.getElementById('wcFuturesQuotes');if(!panel)return;panel.replaceChildren();let received=0;for(const symbol of wcFuturesSymbols){const record=quotes[symbol],q=record?.quote||{},price=miFinite(q.lastPrice),change=miFinite(q.netPercentChange);if(price!==null)received++;const row=document.createElement('div');row.className='wc-futures-row';for(const value of [symbol,miPrice(price),change===null?'—':(change>0?'+':'')+change.toFixed(2)+'%']){const cell=document.createElement('span');cell.textContent=value;row.append(cell);}row.lastChild.dataset.direction=change===null?'unknown':change>0?'up':change<0?'down':'flat';panel.append(row);}miSet('wcFuturesStatus',received?received+' / '+wcFuturesSymbols.length+' quotes received · polled; exchange entitlement may vary':'No futures quotes received');}
 function miDraw(quotes){
  const map=document.getElementById('wcHeat'),ticker=document.getElementById('wcTicker');
  if(!map||!ticker)return;
  map.replaceChildren();ticker.replaceChildren();
+ wcDrawFutures(quotes);
  for(const symbol of miSymbols){
   const q=quotes[symbol]?.quote||{},p=miFinite(q.netPercentChange),last=miPrice(q.lastPrice);
   const change=p===null?'—':(p>0?'+':'')+p.toFixed(2)+'%';
@@ -1130,7 +1133,7 @@ async function miRefresh(){
  const valid=()=>currentUser===user&&generation===miGeneration;
  try{
   const token=await user.getIdToken();
-  const response=await fetch('https://winston-command-api.onrender.com/marketdata/quotes?symbols='+encodeURIComponent(miSymbols.join(',')),{headers:{Authorization:'Bearer '+token},cache:'no-store',signal:controller.signal});
+  const response=await fetch('https://winston-command-api.onrender.com/marketdata/quotes?symbols='+encodeURIComponent([...miSymbols,...wcFuturesSymbols].join(',')),{headers:{Authorization:'Bearer '+token},cache:'no-store',signal:controller.signal});
   if(!valid())return;
   if(!response.ok){miClear();miDraw({});miSet('miStatus',response.status===403?'OWNER FEED RESTRICTED':response.status===404?'BULK FEED NOT DEPLOYED':'MARKET FEED UNAVAILABLE');miSet('miRealtime','No current quote');return;}
   const payload=await response.json();if(!valid())return;
