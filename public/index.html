@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PULSE — Trading Command Bridge</title>
+<title>Winston Command — AI Trading Command Center</title>
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -627,7 +627,7 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
 .mi-positive{color:var(--green)}.mi-negative{color:var(--red)}
 .mi-foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;font:10px var(--mono);color:var(--dim);}
 @media(max-width:900px){.mi-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.mi-panel{margin:12px;}}
-</style>
+ .wc-market{margin:12px 0;padding:14px;background:linear-gradient(120deg,#071322,#12172b);border:1px solid #28415a;border-radius:12px;color:#c9edff}.wc-ticker-window{overflow:hidden;border-bottom:1px solid #28415a;padding:8px 0}.wc-ticker{display:flex;gap:32px;width:max-content;animation:wc-scroll 55s linear infinite}.wc-ticker span{white-space:nowrap;font:600 12px monospace}.wc-ticker-window:hover .wc-ticker,.wc-ticker-window:focus-within .wc-ticker{animation-play-state:paused}@keyframes wc-scroll{from{transform:translateX(0)}to{transform:translateX(-70%)}}.wc-heading{font-weight:800;letter-spacing:2px;margin:12px 0}.wc-heading small{font-size:10px;color:#8da9bc;margin-left:12px}.wc-heat{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:5px}.wc-tile{min-height:56px;display:grid;place-content:center;text-align:center;background:#202c3c;border-radius:5px;gap:4px}.wc-tile[data-direction=up]{background:#115d48}.wc-tile[data-direction=down]{background:#782c45}.wc-tile span{font:12px monospace}@media(prefers-reduced-motion:reduce){.wc-ticker{animation:none}.wc-ticker-window{overflow:auto}}</style>
 </head>
 <body>
 <div class="loading-overlay" id="loadingOverlay"><div class="lo-orb"></div><div class="lo-text">Loading Pulse...</div></div>
@@ -652,7 +652,7 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
 <div class="app" id="appRoot" style="display:none;">
 
 <div class="topbar">
-  <div class="brand"><div class="brand-mark"></div><div class="brand-text"><div class="t1">PULSE</div><div class="t2">TRADING COMMAND BRIDGE</div></div>
+  <div class="brand"><div class="brand-mark"></div><div class="brand-text"><div class="t1">WINSTON COMMAND</div><div class="t2">AI TRADING COMMAND CENTER</div></div>
     <div class="brand-badges"><span class="brand-badge"><span class="bdot"></span>Online</span><span class="brand-badge"><span class="bdot"></span>Synced</span><span class="brand-badge"><span class="bdot"></span>Encrypted</span></div>
   </div>
   <div class="top-actions">
@@ -681,7 +681,7 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
   </div>
   <div class="mi-foot"><span id="miSource">Source: Schwab (administrator only until redistribution is authorized)</span><span id="miRealtime">Data status: awaiting verification</span></div>
 </section>
-<div class="overview-strip" id="overviewStrip"></div>
+<section class="wc-market" aria-label="Market watch"><div class="wc-ticker-window" tabindex="0" aria-label="Scrolling market quotes"><div id="wcTicker" class="wc-ticker"></div></div><div class="wc-heading">MARKET PULSE <small>WATCHLIST HEAT MAP · SCHWAB QUOTES</small></div><div id="wcHeat" class="wc-heat"></div></section><div class="overview-strip" id="overviewStrip"></div>
 
 <div class="alert-banner" id="alertBanner"><span class="alert-dot"></span><span id="alertText">RISK RULE BREACHED</span></div>
 
@@ -1038,7 +1038,7 @@ onAuthStateChanged(auth, async (user)=>{
     pushFeed('Command bridge online — synced to your account');
   } else {
     currentUser = null;
-    clearInterval(miTimer);miTimer=null;
+    miStop();
     appRoot.style.display = 'none';
     loadingOverlay.classList.add('hide');
     authOverlay.classList.add('show');
@@ -1047,43 +1047,45 @@ onAuthStateChanged(auth, async (user)=>{
 
 
 /* Phase 7 — never proxy the owner's Schwab credentials or quote payload to other users. */
-let miTimer = null;
-function miSet(id,value){ const el=document.getElementById(id);if(el)el.textContent=value; }
-function miPrice(n){return Number.isFinite(Number(n)) ? '$' + Number(n).toFixed(2) : '—';}
-function miNum(n){return Number.isFinite(Number(n))?Number(n).toLocaleString('en-US'):'—';}
-async function miRefresh(){
-  if(!currentUser)return;
-  try{
-    const token=await currentUser.getIdToken();
-    const response=await fetch('https://winston-command-api.onrender.com/marketdata/quote?symbol=SPY',{
-      headers:{Authorization:'Bearer '+token},cache:'no-store'
-    });
-    if(response.status===403){
-      miSet('miStatus','SHARED FEED PENDING LICENSING');
-      miSet('miSource','Market-data redistribution approval required before shared quotes can be displayed');
-      miSet('miRealtime','No personal Schwab information shared');
-      return;
-    }
-    if(!response.ok){miSet('miStatus','MARKET FEED UNAVAILABLE');return;}
-    const data=await response.json();
-    const q=data?.quote;
-    if(!q){miSet('miStatus','QUOTE UNAVAILABLE');return;}
-    const v=q.quote || {};
-    miSet('miLast',miPrice(v.lastPrice));
-    const change=Number(v.netChange);
-    const changeEl=document.getElementById('miChange');
-    miSet('miChange',Number.isFinite(change)?(change>=0?'+':'')+change.toFixed(2):'—');
-    changeEl.classList.toggle('mi-positive',Number.isFinite(change)&&change>0);
-    changeEl.classList.toggle('mi-negative',Number.isFinite(change)&&change<0);
-    miSet('miSpread',miPrice(v.bidPrice)+' / '+miPrice(v.askPrice));
-    miSet('miVolume',miNum(v.totalVolume));
-    const time=v.quoteTime||v.tradeTime;
-    miSet('miTime',Number.isFinite(Number(time))?new Date(Number(time)).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZone:'America/New_York'}):'—');
-    miSet('miStatus','SCHWAB FEED CONNECTED');
-    miSet('miRealtime',q.realtime===true?'Real-time flag: true':'Real-time status not confirmed');
-  }catch(_err){miSet('miStatus','MARKET FEED UNAVAILABLE');}
+let miTimer=null, miGeneration=0, miAbort=null;
+const miSymbols=['SPY','QQQ','DIA','IWM','NVDA','MSFT','AAPL','AMZN','GOOGL','META','TSLA','AMD','JPM','XOM','XLK','XLF','XLE','XLV'];
+function miSet(id,value){const el=document.getElementById(id);if(el)el.textContent=value;}
+function miFinite(n){return n===null||n===undefined||n===''?null:Number.isFinite(Number(n))?Number(n):null;}
+function miPrice(n){const v=miFinite(n);return v===null?'—':'$'+v.toFixed(2);}
+function miNum(n){const v=miFinite(n);return v===null?'—':v.toLocaleString('en-US');}
+function miClear(){for(const id of ['miLast','miChange','miSpread','miVolume','miTime'])miSet(id,'—');document.getElementById('miChange').classList.remove('mi-positive','mi-negative');}
+function miStop(){clearInterval(miTimer);miTimer=null;miGeneration++;if(miAbort)miAbort.abort();miClear();miDraw({});miSet('miStatus','DISCONNECTED');miSet('miRealtime','No current quote');}
+function miDraw(quotes){
+ const map=document.getElementById('wcHeat'),ticker=document.getElementById('wcTicker');
+ if(!map||!ticker)return;
+ map.replaceChildren();ticker.replaceChildren();
+ for(const symbol of miSymbols){
+  const q=quotes[symbol]?.quote||{},p=miFinite(q.netPercentChange),last=miPrice(q.lastPrice);
+  const change=p===null?'—':(p>0?'+':'')+p.toFixed(2)+'%';
+  const tile=document.createElement('div');tile.className='wc-tile';tile.dataset.direction=p===null?'unknown':p>0?'up':p<0?'down':'flat';
+  const name=document.createElement('strong');name.textContent=symbol;const value=document.createElement('span');value.textContent=change;tile.append(name,value);map.append(tile);
+  const item=document.createElement('span');item.textContent=symbol+'  '+last+'  '+change;ticker.append(item);
+ }
 }
-function miStart(){clearInterval(miTimer);miRefresh();miTimer=setInterval(miRefresh,60000);}
+async function miRefresh(){
+ const user=currentUser;if(!user)return;
+ const generation=++miGeneration;if(miAbort)miAbort.abort();const controller=new AbortController();miAbort=controller;
+ const timeout=setTimeout(()=>controller.abort(),25000);
+ const valid=()=>currentUser===user&&generation===miGeneration;
+ try{
+  const token=await user.getIdToken();
+  const get=async symbol=>{const response=await fetch('https://winston-command-api.onrender.com/marketdata/quote?symbol='+encodeURIComponent(symbol),{headers:{Authorization:'Bearer '+token},cache:'no-store',signal:controller.signal});if(!response.ok)return {status:response.status};const data=await response.json();return {status:200,quote:data?.quote};};
+  const spy=await get('SPY');if(!valid())return;
+  if(!spy.quote?.quote){miClear();miDraw({});miSet('miStatus',spy.status===403?'SHARED FEED PENDING LICENSING':'MARKET FEED UNAVAILABLE');miSet('miRealtime','No current quote');return;}
+  const quotes={SPY:spy.quote};const q=spy.quote.quote;
+  miSet('miLast',miPrice(q.lastPrice));const change=miFinite(q.netChange);miSet('miChange',change===null?'—':(change>0?'+':'')+change.toFixed(2));
+  const el=document.getElementById('miChange');el.classList.toggle('mi-positive',change!==null&&change>0);el.classList.toggle('mi-negative',change!==null&&change<0);
+  miSet('miSpread',miPrice(q.bidPrice)+' / '+miPrice(q.askPrice));miSet('miVolume',miNum(q.totalVolume));const t=miFinite(q.quoteTime||q.tradeTime);miSet('miTime',t!==null&&t>0?new Date(t).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZone:'America/New_York'}):'—');
+  miSet('miStatus','SCHWAB QUOTE RECEIVED');miSet('miRealtime',spy.quote.realtime===true?'Provider real-time flag: true · polled':'Real-time status unconfirmed · polled');miDraw(quotes);
+  for(let i=1;i<miSymbols.length;i+=4){const group=miSymbols.slice(i,i+4);const results=await Promise.allSettled(group.map(get));if(!valid())return;results.forEach((r,j)=>{if(r.status==='fulfilled'&&r.value.quote?.quote)quotes[group[j]]=r.value.quote;});miDraw(quotes);}
+ }catch(e){if(valid()){miClear();miDraw({});miSet('miStatus','MARKET FEED UNAVAILABLE');miSet('miRealtime','No current quote');}}finally{clearTimeout(timeout);}
+}
+function miStart(){miStop();miSet('miStatus','CONNECTING…');miRefresh();miTimer=setInterval(miRefresh,60000);}
 
 const sfCanvas = document.getElementById('starfield');
 const sfCtx = sfCanvas.getContext('2d');
