@@ -637,7 +637,7 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
 .wc-wall .wc-market,.wc-wall .mi-panel{width:100%;min-width:0;margin:0;padding:12px;background:linear-gradient(150deg,#162b4be8,#080c20f5);border:1px solid #6edbff80;box-shadow:0 0 22px #00aaff25,inset 0 0 24px #1963b51c;border-radius:5px}
 .wc-left .wc-market{border-color:#ff73c5aa;box-shadow:0 0 24px #ff26883b,inset 0 0 24px #a71d7820}.wc-wall .wc-heat{grid-template-columns:repeat(2,minmax(0,1fr))}.wc-wall .wc-heading small{display:block;margin:6px 0}.wc-wall .mi-grid{display:grid;grid-template-columns:1fr}.wc-wall .mi-head,.wc-wall .mi-foot{flex-wrap:wrap;gap:6px}.wc-wall .mi-value{overflow-wrap:anywhere}.wc-center{min-width:0;position:relative}.wc-center:after{content:"";position:absolute;pointer-events:none;z-index:-1;left:8%;right:8%;bottom:4%;height:80px;border-radius:50%;border:3px solid #55eaff;box-shadow:0 0 20px #00caff,inset 0 0 22px #00aaff,0 12px 0 -3px #ffb25d;background:radial-gradient(ellipse,#06476d88,#050819 65%)}.wc-room-ticker{position:absolute;left:2%;right:2%;bottom:15px;border:1px solid #28c8f780;background:#060e20e8;box-shadow:0 0 15px #00baff33;padding:0 10px;overflow:hidden}.wc-room-ticker .wc-ticker-window{border:0}
 @media(max-width:1100px){.wc-room{grid-template-columns:1fr 1fr;padding-top:45px}.wc-center{grid-column:1/-1;grid-row:1}.wc-wall{transform:none}.wc-wall .wc-heat{grid-template-columns:repeat(auto-fit,minmax(65px,1fr))}}
- .wc-center .hub-mesh-wrap{width:clamp(180px,52%,340px);height:auto;aspect-ratio:1;z-index:3}.wc-center #meshCanvas{width:100%;height:100%;display:block}.wc-center .hub-mesh-label{bottom:8%;font-size:9px;letter-spacing:4px;color:#b5eaff}.wc-center .hub-ring{opacity:.35}.wc-center .world-map{opacity:.38}.wc-center .firm-node{z-index:5}.wc-center .node-lines{z-index:4}</style>
+ .wc-center .hub-mesh-wrap{width:clamp(180px,52%,340px);height:auto;aspect-ratio:1;z-index:3}.wc-center #meshCanvas{width:100%;height:100%;display:block}.wc-center .hub-mesh-label{bottom:8%;font-size:9px;letter-spacing:4px;color:#b5eaff}.wc-center .hub-ring{opacity:.35}.wc-center .world-map{opacity:.38}.wc-center .firm-node{z-index:5}.wc-center .node-lines{z-index:4} .wc-room{background:radial-gradient(ellipse at 50% 38%,#14366a88,transparent 42%),linear-gradient(110deg,#270c3380,transparent 35%,#062f4980),#050713}.wc-wall:before{content:"";position:absolute;inset:5% -5px;z-index:-1;border:1px solid #57688955;background:linear-gradient(110deg,#27344c88,#090b17 30%,#161d31);box-shadow:0 15px 30px #0009;transform:translateZ(-10px)}.wc-left:after,.wc-right:after{content:"";position:absolute;top:7%;bottom:7%;width:3px;background:#ff9bdc;box-shadow:0 0 12px #ff35b0,0 0 28px #ff35b0;pointer-events:none}.wc-left:after{left:-5px}.wc-right:after{right:-5px;background:#8afaff;box-shadow:0 0 12px #00dfff,0 0 28px #00dfff}.wc-center:after{height:100px;border:4px double #a2f8ff;box-shadow:0 0 18px #00caff,inset 0 0 25px #00aaff,0 12px 0 -3px #ffb25d,0 18px 24px #000b;background:radial-gradient(ellipse,#12678a88 0%,#09182c 45%,#00cfff66 49%,#080a1b 53%,#122943 68%,#050819 70%)}.wc-floor{background:repeating-linear-gradient(90deg,transparent 0 90px,#526a9a40 91px 92px),repeating-linear-gradient(0deg,transparent 0 44px,#526a9a40 45px 46px),radial-gradient(ellipse at 50% 0%,#03c9ff88,transparent 55%),linear-gradient(90deg,#c0008b55,transparent,#0065b666)}@media(max-width:1100px){.wc-wall:before,.wc-wall:after{display:none}}</style>
 </head>
 <body>
 <div class="loading-overlay" id="loadingOverlay"><div class="lo-orb"></div><div class="lo-text">Loading Pulse...</div></div>
@@ -1085,15 +1085,18 @@ async function miRefresh(){
  const valid=()=>currentUser===user&&generation===miGeneration;
  try{
   const token=await user.getIdToken();
-  const get=async symbol=>{const response=await fetch('https://winston-command-api.onrender.com/marketdata/quote?symbol='+encodeURIComponent(symbol),{headers:{Authorization:'Bearer '+token},cache:'no-store',signal:controller.signal});if(!response.ok)return {status:response.status};const data=await response.json();return {status:200,quote:data?.quote};};
-  const spy=await get('SPY');if(!valid())return;
-  if(!spy.quote?.quote){miClear();miDraw({});miSet('miStatus',spy.status===403?'SHARED FEED PENDING LICENSING':'MARKET FEED UNAVAILABLE');miSet('miRealtime','No current quote');return;}
-  const quotes={SPY:spy.quote};const q=spy.quote.quote;
+  const response=await fetch('https://winston-command-api.onrender.com/marketdata/quotes?symbols='+encodeURIComponent(miSymbols.join(',')),{headers:{Authorization:'Bearer '+token},cache:'no-store',signal:controller.signal});
+  if(!valid())return;
+  if(!response.ok){miClear();miDraw({});miSet('miStatus',response.status===403?'OWNER FEED RESTRICTED':response.status===404?'BULK FEED NOT DEPLOYED':'MARKET FEED UNAVAILABLE');miSet('miRealtime','No current quote');return;}
+  const payload=await response.json();if(!valid())return;
+  const quotes=payload.quotes||{};const spy={quote:quotes.SPY};
+  if(!spy.quote?.quote){miClear();miDraw(quotes);miSet('miStatus','SPY QUOTE UNAVAILABLE');miSet('miRealtime','Partial watchlist data');return;}
+  const q=spy.quote.quote;
   miSet('miLast',miPrice(q.lastPrice));const change=miFinite(q.netChange);miSet('miChange',change===null?'—':(change>0?'+':'')+change.toFixed(2));
   const el=document.getElementById('miChange');el.classList.toggle('mi-positive',change!==null&&change>0);el.classList.toggle('mi-negative',change!==null&&change<0);
   miSet('miSpread',miPrice(q.bidPrice)+' / '+miPrice(q.askPrice));miSet('miVolume',miNum(q.totalVolume));const t=miFinite(q.quoteTime||q.tradeTime);miSet('miTime',t!==null&&t>0?new Date(t).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZone:'America/New_York'}):'—');
   miSet('miStatus','SCHWAB QUOTE RECEIVED');miSet('miRealtime',spy.quote.realtime===true?'Provider real-time flag: true · polled':'Real-time status unconfirmed · polled');miDraw(quotes);
-  for(let i=1;i<miSymbols.length;i+=4){const group=miSymbols.slice(i,i+4);const results=await Promise.allSettled(group.map(get));if(!valid())return;results.forEach((r,j)=>{if(r.status==='fulfilled'&&r.value.quote?.quote)quotes[group[j]]=r.value.quote;});miDraw(quotes);}
+
  }catch(e){if(valid()){miClear();miDraw({});miSet('miStatus','MARKET FEED UNAVAILABLE');miSet('miRealtime','No current quote');}}finally{clearTimeout(timeout);}
 }
 function miStart(){miStop();miSet('miStatus','CONNECTING…');miRefresh();miTimer=setInterval(miRefresh,60000);}
