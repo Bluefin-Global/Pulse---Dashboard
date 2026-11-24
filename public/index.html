@@ -660,6 +660,26 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
 #wcTradeScreen .network-sidebar{background:linear-gradient(145deg,#112640,#060d1d)}
 @media(max-width:1100px){#wcHomeScreen .wc-room{grid-template-columns:1fr 1fr;padding:55px 3% 65px;gap:12px}#wcHomeScreen .wc-left,#wcHomeScreen .wc-right{transform:none}#wcHomeScreen .wc-home-stage{min-height:340px}#wcHomeScreen .wc-wall{min-height:0}}
 @media(max-width:600px){#wcHomeScreen .wc-room{grid-template-columns:1fr}#wcHomeScreen .wc-home-stage{min-height:260px}.wc-nav button{padding:9px;font-size:11px}}
+
+/* Approved trading room: luminous spherical firm nodes, not polygon tiles. */
+#wcTradeScreen .network-panel{position:relative;overflow:hidden;isolation:isolate;border-radius:18px;border:1px solid #459bca;background:radial-gradient(ellipse at 50% 38%,#103764,#060d21 62%,#03050d);box-shadow:inset 0 0 60px #0009,0 0 24px #008aff33}
+#wcTradeScreen .network-head{border-bottom:3px solid #ff8055;box-shadow:0 4px 18px #ff3d6566;background:linear-gradient(180deg,#122d4b,#050a19);position:relative;z-index:6}
+#wcTradeScreen .network-body{perspective:1300px;grid-template-columns:minmax(210px,1fr) minmax(420px,2.5fr) minmax(210px,1fr);gap:12px;padding:12px}
+#wcTradeScreen .network-sidebar{border:1px solid #2d9ad4;border-radius:8px;box-shadow:inset 0 0 24px #007cbe22,0 0 15px #008cff33}
+#wcTradeScreen .network-sidebar.left{transform:rotateY(8deg);transform-origin:right center}
+#wcTradeScreen .network-sidebar.right{transform:rotateY(-8deg);transform-origin:left center}
+#wcTradeScreen .network-stage{isolation:isolate;overflow:hidden;background:radial-gradient(ellipse at 50% 48%,#0d4d8344,transparent 65%),linear-gradient(180deg,#040a17,#071c35 78%,#050917)}
+#wcTradeScreen .world-map{opacity:.55}
+#wcTradeScreen .firm-node{clip-path:none;border-radius:50%;background:radial-gradient(ellipse at 30% 19%,#a9efff88 0%,#1a6b9a66 19%,#091b3c 53%,#030918 77%,color-mix(in srgb,var(--fc,#00bfff) 70%,#08294a) 100%);border:1.5px solid color-mix(in srgb,var(--fc,#00bfff) 65%,#baf8ff);box-shadow:inset 0 0 12px #4edcff66,0 0 14px color-mix(in srgb,var(--fc,#00bfff) 60%,transparent);text-shadow:0 1px 4px #000;animation:none}
+#wcTradeScreen .firm-node:hover,#wcTradeScreen .firm-node.selected{box-shadow:inset 0 0 18px #4edcff99,0 0 25px #38caffaa}
+#wcTradeScreen .firm-node .fn-name{color:#e8faff;max-width:90%;overflow-wrap:anywhere}
+#wcTradeScreen .hub-mesh-wrap{width:clamp(150px,29%,250px);height:auto;aspect-ratio:1}
+#wcTradeScreen .hub-mesh-wrap canvas{width:100%;height:100%}
+#wcTradeScreen .node-lines line{stroke-dasharray:6 4;filter:drop-shadow(0 0 3px #00bfff)}
+.wc-network-pedestal{position:absolute;z-index:-1;pointer-events:none;left:18%;right:18%;bottom:4%;height:16%;border-radius:50%;border:4px solid #ff8055;background:radial-gradient(ellipse,#1a7ea5 0%,#09172e 45%,#31d7ff 47%,#071021 50%,#0c2540 70%);box-shadow:0 0 18px #ff4059,0 9px 0 #06101e,0 13px 0 #2e8bba,0 18px 24px #000a;transform:perspective(700px) rotateX(24deg)}
+.wc-network-orbit{position:absolute;z-index:-1;pointer-events:none;left:12%;right:12%;top:30%;height:40%;border-radius:50%;border:1px solid #4bdfff88;box-shadow:0 0 12px #00bfff66,inset 0 0 12px #00bfff33;transform:rotate(-12deg)}
+@media(max-width:1200px){#wcTradeScreen .network-body{grid-template-columns:1fr}#wcTradeScreen .network-sidebar.left,#wcTradeScreen .network-sidebar.right{transform:none}}
+@media(prefers-reduced-motion:reduce){#wcTradeScreen .node-lines line{animation:none}}
 </style>
 </head>
 <body>
@@ -755,7 +775,7 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
       </div>
       </div>
     </div></div>
-    <div class="network-stage" id="networkStage">
+    <div class="network-stage" id="networkStage"><div class="wc-network-pedestal" aria-hidden="true"></div><div class="wc-network-orbit" aria-hidden="true"></div>
       <div class="world-map" id="worldMap"><canvas id="worldCanvas"></canvas></div>
       <svg class="node-lines" id="nodeLines"></svg>
       <div class="affirm affirm-stage hidden" id="affirmStage" title="Click for another"><div class="affirm-t" id="affirmTextStage"></div></div>
