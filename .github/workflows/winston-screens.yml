@@ -2,9 +2,12 @@ name: Winston screen verification
 on:
   push:
     branches: [winston-recovery-functional-baseline]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 jobs:
   browser:
+    if: github.event_name != 'pull_request' || github.head_ref == 'winston-recovery-functional-baseline'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
