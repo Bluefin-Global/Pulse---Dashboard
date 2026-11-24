@@ -627,7 +627,17 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
 .mi-positive{color:var(--green)}.mi-negative{color:var(--red)}
 .mi-foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;font:10px var(--mono);color:var(--dim);}
 @media(max-width:900px){.mi-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.mi-panel{margin:12px;}}
- .wc-market{margin:12px 0;padding:14px;background:linear-gradient(120deg,#071322,#12172b);border:1px solid #28415a;border-radius:12px;color:#c9edff}.wc-ticker-window{overflow:hidden;border-bottom:1px solid #28415a;padding:8px 0}.wc-ticker{display:flex;gap:32px;width:max-content;animation:wc-scroll 55s linear infinite}.wc-ticker span{white-space:nowrap;font:600 12px monospace}.wc-ticker-window:hover .wc-ticker,.wc-ticker-window:focus-within .wc-ticker{animation-play-state:paused}@keyframes wc-scroll{from{transform:translateX(0)}to{transform:translateX(-70%)}}.wc-heading{font-weight:800;letter-spacing:2px;margin:12px 0}.wc-heading small{font-size:10px;color:#8da9bc;margin-left:12px}.wc-heat{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:5px}.wc-tile{min-height:56px;display:grid;place-content:center;text-align:center;background:#202c3c;border-radius:5px;gap:4px}.wc-tile[data-direction=up]{background:#115d48}.wc-tile[data-direction=down]{background:#782c45}.wc-tile span{font:12px monospace}@media(prefers-reduced-motion:reduce){.wc-ticker{animation:none}.wc-ticker-window{overflow:auto}}</style>
+ .wc-market{margin:12px 0;padding:14px;background:linear-gradient(120deg,#071322,#12172b);border:1px solid #28415a;border-radius:12px;color:#c9edff}.wc-ticker-window{overflow:hidden;border-bottom:1px solid #28415a;padding:8px 0}.wc-ticker{display:flex;gap:32px;width:max-content;animation:wc-scroll 55s linear infinite}.wc-ticker span{white-space:nowrap;font:600 12px monospace}.wc-ticker-window:hover .wc-ticker,.wc-ticker-window:focus-within .wc-ticker{animation-play-state:paused}@keyframes wc-scroll{from{transform:translateX(0)}to{transform:translateX(-70%)}}.wc-heading{font-weight:800;letter-spacing:2px;margin:12px 0}.wc-heading small{font-size:10px;color:#8da9bc;margin-left:12px}.wc-heat{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:5px}.wc-tile{min-height:56px;display:grid;place-content:center;text-align:center;background:#202c3c;border-radius:5px;gap:4px}.wc-tile[data-direction=up]{background:#115d48}.wc-tile[data-direction=down]{background:#782c45}.wc-tile span{font:12px monospace}@media(prefers-reduced-motion:reduce){.wc-ticker{animation:none}.wc-ticker-window{overflow:auto}} 
+/* Cinematic room foundation: real DOM displays, independent of account renderer. */
+.wc-room{position:relative;isolation:isolate;flex:1;min-width:0;display:grid;grid-template-columns:minmax(150px,1fr) minmax(280px,2.4fr) minmax(150px,1fr);align-items:center;gap:10px;padding:80px 12px 76px;overflow:hidden;perspective:1100px;background:radial-gradient(ellipse at 50% 46%,#102e63 0%,#080c25 40%,#040610 78%);border:1px solid #263452;border-radius:18px}
+.wc-ceiling{position:absolute;z-index:-1;left:-10%;right:-10%;top:-110px;height:190px;border-radius:50%;border:9px solid #ff75d4;box-shadow:0 0 14px #ff3a9e,0 0 50px #f4008a,inset 0 0 35px #ff239a;transform:rotateX(35deg);opacity:.8;pointer-events:none}
+.wc-floor{position:absolute;z-index:-1;bottom:-65px;left:-25%;right:-25%;height:220px;transform:rotateX(58deg);background:repeating-linear-gradient(90deg,transparent 0 90px,#526a9a40 91px 92px),repeating-linear-gradient(0deg,transparent 0 44px,#526a9a40 45px 46px),radial-gradient(ellipse at 50% 0%,#03c9ff66,transparent 55%),linear-gradient(90deg,#a6007733,transparent,#0065b644);border-top:2px solid #ff68bd;box-shadow:0 -8px 36px #ec318855;pointer-events:none}
+.wc-wall{min-width:0;align-self:stretch;display:flex;align-items:center;position:relative;z-index:1;transform-style:preserve-3d}
+.wc-left{transform:rotateY(12deg);transform-origin:right center}.wc-right{transform:rotateY(-12deg);transform-origin:left center}
+.wc-wall .wc-market,.wc-wall .mi-panel{width:100%;min-width:0;margin:0;padding:12px;background:linear-gradient(150deg,#162b4be8,#080c20f5);border:1px solid #6edbff80;box-shadow:0 0 22px #00aaff25,inset 0 0 24px #1963b51c;border-radius:5px}
+.wc-left .wc-market{border-color:#ff73c5aa;box-shadow:0 0 24px #ff26883b,inset 0 0 24px #a71d7820}.wc-wall .wc-heat{grid-template-columns:repeat(2,minmax(0,1fr))}.wc-wall .wc-heading small{display:block;margin:6px 0}.wc-wall .mi-grid{display:grid;grid-template-columns:1fr}.wc-wall .mi-head,.wc-wall .mi-foot{flex-wrap:wrap;gap:6px}.wc-wall .mi-value{overflow-wrap:anywhere}.wc-center{min-width:0;position:relative}.wc-center:after{content:"";position:absolute;pointer-events:none;z-index:-1;left:8%;right:8%;bottom:4%;height:80px;border-radius:50%;border:3px solid #55eaff;box-shadow:0 0 20px #00caff,inset 0 0 22px #00aaff,0 12px 0 -3px #ffb25d;background:radial-gradient(ellipse,#06476d88,#050819 65%)}.wc-room-ticker{position:absolute;left:2%;right:2%;bottom:15px;border:1px solid #28c8f780;background:#060e20e8;box-shadow:0 0 15px #00baff33;padding:0 10px;overflow:hidden}.wc-room-ticker .wc-ticker-window{border:0}
+@media(max-width:1100px){.wc-room{grid-template-columns:1fr 1fr;padding-top:45px}.wc-center{grid-column:1/-1;grid-row:1}.wc-wall{transform:none}.wc-wall .wc-heat{grid-template-columns:repeat(auto-fit,minmax(65px,1fr))}}
+</style>
 </head>
 <body>
 <div class="loading-overlay" id="loadingOverlay"><div class="lo-orb"></div><div class="lo-text">Loading Pulse...</div></div>
@@ -666,22 +676,8 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
 </div>
 
 
-<section class="mi-panel" aria-label="WINSTON Market Intelligence">
-  <div class="mi-head">
-    <div><div class="mi-title">◈ WINSTON MARKET INTELLIGENCE <span style="color:var(--pink)">/ SPY</span></div>
-      <div class="mi-caption">One command center · Same market intelligence layout for every user</div></div>
-    <div class="mi-status" id="miStatus" role="status">CONNECTING…</div>
-  </div>
-  <div class="mi-grid">
-    <div class="mi-stat"><div class="mi-label">LAST PRICE</div><div class="mi-value" id="miLast">—</div></div>
-    <div class="mi-stat"><div class="mi-label">DAY CHANGE</div><div class="mi-value" id="miChange">—</div></div>
-    <div class="mi-stat"><div class="mi-label">BID / ASK</div><div class="mi-value" id="miSpread">—</div></div>
-    <div class="mi-stat"><div class="mi-label">VOLUME</div><div class="mi-value" id="miVolume">—</div></div>
-    <div class="mi-stat"><div class="mi-label">QUOTE TIME</div><div class="mi-value" id="miTime">—</div></div>
-  </div>
-  <div class="mi-foot"><span id="miSource">Source: Schwab (administrator only until redistribution is authorized)</span><span id="miRealtime">Data status: awaiting verification</span></div>
-</section>
-<section class="wc-market" aria-label="Market watch"><div class="wc-ticker-window" tabindex="0" aria-label="Scrolling market quotes"><div id="wcTicker" class="wc-ticker"></div></div><div class="wc-heading">MARKET PULSE <small>WATCHLIST HEAT MAP · SCHWAB QUOTES</small></div><div id="wcHeat" class="wc-heat"></div></section><div class="overview-strip" id="overviewStrip"></div>
+
+<div class="overview-strip" id="overviewStrip"></div>
 
 <div class="alert-banner" id="alertBanner"><span class="alert-dot"></span><span id="alertText">RISK RULE BREACHED</span></div>
 
@@ -721,7 +717,7 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
       </div>
       </div>
     </div></div>
-    <div class="network-stage" id="networkStage">
+    <div class="wc-room"><div class="wc-ceiling" aria-hidden="true"></div><div class="wc-wall wc-left"><section class="wc-market" aria-label="Market watch"><div class="wc-heading">MARKET PULSE <small>WATCHLIST HEAT MAP · SCHWAB QUOTES</small></div><div id="wcHeat" class="wc-heat"></div></section></div><div class="wc-center"><div class="network-stage" id="networkStage">
       <div class="world-map" id="worldMap"><canvas id="worldCanvas"></canvas></div>
       <svg class="node-lines" id="nodeLines"></svg>
       <div class="affirm affirm-stage hidden" id="affirmStage" title="Click for another"><div class="affirm-t" id="affirmTextStage"></div></div>
@@ -741,6 +737,21 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
         <div class="hub-mesh-label">NETWORK</div>
       </div>
     </div>
+</div><div class="wc-wall wc-right"><section class="mi-panel" aria-label="WINSTON Market Intelligence">
+  <div class="mi-head">
+    <div><div class="mi-title">◈ WINSTON MARKET INTELLIGENCE <span style="color:var(--pink)">/ SPY</span></div>
+      <div class="mi-caption">One command center · Same market intelligence layout for every user</div></div>
+    <div class="mi-status" id="miStatus" role="status">CONNECTING…</div>
+  </div>
+  <div class="mi-grid">
+    <div class="mi-stat"><div class="mi-label">LAST PRICE</div><div class="mi-value" id="miLast">—</div></div>
+    <div class="mi-stat"><div class="mi-label">DAY CHANGE</div><div class="mi-value" id="miChange">—</div></div>
+    <div class="mi-stat"><div class="mi-label">BID / ASK</div><div class="mi-value" id="miSpread">—</div></div>
+    <div class="mi-stat"><div class="mi-label">VOLUME</div><div class="mi-value" id="miVolume">—</div></div>
+    <div class="mi-stat"><div class="mi-label">QUOTE TIME</div><div class="mi-value" id="miTime">—</div></div>
+  </div>
+  <div class="mi-foot"><span id="miSource">Source: Schwab (administrator only until redistribution is authorized)</span><span id="miRealtime">Data status: awaiting verification</span></div>
+</section></div><div class="wc-floor" aria-hidden="true"></div><div class="wc-room-ticker"><div class="wc-ticker-window" tabindex="0" aria-label="Scrolling market quotes"><div id="wcTicker" class="wc-ticker"></div></div></div></div>
     <div class="network-sidebar right"><div class="sb-inner">
       <div class="mini-widget" style="flex:0 0 auto;">
         <div class="mini-widget-title" id="miniCalTitle">This Month</div>
