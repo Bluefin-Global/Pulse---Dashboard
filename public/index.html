@@ -260,10 +260,12 @@ body::before{
 .mk-pill{position:absolute;transform:translate(-50%,-135%);display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.05);backdrop-filter:blur(3px);font-family:var(--mono);font-size:9px;letter-spacing:1.4px;color:rgba(255,255,255,0.45);white-space:nowrap;}
 .mk-pill .mk-s{color:rgba(255,255,255,0.3);}
 .mk-pill.open{color:#fff;border-color:rgba(255,255,255,0.55);background:rgba(255,255,255,0.1);box-shadow:0 0 14px rgba(255,255,255,0.25);}
-.mk-pill.open .mk-s{color:var(--neon,#39ff14);}
-.mk-dot{position:absolute;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;background:rgba(255,255,255,0.35);}
-.mk-dot.open{background:#fff;box-shadow:0 0 10px 3px rgba(255,255,255,0.7);animation:mkPulse 2.4s ease-in-out infinite;}
-@keyframes mkPulse{0%,100%{box-shadow:0 0 8px 2px rgba(255,255,255,0.5);}50%{box-shadow:0 0 18px 7px rgba(255,255,255,0.85);}}
+.mk-pill.open .mk-s{color:#fff;}
+.mk-led{display:inline-block;width:7px;height:7px;margin-right:5px;border-radius:50%;background:#ff1f3d;box-shadow:0 0 8px 2px rgba(255,31,61,0.85);vertical-align:middle;animation:mkBlink 1s steps(2,jump-none) infinite;}
+@keyframes mkBlink{0%{opacity:1;}50%{opacity:0.15;}100%{opacity:1;}}
+.mk-dot{position:absolute;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:rgba(255,255,255,0.35);}
+.mk-dot.open{background:#ff1f3d;box-shadow:0 0 12px 4px rgba(255,31,61,0.85);animation:mkDotFlash 1s ease-in-out infinite;}
+@keyframes mkDotFlash{0%,100%{opacity:1;box-shadow:0 0 18px 7px rgba(255,31,61,0.9);}50%{opacity:0.2;box-shadow:0 0 4px 1px rgba(255,31,61,0.3);}}
 .hud-row{width:calc(100% - 40px);max-width:1900px;margin:0 auto 14px;display:grid;grid-template-columns:minmax(260px,1fr) minmax(300px,1.6fr) minmax(250px,1fr) minmax(220px,0.9fr);gap:12px;}
 .hud-panel{position:relative;border:1px solid rgba(0,229,255,0.35);border-radius:12px;background:linear-gradient(180deg,rgba(10,22,48,0.75),rgba(6,10,26,0.85));padding:12px 14px;overflow:hidden;box-shadow:0 0 18px rgba(0,229,255,0.12),inset 0 0 22px rgba(0,229,255,0.05);min-height:250px;}
 .hud-panel::before,.hud-panel::after{content:'';position:absolute;width:14px;height:14px;border:2px solid #00e5ff;pointer-events:none;}
@@ -610,20 +612,6 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
 .cal-pl{font-weight:700;font-size:9px;margin-top:3px;}
 
 @media(max-width:1200px){.grid{grid-template-columns:1fr;} .core-wrap{width:220px;height:220px;} .drawer{width:100vw;} .dash-grid2{grid-template-columns:1fr;} .modal.wide{width:94vw;}}
-
-/* Phase 7: shared presentation, owner-only licensed Schwab data */
-.mi-panel{margin:14px 20px 18px;border:1px solid rgba(0,234,255,.35);border-radius:15px;background:linear-gradient(120deg,rgba(8,26,48,.94),rgba(25,8,50,.95));box-shadow:0 0 30px rgba(0,234,255,.08);padding:18px;}
-.mi-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:15px;}
-.mi-title{font:800 15px var(--disp);letter-spacing:2px;color:var(--cyan);}
-.mi-caption{font:10px var(--mono);color:var(--dim);margin-top:5px;}
-.mi-status{font:10px var(--mono);letter-spacing:1px;color:var(--amber);}
-.mi-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;}
-.mi-stat{background:rgba(3,12,30,.68);border:1px solid rgba(0,234,255,.16);padding:13px;border-radius:10px;min-width:0;}
-.mi-label{font:10px var(--mono);color:var(--dim);letter-spacing:1px;margin-bottom:8px;}
-.mi-value{font:700 clamp(14px,1.6vw,23px) var(--mono);color:var(--bright);overflow:hidden;text-overflow:ellipsis;}
-.mi-positive{color:var(--green)}.mi-negative{color:var(--red)}
-.mi-foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;font:10px var(--mono);color:var(--dim);}
-@media(max-width:900px){.mi-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.mi-panel{margin:12px;}}
 </style>
 </head>
 <body>
@@ -661,8 +649,6 @@ body[data-mode="options"] .topbar{border-bottom:1px solid rgba(255,45,240,0.55);
     <button class="btn" id="btnLogout">⎋ LOG OUT</button>
   </div>
 </div>
-
-
 
 <div class="overview-strip" id="overviewStrip"></div>
 
@@ -1015,20 +1001,17 @@ onAuthStateChanged(auth, async (user)=>{
     await load();
     applyModeUI();
     renderAll();
-    
     loadingOverlay.classList.add('hide');
     pushFeed('Command bridge online — synced to your account');
   } else {
     currentUser = null;
-    
     appRoot.style.display = 'none';
     loadingOverlay.classList.add('hide');
     authOverlay.classList.add('show');
   }
 });
 
-
-/* Phase 7 — never proxy the owner's Schwab credentials or quote payload to other users. */
+/* ================= STARFIELD ================= */
 const sfCanvas = document.getElementById('starfield');
 const sfCtx = sfCanvas.getContext('2d');
 let stars = [], shooters = [];
@@ -1693,7 +1676,7 @@ function renderWorldMap(){
     const dot = document.createElement('div'); dot.className='mk-dot'+(open[i]?' open':''); dot.style.left=p.x+'px'; dot.style.top=p.y+'px';
     const pill = document.createElement('div'); pill.className='mk-pill'+(open[i]?' open':'');
     pill.style.left=x+'px'; pill.style.top=p.y+'px';
-    pill.innerHTML = m.name+' <span class="mk-s">'+(open[i]?'● OPEN':'CLOSED')+'</span>';
+    pill.innerHTML = m.name+' <span class="mk-s">'+(open[i]?'<i class="mk-led"></i>OPEN':'CLOSED')+'</span>';
     box.appendChild(dot); box.appendChild(pill);
     // nudge the label off any node it would sit behind
     const pw = pill.offsetWidth, ph = pill.offsetHeight;
